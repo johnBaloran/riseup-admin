@@ -72,7 +72,9 @@ export async function getDivisions({
 /**
  * Get division by ID
  */
-export async function getDivisionById(id: string) {
+export async function getDivisionById(
+  id: string
+): Promise<PopulatedDivision | null> {
   await connectDB();
   return Division.findById(id)
     .populate("city", "cityName region")
@@ -84,7 +86,7 @@ export async function getDivisionById(id: string) {
     .populate("prices.regularInstallment")
     .populate("prices.firstInstallment")
     .populate("prices.free")
-    .lean();
+    .lean() as Promise<PopulatedDivision | null>;
 }
 
 /**

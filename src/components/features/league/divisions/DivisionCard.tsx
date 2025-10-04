@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { PopulatedDivision } from "@/types/division";
+import Link from "next/link";
 
 interface DivisionCardProps {
   division: PopulatedDivision;
@@ -140,9 +141,11 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">{getStatusBadge()}</div>
-            <h3 className="font-semibold text-lg leading-tight">
-              {division.divisionName}
-            </h3>
+            <Link href={`/admin/${cityId}/league/divisions/${division._id}`}>
+              <h3 className="font-semibold text-lg leading-tight hover:underline">
+                {division.divisionName}
+              </h3>
+            </Link>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
