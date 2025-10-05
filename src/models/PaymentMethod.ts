@@ -12,35 +12,27 @@ const Schema = mongoose.Schema;
 export interface IPaymentMethod extends mongoose.Document {
   player: mongoose.Types.ObjectId;
   division: mongoose.Types.ObjectId;
-  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "ETRANSFER" | "CASH";
-  status: "PENDING" | "COMPLETED" | "FAILED" | "IN_PROGRESS";
-  totalAmount: number;
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS";
+  pricingTier: "EARLY_BIRD" | "REGULAR";
+  originalPrice: number;
   amountPaid: number;
-  eTransferTransaction?: {
-    referenceNumber: string;
-    senderEmail: string;
-    amountPaid: number;
-    date: Date;
-    notes?: string;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  installments?: {
+    subscriptionId: string;
+    totalAmountDue: number;
+    remainingBalance: number;
+    nextPaymentDate?: Date;
+    subscriptionPayments: Array<{
+      invoiceId: string;
+      status: "succeeded" | "failed" | "pending";
+      amountPaid: number;
+      attemptCount: number;
+      lastAttempt?: Date;
+      paymentLink: string;
+      paymentNumber: number;
+      dueDate?: Date;
+    }>;
   };
-  cashTransaction?: {
-    receivedBy: string;
-    receivedAt: Date;
-    receiptNumber: string;
-    amountPaid: number;
-    notes?: string;
-  };
-  installmentPlan?: {
-    totalInstallments: number;
-    completedInstallments: number;
-    installmentAmount: number;
-    nextPaymentDate: Date;
-  };
-  installmentReminders: Array<{
-    sentAt: Date;
-    type: "SMS" | "EMAIL";
-    status: "SENT" | "FAILED";
-  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -59,49 +51,48 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
     },
     paymentType: {
       type: String,
-      enum: ["FULL_PAYMENT", "INSTALLMENTS", "ETRANSFER", "CASH"],
+      enum: ["FULL_PAYMENT", "INSTALLMENTS"],
       required: [true, "Payment type is required"],
     },
-    status: {
+    pricingTier: {
       type: String,
-      enum: ["PENDING", "COMPLETED", "FAILED", "IN_PROGRESS"],
-      default: "PENDING",
+      enum: ["EARLY_BIRD", "REGULAR"],
+      required: [true, "Pricing tier is required"],
     },
-    totalAmount: {
+    originalPrice: {
       type: Number,
-      required: [true, "Total amount is required"],
+      required: [true, "Original price is required"],
     },
     amountPaid: {
       type: Number,
       default: 0,
     },
-    eTransferTransaction: {
-      referenceNumber: String,
-      senderEmail: String,
-      amountPaid: Number,
-      date: Date,
-      notes: String,
+    status: {
+      type: String,
+      enum: ["PENDING", "IN_PROGRESS", "COMPLETED"],
+      default: "PENDING",
     },
-    cashTransaction: {
-      receivedBy: String,
-      receivedAt: Date,
-      receiptNumber: String,
-      amountPaid: Number,
-      notes: String,
-    },
-    installmentPlan: {
-      totalInstallments: Number,
-      completedInstallments: { type: Number, default: 0 },
-      installmentAmount: Number,
+    installments: {
+      subscriptionId: String,
+      totalAmountDue: Number,
+      remainingBalance: Number,
       nextPaymentDate: Date,
+      subscriptionPayments: [
+        {
+          invoiceId: String,
+          status: {
+            type: String,
+            enum: ["succeeded", "failed", "pending"],
+          },
+          amountPaid: Number,
+          attemptCount: Number,
+          lastAttempt: Date,
+          paymentLink: String,
+          paymentNumber: Number,
+          dueDate: Date,
+        },
+      ],
     },
-    installmentReminders: [
-      {
-        sentAt: { type: Date, default: Date.now },
-        type: { type: String, enum: ["SMS", "EMAIL"] },
-        status: { type: String, enum: ["SENT", "FAILED"] },
-      },
-    ],
   },
   {
     timestamps: true,
@@ -109,10 +100,36 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
 );
 
 // Indexes
-paymentMethodSchema.index({ player: 1 });
-paymentMethodSchema.index({ division: 1 });
+paymentMethodSchema.index({ player: 1, division: 1 });
+paymentMethodSchema.index({ division: 1, status: 1 });
 paymentMethodSchema.index({ status: 1 });
-paymentMethodSchema.index({ paymentType: 1 });
+
+// Middleware: Auto-calculate remaining balance when installment payments update
+paymentMethodSchema.pre("save", function (next) {
+  if (
+    this.paymentType === "INSTALLMENTS" &&
+    this.installments?.subscriptionPayments
+  ) {
+    const totalPaid = this.installments.subscriptionPayments
+      .filter((payment) => payment.status === "succeeded")
+      .reduce((sum, payment) => sum + (payment.amountPaid || 0), 0);
+
+    if (this.installments.totalAmountDue) {
+      this.installments.remainingBalance =
+        this.installments.totalAmountDue - totalPaid;
+    }
+    this.amountPaid = totalPaid;
+
+    // Auto-complete if all payments succeeded
+    const allPaid = this.installments.subscriptionPayments.every(
+      (p) => p.status === "succeeded"
+    );
+    if (allPaid && this.installments.remainingBalance === 0) {
+      this.status = "COMPLETED";
+    }
+  }
+  next();
+});
 
 export default (mongoose.models
   .PaymentMethod as mongoose.Model<IPaymentMethod>) ||

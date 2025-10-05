@@ -14,7 +14,6 @@ export interface ITeam extends mongoose.Document {
   teamNameShort: string;
   teamCode: string;
   teamCaptain?: mongoose.Types.ObjectId;
-  organizer?: mongoose.Types.ObjectId;
   division: mongoose.Types.ObjectId;
   players: mongoose.Types.ObjectId[];
   games: mongoose.Types.ObjectId[];
@@ -24,7 +23,6 @@ export interface ITeam extends mongoose.Document {
   wins: number;
   losses: number;
   pointDifference: number;
-  paid: boolean;
   createdManually: boolean;
   isCustomJersey: boolean;
   jerseyEdition?: string;
@@ -54,10 +52,7 @@ const teamSchema = new Schema<ITeam>(
       type: Schema.Types.ObjectId,
       ref: "Player",
     },
-    organizer: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    },
+
     division: {
       type: Schema.Types.ObjectId,
       ref: "Division",
@@ -90,10 +85,7 @@ const teamSchema = new Schema<ITeam>(
       type: Number,
       default: 0,
     },
-    paid: {
-      type: Boolean,
-      default: false,
-    },
+
     createdManually: {
       type: Boolean,
       default: false,
