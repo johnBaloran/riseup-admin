@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -107,8 +107,8 @@ export function EditTeamForm({ team, cityId, cities }: EditTeamFormProps) {
     }
   };
 
-  // Fetch divisions on mount and when city changes
-  useMemo(() => {
+  // Fetch divisions when city changes
+  useEffect(() => {
     if (selectedCity) {
       fetchDivisions(selectedCity);
     }

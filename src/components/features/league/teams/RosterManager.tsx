@@ -1,4 +1,4 @@
-// src/components/features/league/teams/RosterManager.tsx
+// src/components/features/league/teams/RosterManager.tsx - Add quick create
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -12,10 +12,11 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Trash2, AlertCircle } from "lucide-react";
+import { Users, UserPlus, Trash2, AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AddPlayerDialog } from "./AddPlayerDialog";
 import { RemovePlayerDialog } from "./RemovePlayerDialog";
+import { QuickCreatePlayerDialog } from "./QuickCreatePlayerDialog";
 
 interface RosterManagerProps {
   team: any;
@@ -28,10 +29,10 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
   const [loadingFreeAgents, setLoadingFreeAgents] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showQuickCreateDialog, setShowQuickCreateDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch free agents
   useEffect(() => {
     fetchFreeAgents();
   }, [team._id]);
@@ -112,6 +113,12 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
     }
   };
 
+  const handleQuickCreateSuccess = () => {
+    setShowQuickCreateDialog(false);
+    router.refresh();
+    fetchFreeAgents();
+  };
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Current Roster */}
@@ -119,14 +126,24 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Current Roster ({team.players?.length || 0})</CardTitle>
-            <Button
-              size="sm"
-              onClick={() => setShowAddDialog(true)}
-              disabled={loadingFreeAgents || freeAgents.length === 0}
-            >
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Player
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowQuickCreateDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create New
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setShowAddDialog(true)}
+                disabled={loadingFreeAgents || freeAgents.length === 0}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Existing
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -134,15 +151,23 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <p className="mt-2 text-sm text-gray-500">No players on roster</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={() => setShowAddDialog(true)}
-                disabled={loadingFreeAgents || freeAgents.length === 0}
-              >
-                Add First Player
-              </Button>
+              <div className="flex gap-2 justify-center mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowQuickCreateDialog(true)}
+                >
+                  Create New Player
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddDialog(true)}
+                  disabled={loadingFreeAgents || freeAgents.length === 0}
+                >
+                  Add Existing Player
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -198,8 +223,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
                 No free agents available in this division
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Free agents are players registered for this division who aren't
-                on a team
+                Create a new player to add them to the roster
               </p>
             </div>
           ) : (
@@ -232,7 +256,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         </CardContent>
       </Card>
 
-      {/* Add Player Dialog */}
+      {/* Dialogs */}
       <AddPlayerDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
@@ -241,7 +265,6 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         isProcessing={isProcessing}
       />
 
-      {/* Remove Player Dialog */}
       <RemovePlayerDialog
         open={showRemoveDialog}
         onOpenChange={setShowRemoveDialog}
@@ -249,6 +272,14 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         onRemove={handleRemovePlayer}
         isProcessing={isProcessing}
         isCaptain={selectedPlayer?._id === team.teamCaptain?._id}
+      />
+
+      <QuickCreatePlayerDialog
+        open={showQuickCreateDialog}
+        onOpenChange={setShowQuickCreateDialog}
+        team={team}
+        cityId={cityId}
+        onSuccess={handleQuickCreateSuccess}
       />
     </div>
   );

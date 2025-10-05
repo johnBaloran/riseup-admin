@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react"; // Changed: Remove useMemo, add useEffect
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +28,7 @@ import {
   CreatePlayerInput,
   createPlayerSchema,
 } from "@/lib/validations/player";
+import { formatTime } from "@/lib/utils/time";
 
 interface CreatePlayerFormProps {
   cityId: string;
@@ -56,28 +57,7 @@ export function CreatePlayerForm({ cityId, cities }: CreatePlayerFormProps) {
   const selectedDivision = watch("division");
   const selectedTeam = watch("team");
 
-  // Filter locations by selected city
-  const availableLocations = useMemo(() => {
-    const city = cities.find((c) => c._id === selectedCity);
-    return city?.locations || [];
-  }, [cities, selectedCity]);
-
-  // Fetch divisions when city changes
-  useMemo(() => {
-    if (selectedCity) {
-      fetchDivisions(selectedCity);
-    }
-  }, [selectedCity]);
-
-  // Fetch teams when division changes
-  useMemo(() => {
-    if (selectedDivision) {
-      fetchTeams(selectedDivision);
-    } else {
-      setTeams([]);
-    }
-  }, [selectedDivision]);
-
+  // Define functions before using them
   const fetchDivisions = async (cityId: string) => {
     setLoadingDivisions(true);
     try {
@@ -115,6 +95,22 @@ export function CreatePlayerForm({ cityId, cities }: CreatePlayerFormProps) {
       setLoadingTeams(false);
     }
   };
+
+  // Fetch divisions when city changes
+  useEffect(() => {
+    if (selectedCity) {
+      fetchDivisions(selectedCity);
+    }
+  }, [selectedCity]);
+
+  // Fetch teams when division changes
+  useEffect(() => {
+    if (selectedDivision) {
+      fetchTeams(selectedDivision);
+    } else {
+      setTeams([]);
+    }
+  }, [selectedDivision]);
 
   const onSubmit = async (data: CreatePlayerInput) => {
     setIsLoading(true);
@@ -202,7 +198,9 @@ export function CreatePlayerForm({ cityId, cities }: CreatePlayerFormProps) {
               <SelectContent>
                 {divisions.map((division: any) => (
                   <SelectItem key={division._id} value={division._id}>
-                    {division.divisionName}
+                    {division.location?.name} - {division.divisionName}:{" "}
+                    {division.day} {formatTime(division.startTime)} -{" "}
+                    {formatTime(division.endTime)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -307,7 +305,12 @@ export function CreatePlayerForm({ cityId, cities }: CreatePlayerFormProps) {
             <div>
               <Label htmlFor="jerseySize">Jersey Size</Label>
               <Select
-                onValueChange={(value) => setValue("jerseySize", value)}
+                onValueChange={(value) =>
+                  setValue(
+                    "jerseySize",
+                    value as "S" | "M" | "L" | "XL" | "2XL"
+                  )
+                }
                 disabled={isLoading}
               >
                 <SelectTrigger>

@@ -1,4 +1,4 @@
-// src/lib/validations/player.ts
+// src/lib/validations/player.ts - Update jersey sizes
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -18,14 +18,14 @@ export const createPlayerSchema = z.object({
     .optional()
     .nullable(),
   jerseySize: z
-    .enum(["YS", "YM", "YL", "S", "M", "L", "XL", "2XL", "3XL"])
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
     .optional(),
   jerseyName: z
     .string()
     .max(15, "Jersey name must be 15 characters or less")
     .optional(),
   instagram: z.string().optional(),
-  user: z.string().optional(), // Link to existing User (for later)
+  user: z.string().optional(),
 });
 
 export const updatePlayerSchema = z.object({
@@ -34,7 +34,10 @@ export const updatePlayerSchema = z.object({
   division: z.string().optional(),
   team: z.string().nullable().optional(),
   jerseyNumber: z.number().min(0).max(99).nullable().optional(),
-  jerseySize: z.enum(["S", "M", "L", "XL", "2XL"]).optional().nullable(),
+  jerseySize: z
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
+    .optional()
+    .nullable(),
   jerseyName: z.string().max(15).optional().nullable(),
   instagram: z.string().optional().nullable(),
   user: z.string().nullable().optional(),

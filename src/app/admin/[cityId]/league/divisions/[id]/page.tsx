@@ -28,6 +28,7 @@ import {
   Users,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { formatTimeRange } from "@/lib/utils/time";
 
 interface DivisionDetailPageProps {
   params: { cityId: string; id: string };
@@ -169,7 +170,10 @@ export default async function DivisionDetailPage({
               <Calendar className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Schedule</p>
-                <p className="font-medium">{division.day}s</p>
+                <p className="font-medium">
+                  {division.day}{" "}
+                  {formatTimeRange(division.startTime, division.endTime)}
+                </p>{" "}
               </div>
             </div>
 
