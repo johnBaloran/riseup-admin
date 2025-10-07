@@ -36,6 +36,7 @@ interface CitiesTableProps {
 }
 
 export function CitiesTable({ cities, cityId }: CitiesTableProps) {
+  console.log("cities:",cities)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<ICity | null>(null);

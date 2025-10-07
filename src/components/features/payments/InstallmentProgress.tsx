@@ -7,29 +7,13 @@
 
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { format } from "date-fns";
-
-interface InstallmentProgressProps {
-  progress: Array<{
-    week: number;
-    status: "succeeded" | "failed" | "pending";
-    amountPaid?: number;
-    dueDate?: Date;
-  }>;
-  size?: "sm" | "md" | "lg";
-}
-
 export function InstallmentProgress({
-  progress,
+  payments,
   size = "md",
-}: InstallmentProgressProps) {
+}: {
+  payments: any[];
+  size?: "sm" | "md" | "lg";
+}) {
   const dotSize = {
     sm: "w-2 h-2",
     md: "w-3 h-3",
@@ -47,48 +31,28 @@ export function InstallmentProgress({
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "succeeded":
-        return "Paid";
-      case "failed":
-        return "Failed";
-      default:
-        return "Pending";
-    }
-  };
+  // Ensure we always show 8 dots (1 down + 7 weekly)
+  const allPayments = Array(8)
+    .fill(null)
+    .map((_, index) => {
+      const payment = payments.find((p: any) => p.paymentNumber === index + 1);
+      return {
+        paymentNumber: index + 1,
+        status: payment?.status || "pending",
+      };
+    });
 
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-1">
-        {progress.map((week) => (
-          <Tooltip key={week.week}>
-            <TooltipTrigger>
-              <div
-                className={`${dotSize[size]} rounded-full ${getStatusColor(
-                  week.status
-                )} transition-colors`}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="text-xs">
-                <p className="font-medium">Week {week.week}</p>
-                <p className="text-gray-500">{getStatusLabel(week.status)}</p>
-                {week.amountPaid && (
-                  <p className="text-green-600">
-                    ${week.amountPaid.toFixed(2)}
-                  </p>
-                )}
-                {week.dueDate && (
-                  <p className="text-gray-400">
-                    Due: {format(new Date(week.dueDate), "MMM dd")}
-                  </p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-      </div>
-    </TooltipProvider>
+    <div className="flex items-center gap-1">
+      {allPayments.map((payment) => (
+        <div
+          key={payment.paymentNumber}
+          className={`${dotSize[size]} rounded-full ${getStatusColor(
+            payment.status
+          )} transition-colors`}
+          title={`Payment ${payment.paymentNumber}: ${payment.status}`}
+        />
+      ))}
+    </div>
   );
 }

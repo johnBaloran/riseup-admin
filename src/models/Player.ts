@@ -9,37 +9,42 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
+// src/models/Player.ts - Add paymentMethods to interface
+
 export interface IPlayer extends mongoose.Document {
-  playerName: string;
-  user?: mongoose.Types.ObjectId;
-  team?: mongoose.Types.ObjectId;
-  division?: mongoose.Types.ObjectId;
-  jerseyNumber?: number;
-  jerseySize?: string;
-  jerseyName?: string;
-  instagram?: string;
-  teamCaptain: boolean;
+  createdAt: Date;
   freeAgent: boolean;
   agreeToRefundPolicy: boolean;
   agreeToTerms: boolean;
   receiveNews: boolean;
   customerId?: string;
+  subscriptionPayments: Array<any>;
+  playerName: string;
   playerImage?: {
     id: string;
     image: string;
   };
-  averageStats?: {
-    points: number;
-    rebounds: number;
-    assists: number;
-    blocks: number;
-    steals: number;
-    threesMade: number;
-    twosMade: number;
-    freeThrowsMade: number;
+  instagram?: string;
+  jerseyNumber?: number;
+  jerseyNumberTwo?: number;
+  jerseyNumberThree?: number;
+  jerseySize?: string;
+  jerseyName?: string;
+  team?: mongoose.Types.ObjectId;
+  teamCaptain: boolean;
+  paymentStatus: {
+    hasPaid?: boolean;
+    reminderCount?: number;
+    teamCreatedDate?: Date;
+    lastAttempt?: Date;
+    email?: string;
+    phoneNumber?: string;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  paymentMethods: mongoose.Types.ObjectId[]; // ADD THIS LINE
+  user?: mongoose.Types.ObjectId;
+  division?: mongoose.Types.ObjectId;
+  averageStats?: any;
+  allStats: Array<any>;
 }
 
 const playerSchema = new Schema<IPlayer>(
@@ -61,6 +66,21 @@ const playerSchema = new Schema<IPlayer>(
       type: Schema.Types.ObjectId,
       ref: "Division",
     },
+    paymentStatus: {
+      hasPaid: Boolean,
+      reminderCount: Number,
+      teamCreatedDate: Date,
+      lastAttempt: Date,
+      email: String,
+      phoneNumber: String,
+    },
+  
+    paymentMethods: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PaymentMethod",
+      },
+    ],
     jerseyNumber: Number,
     jerseySize: String,
     jerseyName: String,

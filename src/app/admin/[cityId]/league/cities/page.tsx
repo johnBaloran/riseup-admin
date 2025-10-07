@@ -31,7 +31,7 @@ export default async function CitiesPage({ params }: CitiesPageProps) {
   }
 
   const cities = await getAllCities();
-
+console.log("cities:",cities)
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
