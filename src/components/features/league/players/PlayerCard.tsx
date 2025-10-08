@@ -52,7 +52,7 @@ export function PlayerCard({ player, cityId }: PlayerCardProps) {
           </Badge>
           {player.installmentProgress && (
             <InstallmentProgress
-              progress={player.installmentProgress}
+              payments={player.installmentProgress}
               size="sm"
             />
           )}
