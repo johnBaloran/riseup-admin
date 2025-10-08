@@ -18,11 +18,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createLevelSchema, CreateLevelInput } from "@/lib/validations/level";
 
-interface CreateLevelFormProps {
-  cityId: string;
-}
-
-export function CreateLevelForm({ cityId }: CreateLevelFormProps) {
+export function CreateLevelForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -51,7 +47,7 @@ export function CreateLevelForm({ cityId }: CreateLevelFormProps) {
       }
 
       toast.success("Level created successfully!");
-      router.push(`/admin/${cityId}/league/levels`);
+      router.push(`/admin/league/levels`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create level");

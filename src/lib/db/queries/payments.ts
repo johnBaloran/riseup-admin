@@ -31,8 +31,11 @@ export async function getPlayerPaymentStatus(playerId: string) {
   }
 
   if (paymentMethod.paymentType === "INSTALLMENTS") {
-    const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
-    const failedCount = subscriptionPayments.filter((p: any) => p.status === "failed").length;
+    const subscriptionPayments =
+      paymentMethod.installments?.subscriptionPayments || [];
+    const failedCount = subscriptionPayments.filter(
+      (p: any) => p.status === "failed"
+    ).length;
 
     if (failedCount === 0) return { status: "on-track", paymentMethod };
     if (failedCount >= 3) return { status: "critical", paymentMethod };
@@ -46,14 +49,12 @@ export async function getPlayerPaymentStatus(playerId: string) {
  * Get all players with payment status for dashboard
  */
 export async function getPlayersWithPaymentStatus({
-  cityId,
   locationId,
   divisionId,
   teamId,
   paymentStatusFilter = "all",
   search,
 }: {
-  cityId?: string;
   locationId?: string;
   divisionId?: string;
   teamId?: string;
@@ -64,7 +65,6 @@ export async function getPlayersWithPaymentStatus({
 
   // Build filter for active divisions only
   const divisionFilter: any = { active: true, register: true };
-  if (cityId) divisionFilter.city = cityId;
   if (locationId) divisionFilter.location = locationId;
   if (divisionId) divisionFilter._id = divisionId;
 
@@ -103,8 +103,11 @@ export async function getPlayersWithPaymentStatus({
       if (paymentMethod.status === "COMPLETED") {
         status = "paid";
       } else if (paymentMethod.paymentType === "INSTALLMENTS") {
-        const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
-        const failedCount = subscriptionPayments.filter((p: any) => p.status === "failed").length;
+        const subscriptionPayments =
+          paymentMethod.installments?.subscriptionPayments || [];
+        const failedCount = subscriptionPayments.filter(
+          (p: any) => p.status === "failed"
+        ).length;
 
         if (failedCount === 0) status = "on-track";
         else if (failedCount >= 3) status = "critical";
@@ -117,7 +120,9 @@ export async function getPlayersWithPaymentStatus({
 
   // Filter by payment status if needed
   if (paymentStatusFilter !== "all") {
-    return playersWithStatus.filter((p) => p.paymentStatus === paymentStatusFilter);
+    return playersWithStatus.filter(
+      (p) => p.paymentStatus === paymentStatusFilter
+    );
   }
 
   return playersWithStatus;

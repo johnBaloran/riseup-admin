@@ -55,14 +55,9 @@ interface City {
 interface LocationsTableProps {
   locations: Location[];
   cities: City[];
-  cityId: string;
 }
 
-export function LocationsTable({
-  locations,
-  cities,
-  cityId,
-}: LocationsTableProps) {
+export function LocationsTable({ locations, cities }: LocationsTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(

@@ -32,11 +32,9 @@ import { ICity } from "@/models/City";
 
 interface CitiesTableProps {
   cities: ICity[];
-  cityId: string;
 }
 
-export function CitiesTable({ cities, cityId }: CitiesTableProps) {
-  console.log("cities:",cities)
+export function CitiesTable({ cities }: CitiesTableProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState<ICity | null>(null);

@@ -13,10 +13,9 @@ import { PopulatedDivision } from "@/types/division";
 
 interface DivisionsGridProps {
   divisions: PopulatedDivision[];
-  cityId: string;
 }
 
-export function DivisionsGrid({ divisions, cityId }: DivisionsGridProps) {
+export function DivisionsGrid({ divisions }: DivisionsGridProps) {
   if (divisions.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow">
@@ -34,7 +33,7 @@ export function DivisionsGrid({ divisions, cityId }: DivisionsGridProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {divisions.map((division) => (
-        <DivisionCard key={division._id} division={division} cityId={cityId} />
+        <DivisionCard key={division._id} division={division} />
       ))}
     </div>
   );

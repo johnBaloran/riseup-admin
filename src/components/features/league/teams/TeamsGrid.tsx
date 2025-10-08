@@ -12,10 +12,9 @@ import { TeamCard } from "./TeamCard";
 
 interface TeamsGridProps {
   teams: any[];
-  cityId: string;
 }
 
-export function TeamsGrid({ teams, cityId }: TeamsGridProps) {
+export function TeamsGrid({ teams }: TeamsGridProps) {
   if (teams.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow">
@@ -33,7 +32,7 @@ export function TeamsGrid({ teams, cityId }: TeamsGridProps) {
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {teams.map((team) => (
-        <TeamCard key={team._id} team={team} cityId={cityId} />
+        <TeamCard key={team._id} team={team} />
       ))}
     </div>
   );

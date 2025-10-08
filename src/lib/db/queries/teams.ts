@@ -14,7 +14,6 @@ import Player from "@/models/Player";
  * Get teams with pagination and filters
  */
 export async function getTeams({
-  cityId,
   page = 1,
   limit = 12,
   paymentFilter = "all",
@@ -23,7 +22,6 @@ export async function getTeams({
   search,
   viewMode = "card",
 }: {
-  cityId: string;
   page?: number;
   limit?: number;
   paymentFilter?: "all" | "paid" | "unpaid";
@@ -40,10 +38,6 @@ export async function getTeams({
   const filter: any = {};
 
   // Filter by city through division
-  if (cityId) {
-    const divisions = await Division.find({ city: cityId }).select("_id");
-    filter.division = { $in: divisions.map((d) => d._id) };
-  }
 
   if (divisionId) filter.division = divisionId;
   if (search) {

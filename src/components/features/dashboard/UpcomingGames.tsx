@@ -17,10 +17,9 @@ import { IGame } from "@/models/Game";
 
 interface UpcomingGamesProps {
   games: IGame[];
-  cityId: string;
 }
 
-export function UpcomingGames({ games, cityId }: UpcomingGamesProps) {
+export function UpcomingGames({ games }: UpcomingGamesProps) {
   if (games.length === 0) {
     return (
       <Card>
@@ -48,7 +47,7 @@ export function UpcomingGames({ games, cityId }: UpcomingGamesProps) {
           {games.map((game) => (
             <Link
               key={game._id}
-              href={`/admin/${cityId}/games/${game._id}`}
+              href={`/admin/games/${game._id}`}
               className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               {/* <div className="font-medium">

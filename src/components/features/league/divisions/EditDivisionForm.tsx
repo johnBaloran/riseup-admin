@@ -37,14 +37,12 @@ import { LeanLevel } from "@/types/level";
 
 interface EditDivisionFormProps {
   division: PopulatedDivision; // Will be PopulatedDivision from DB
-  cityId: string;
   cities: LeanCity[];
   levels: LeanLevel[];
 }
 
 export function EditDivisionForm({
   division,
-  cityId,
   cities,
   levels,
 }: EditDivisionFormProps) {
@@ -120,7 +118,7 @@ export function EditDivisionForm({
     setConflictWarning(null);
 
     try {
-      const response = await fetch(`/api/v1/${cityId}/divisions`, {
+      const response = await fetch(`/api/v1/divisions`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -138,7 +136,7 @@ export function EditDivisionForm({
       }
 
       toast.success("Division updated successfully!");
-      router.push(`/admin/${cityId}/league/divisions`);
+      router.push(`/admin/league/divisions`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to update division");

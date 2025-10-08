@@ -34,7 +34,6 @@ interface TeamsContentProps {
   };
   divisions: any[];
   locations: any[];
-  cityId: string;
   currentTab: string;
   currentView: "card" | "list";
   currentFilters: {
@@ -49,7 +48,6 @@ export function TeamsContent({
   pagination,
   divisions,
   locations,
-  cityId,
   currentTab,
   currentView,
   currentFilters,
@@ -74,7 +72,7 @@ export function TeamsContent({
       params.set("page", "1");
     }
 
-    router.push(`/admin/${cityId}/league/teams?${params.toString()}`);
+    router.push(`/admin/league/teams?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -174,9 +172,9 @@ export function TeamsContent({
 
       {/* Teams Display */}
       {currentView === "card" ? (
-        <TeamsGrid teams={teams} cityId={cityId} />
+        <TeamsGrid teams={teams} />
       ) : (
-        <TeamsList teams={teams} cityId={cityId} />
+        <TeamsList teams={teams} />
       )}
 
       {/* Pagination */}

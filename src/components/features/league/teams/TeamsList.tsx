@@ -14,10 +14,9 @@ import { Users, AlertCircle, ExternalLink } from "lucide-react";
 
 interface TeamsListProps {
   teams: any[];
-  cityId: string;
 }
 
-export function TeamsList({ teams, cityId }: TeamsListProps) {
+export function TeamsList({ teams }: TeamsListProps) {
   if (teams.length === 0) {
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow">
@@ -147,7 +146,7 @@ export function TeamsList({ teams, cityId }: TeamsListProps) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/${cityId}/league/teams/${team._id}`}>
+                    <Link href={`/admin/league/teams/${team._id}`}>
                       <ExternalLink className="h-4 w-4" />
                     </Link>
                   </Button>

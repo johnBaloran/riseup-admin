@@ -16,10 +16,9 @@ import { InstallmentProgress } from "./InstallmentProgress";
 
 interface PaymentsListProps {
   players: any[];
-  cityId: string;
 }
 
-export function PaymentsList({ players, cityId }: PaymentsListProps) {
+export function PaymentsList({ players }: PaymentsListProps) {
   if (players.length === 0) {
     return (
       <Card className="p-12 text-center">
@@ -91,7 +90,7 @@ export function PaymentsList({ players, cityId }: PaymentsListProps) {
                 )}
               </div>
               <Button variant="ghost" size="sm" asChild className="ml-2">
-                <Link href={`/admin/${cityId}/payments/${player._id}`}>
+                <Link href={`/admin/payments/${player._id}`}>
                   <ExternalLink className="h-4 w-4" />
                 </Link>
               </Button>

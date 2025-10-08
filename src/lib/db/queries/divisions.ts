@@ -13,7 +13,6 @@ import Division from "@/models/Division";
  * Get divisions with pagination and filters
  */
 export async function getDivisions({
-  cityId,
   page = 1,
   limit = 12,
   activeFilter = "all",
@@ -22,7 +21,6 @@ export async function getDivisions({
   day,
   search,
 }: {
-  cityId: string;
   page?: number;
   limit?: number;
   activeFilter?: "all" | "active" | "inactive" | "registration";
@@ -36,12 +34,13 @@ export async function getDivisions({
   const skip = (page - 1) * limit;
 
   // Build filter
-  const filter: any = { city: cityId };
+  const filter: any = {};
 
   if (activeFilter === "active") filter.active = true;
   if (activeFilter === "inactive") filter.active = false;
   if (activeFilter === "registration") filter.register = true;
   if (locationId) filter.location = locationId;
+
   if (levelId) filter.level = levelId;
   if (day) filter.day = day;
   if (search) filter.divisionName = { $regex: search, $options: "i" };

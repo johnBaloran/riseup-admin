@@ -44,10 +44,9 @@ import {
 
 interface TeamCardProps {
   team: any;
-  cityId: string;
 }
 
-export function TeamCard({ team, cityId }: TeamCardProps) {
+export function TeamCard({ team }: TeamCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -86,7 +85,7 @@ export function TeamCard({ team, cityId }: TeamCardProps) {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/teams?id=${team._id}`, {
+      const response = await fetch(`/api/v1/teams?id=${team._id}`, {
         method: "DELETE",
       });
 
@@ -126,7 +125,7 @@ export function TeamCard({ team, cityId }: TeamCardProps) {
                   </Badge>
                 )}
               </div>
-              <Link href={`/admin/${cityId}/league/teams/${team._id}`}>
+              <Link href={`/admin/league/teams/${team._id}`}>
                 <h3 className="font-semibold text-lg leading-tight hover:underline">
                   {team.teamName}
                 </h3>
@@ -143,9 +142,7 @@ export function TeamCard({ team, cityId }: TeamCardProps) {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={() =>
-                    router.push(
-                      `/admin/${cityId}/league/teams/${team._id}/edit`
-                    )
+                    router.push(`/admin/league/teams/${team._id}/edit`)
                   }
                 >
                   <Pencil className="mr-2 h-4 w-4" />

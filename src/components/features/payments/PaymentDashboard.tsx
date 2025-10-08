@@ -24,9 +24,9 @@ import { toast } from "sonner";
 
 interface PaymentDashboardProps {
   players: any[];
+  allPlayers: any[];
   locations: any[];
   divisions: any[];
-  cityId: string;
   currentFilters: {
     location?: string;
     division?: string;
@@ -38,9 +38,9 @@ interface PaymentDashboardProps {
 
 export function PaymentDashboard({
   players,
+  allPlayers,
   locations,
   divisions,
-  cityId,
   currentFilters,
 }: PaymentDashboardProps) {
   const router = useRouter();
@@ -50,23 +50,23 @@ export function PaymentDashboard({
   const [currentPage, setCurrentPage] = useState(1);
   const playersPerPage = 12;
 
-  // Calculate stats
+  // Calculate overall stats (unfiltered)
   const stats = useMemo(() => {
-    const total = players.length;
-    const unpaid = players.filter((p) => p.paymentStatus === "unpaid").length;
-    const onTrack = players.filter(
+    const total = allPlayers.length;
+    const unpaid = allPlayers.filter((p) => p.paymentStatus === "unpaid").length;
+    const onTrack = allPlayers.filter(
       (p) => p.paymentStatus === "on-track"
     ).length;
-    const hasIssues = players.filter(
+    const hasIssues = allPlayers.filter(
       (p) => p.paymentStatus === "has-issues"
     ).length;
-    const critical = players.filter(
+    const critical = allPlayers.filter(
       (p) => p.paymentStatus === "critical"
     ).length;
-    const paid = players.filter((p) => p.paymentStatus === "paid").length;
+    const paid = allPlayers.filter((p) => p.paymentStatus === "paid").length;
 
     return { total, unpaid, onTrack, hasIssues, critical, paid };
-  }, [players]);
+  }, [allPlayers]);
 
   // Pagination
   const totalPages = Math.ceil(players.length / playersPerPage);
@@ -85,12 +85,12 @@ export function PaymentDashboard({
       }
     });
 
-    router.push(`/admin/${cityId}/payments?${params.toString()}`);
+    router.push(`/admin/payments?${params.toString()}`);
     setCurrentPage(1); // Reset to page 1 when filters change
   };
 
   const clearAllFilters = () => {
-    router.push(`/admin/${cityId}/payments`);
+    router.push(`/admin/payments`);
     setSearchValue("");
     setCurrentPage(1);
   };
@@ -103,7 +103,7 @@ export function PaymentDashboard({
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/payments/export`, {
+      const response = await fetch(`/api/v1/payments/export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -326,7 +326,7 @@ export function PaymentDashboard({
       </div>
 
       {/* Players List */}
-      <PaymentsList players={paginatedPlayers} cityId={cityId} />
+      <PaymentsList players={paginatedPlayers} />
 
       {/* Pagination */}
       {totalPages > 1 && (

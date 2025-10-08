@@ -11,13 +11,13 @@ import Team from "@/models/Team";
 import Player from "@/models/Player";
 import Game from "@/models/Game";
 
-export async function getDashboardStats(cityId: string, locationIds: string[]) {
+export async function getDashboardStats(locationIds: string[]) {
   await connectDB();
 
   const filter =
     locationIds.length > 0
-      ? { city: cityId, location: { $in: locationIds } }
-      : { city: cityId };
+      ? { location: { $in: locationIds } }
+      : {};
 
   const [divisions, teams, players, games] = await Promise.all([
     Division.countDocuments({ ...filter, active: true }),
@@ -34,13 +34,13 @@ export async function getDashboardStats(cityId: string, locationIds: string[]) {
   };
 }
 
-export async function getUpcomingGames(cityId: string, locationIds: string[]) {
+export async function getUpcomingGames(locationIds: string[]) {
   await connectDB();
 
   const filter =
     locationIds.length > 0
-      ? { city: cityId, location: { $in: locationIds } }
-      : { city: cityId };
+      ? { location: { $in: locationIds } }
+      : {};
 
   return Game.find({
     ...filter,

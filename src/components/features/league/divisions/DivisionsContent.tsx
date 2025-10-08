@@ -35,7 +35,6 @@ interface DivisionsContentProps {
   };
   locations: LeanLocation[];
   levels: LeanLevel[];
-  cityId: string;
   currentTab: string;
   currentFilters: {
     location?: string;
@@ -50,7 +49,6 @@ export function DivisionsContent({
   pagination,
   locations,
   levels,
-  cityId,
   currentTab,
   currentFilters,
 }: DivisionsContentProps) {
@@ -72,7 +70,7 @@ export function DivisionsContent({
     // Reset to page 1 when filters change
     params.set("page", "1");
 
-    router.push(`/admin/${cityId}/league/divisions?${params.toString()}`);
+    router.push(`/admin/league/divisions?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -83,7 +81,7 @@ export function DivisionsContent({
     setSearchValue(value);
     updateFilters({ search: value || undefined });
   };
-
+  console.log("locations", locations);
   return (
     <div className="space-y-6">
       {/* Tabs */}
@@ -169,7 +167,7 @@ export function DivisionsContent({
       </div>
 
       {/* Division Cards Grid */}
-      <DivisionsGrid divisions={divisions} cityId={cityId} />
+      <DivisionsGrid divisions={divisions} />
 
       {/* Pagination */}
       {pagination.totalPages > 1 && (

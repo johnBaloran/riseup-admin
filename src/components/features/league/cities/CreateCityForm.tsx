@@ -38,11 +38,7 @@ const TIMEZONES = [
   "Australia/Sydney",
 ];
 
-interface CreateCityFormProps {
-  cityId: string;
-}
-
-export function CreateCityForm({ cityId }: CreateCityFormProps) {
+export function CreateCityForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -75,7 +71,7 @@ export function CreateCityForm({ cityId }: CreateCityFormProps) {
       }
 
       toast.success("City created successfully!");
-      router.push(`/admin/${cityId}/league/cities`);
+      router.push("/admin/league/cities");
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create city");

@@ -53,21 +53,19 @@ interface Price {
 }
 
 interface CreateDivisionFormProps {
-  cityId: string;
   cities: City[];
   levels: Level[];
   prices: Price[];
 }
 
 export function CreateDivisionForm({
-  cityId,
   cities,
   levels,
   prices,
 }: CreateDivisionFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCity, setSelectedCity] = useState(cityId);
+  const [selectedCity, setSelectedCity] = useState(cities[0]?._id || "");
   const [selectedStartDate, setSelectedStartDate] = useState<string>("");
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
 
@@ -80,7 +78,7 @@ export function CreateDivisionForm({
   } = useForm<CreateDivisionInput>({
     resolver: zodResolver(createDivisionSchema),
     defaultValues: {
-      city: cityId,
+      city: cities[0]?._id || "",
       active: false,
       register: false,
     },
@@ -122,7 +120,7 @@ export function CreateDivisionForm({
     setConflictWarning(null);
 
     try {
-      const response = await fetch(`/api/v1/${cityId}/divisions`, {
+      const response = await fetch(`/api/v1/divisions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -140,7 +138,7 @@ export function CreateDivisionForm({
       }
 
       toast.success("Division created successfully!");
-      router.push(`/admin/${cityId}/league/divisions`);
+      router.push(`/admin/league/divisions`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create division");

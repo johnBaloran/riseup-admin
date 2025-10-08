@@ -37,16 +37,17 @@ import Link from "next/link";
 
 interface DivisionCardProps {
   division: PopulatedDivision;
-  cityId: string;
 }
 
-export function DivisionCard({ division, cityId }: DivisionCardProps) {
+export function DivisionCard({ division }: DivisionCardProps) {
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const getStatusBadge = () => {
+    const badges: JSX.Element[] = [];
+
     if (!division.active && !division.register) {
-      return (
+      badges.push(
         <Badge
           variant="outline"
           className="bg-gray-100 text-gray-800 border-gray-200"
@@ -55,8 +56,8 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
         </Badge>
       );
     }
-    if (!division.active && division.register) {
-      return (
+    if (division.register) {
+      badges.push(
         <Badge
           variant="outline"
           className="bg-yellow-100 text-yellow-800 border-yellow-200"
@@ -66,7 +67,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
       );
     }
     if (division.active && !division.register) {
-      return (
+      badges.push(
         <Badge
           variant="outline"
           className="bg-green-100 text-green-800 border-green-200"
@@ -76,7 +77,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
       );
     }
     if (division.active && division.register) {
-      return (
+      badges.push(
         <Badge
           variant="outline"
           className="bg-blue-100 text-blue-800 border-blue-200"
@@ -85,12 +86,14 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
         </Badge>
       );
     }
+
+    return badges;
   };
 
   const handleToggleActive = async () => {
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/divisions`, {
+      const response = await fetch(`/api/v1/divisions`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -115,7 +118,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
   const handleToggleRegister = async () => {
     setIsUpdating(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/divisions`, {
+      const response = await fetch(`/api/v1/divisions`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -141,7 +144,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">{getStatusBadge()}</div>
-            <Link href={`/admin/${cityId}/league/divisions/${division._id}`}>
+            <Link href={`/admin/league/divisions/${division._id}`}>
               <h3 className="font-semibold text-lg leading-tight hover:underline">
                 {division.divisionName}
               </h3>
@@ -156,9 +159,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(
-                    `/admin/${cityId}/league/divisions/${division._id}/edit`
-                  )
+                  router.push(`/admin/league/divisions/${division._id}/edit`)
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />
@@ -176,9 +177,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(
-                    `/admin/${cityId}/league/teams?division=${division._id}`
-                  )
+                  router.push(`/admin/league/teams?division=${division._id}`)
                 }
               >
                 <Users className="mr-2 h-4 w-4" />
@@ -192,7 +191,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
       <CardContent className="space-y-3 text-sm">
         <div className="flex items-center gap-2 text-gray-600">
           <MapPin className="h-4 w-4 flex-shrink-0" />
-          <span>{division.location.name}</span>
+          <span>{division.location?.name}</span>
         </div>
 
         <div className="flex items-center gap-2 text-gray-600">
