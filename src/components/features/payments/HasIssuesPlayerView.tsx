@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,14 @@ import {
   XCircle,
   ExternalLink,
   MessageSquare,
+  CreditCard,
+  Zap,
 } from "lucide-react";
 import { format } from "date-fns";
 import { SendSpecificReminderModal } from "./SendSpecificReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
+import { ChargeCardModal } from "./ChargeCardModal";
+import { SendPaymentLinkModal } from "./SendPaymentLinkModal";
 
 interface HasIssuesPlayerViewProps {
   player: any;
@@ -36,20 +40,123 @@ interface HasIssuesPlayerViewProps {
   cityId: string;
 }
 
-export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssuesPlayerViewProps) {
+export function HasIssuesPlayerView({
+  player,
+  paymentMethod,
+  cityId,
+}: HasIssuesPlayerViewProps) {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showCaptainModal, setShowCaptainModal] = useState(false);
+  const [showChargeModal, setShowChargeModal] = useState(false);
+  const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+  const [cardInfo, setCardInfo] = useState<any>(null);
+  const [loadingCard, setLoadingCard] = useState(true);
 
-  const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
-  const completedPayments = subscriptionPayments.filter((p: any) => p.status === "succeeded").length;
-  const failedPayments = subscriptionPayments.filter((p: any) => p.status === "failed");
+  const subscriptionPayments =
+    paymentMethod.installments?.subscriptionPayments || [];
+  const completedPayments = subscriptionPayments.filter(
+    (p: any) => p.status === "succeeded"
+  ).length;
+  const failedPayments = subscriptionPayments.filter(
+    (p: any) => p.status === "failed"
+  );
   const totalPayments = 8;
-  const progressPercentage = Math.round((completedPayments / totalPayments) * 100);
+  const progressPercentage = Math.round(
+    (completedPayments / totalPayments) * 100
+  );
 
   const handleSendReminder = (payment: any) => {
     setSelectedPayment(payment);
     setShowReminderModal(true);
+  };
+
+  // Load card info on mount
+  useEffect(() => {
+    const loadCardInfo = async () => {
+      if (!player.customerId) {
+        setLoadingCard(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/v1/${cityId}/payments/card-info/${player.customerId}`
+        );
+        console.log("response:", response);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("data.data:", data.data);
+
+          setCardInfo(data.data);
+        }
+      } catch (error) {
+        console.error("Error loading card info:", error);
+      } finally {
+        setLoadingCard(false);
+      }
+    };
+
+    loadCardInfo();
+  }, [player.customerId, cityId]);
+
+  console.log("player.customerId:", player.customerId);
+
+  const handleChargeCard = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowChargeModal(true);
+  };
+
+  const handleSendPaymentLink = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowPaymentLinkModal(true);
+  };
+
+  const getCardDisplay = () => {
+    if (loadingCard) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <CreditCard className="h-4 w-4 animate-pulse" />
+          <span>Loading card info...</span>
+        </div>
+      );
+    }
+
+    if (!cardInfo?.hasCard) {
+      return (
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <CreditCard className="h-4 w-4" />
+          <span>No card on file</span>
+        </div>
+      );
+    }
+
+    const brandDisplay =
+      cardInfo.brand.charAt(0).toUpperCase() + cardInfo.brand.slice(1);
+
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <CreditCard className="h-4 w-4 text-gray-400" />
+        <span
+          className={cardInfo.isValid ? "text-gray-900" : "text-orange-600"}
+        >
+          {brandDisplay} ****{cardInfo.last4}
+        </span>
+        <span className="text-gray-500">
+          (Exp: {cardInfo.expMonth}/{cardInfo.expYear})
+        </span>
+        {cardInfo.isValid ? (
+          <Badge className="bg-green-100 text-green-800 border-green-200 text-xs">
+            ✓ Valid
+          </Badge>
+        ) : (
+          <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+            ⚠️ Expired
+          </Badge>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -67,7 +174,9 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
       {/* Player Overview */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{player.playerName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {player.playerName}
+          </h1>
           <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
             <AlertTriangle className="h-3 w-3 mr-1" />
             Has Issues
@@ -76,6 +185,7 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
         <p className="text-gray-600">
           {player.team?.teamName || "No Team"} • {player.division?.divisionName}
         </p>
+        <div className="mt-2">{getCardDisplay()}</div>
       </div>
 
       {/* Warning Message */}
@@ -84,8 +194,9 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
         <div>
           <p className="font-medium text-yellow-900">Payment Issues Detected</p>
           <p className="text-sm text-yellow-700 mt-1">
-            {failedPayments.length} payment{failedPayments.length > 1 ? "s" : ""} failed. 
-            Commissioner follow-up recommended.
+            {failedPayments.length} payment
+            {failedPayments.length > 1 ? "s" : ""} failed. Commissioner
+            follow-up recommended.
           </p>
         </div>
       </div>
@@ -99,57 +210,82 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
               <CardTitle className="text-yellow-900">Failed Payments</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {failedPayments.map((payment: any) => (
-                <div
-                  key={payment.paymentNumber}
-                  className="bg-white border border-red-200 rounded-lg p-4"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-medium text-red-900">
-                        Payment #{payment.paymentNumber}
-                        {payment.paymentNumber === 1 && " (Down Payment)"}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Failed {payment.attemptCount || 1} time{payment.attemptCount > 1 ? "s" : ""}
-                      </p>
-                      {payment.lastAttempt && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Last attempt: {format(new Date(payment.lastAttempt), "MMM dd, yyyy")}
+              {failedPayments.map((payment: any) => {
+                const amount =
+                  payment.paymentNumber === 1
+                    ? 60
+                    : paymentMethod.pricingTier === "EARLY_BIRD"
+                    ? 25
+                    : 30;
+
+                return (
+                  <div
+                    key={payment.paymentNumber}
+                    className="bg-white border border-red-200 rounded-lg p-4"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-medium text-red-900">
+                          Payment #{payment.paymentNumber}
+                          {payment.paymentNumber === 1 && " (Down Payment)"}
                         </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Amount: ${amount} • Failed {payment.attemptCount || 1}{" "}
+                          time
+                          {payment.attemptCount > 1 ? "s" : ""}
+                        </p>
+                        {payment.lastAttempt && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Last attempt:{" "}
+                            {format(
+                              new Date(payment.lastAttempt),
+                              "MMM dd, yyyy"
+                            )}
+                          </p>
+                        )}
+                      </div>
+                      <Badge className="bg-red-100 text-red-800 border-red-200">
+                        Failed
+                      </Badge>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {cardInfo?.isValid ? (
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700"
+                          onClick={() => handleChargeCard(payment)}
+                        >
+                          <Zap className="h-4 w-4 mr-2" />
+                          Charge Card Now
+                        </Button>
+                      ) : null}
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={cardInfo?.isValid ? "flex-1" : "flex-1"}
+                        onClick={() => handleSendPaymentLink(payment)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Send Payment Link
+                      </Button>
+
+                      {payment.paymentLink && (
+                        <Button size="sm" variant="outline" asChild>
+                          <a
+                            href={payment.paymentLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </Button>
                       )}
                     </div>
-                    <Badge className="bg-red-100 text-red-800 border-red-200">
-                      Failed
-                    </Badge>
                   </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleSendReminder(payment)}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Send Reminder
-                    </Button>
-                    {payment.paymentLink && (
-                     <Button size="sm" variant="outline" asChild>
-                     <a
-                       href={payment.paymentLink}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                     >
-                       <ExternalLink className="h-4 w-4 mr-2" />
-                       View Link
-                     </a>
-                   </Button>
-                   
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
 
@@ -163,7 +299,9 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
                 <div
                   key={payment.paymentNumber}
                   className={`flex items-center gap-4 p-3 rounded-lg border ${
-                    payment.status === "failed" ? "bg-red-50 border-red-200" : ""
+                    payment.status === "failed"
+                      ? "bg-red-50 border-red-200"
+                      : ""
                   }`}
                 >
                   <div
@@ -197,7 +335,8 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
                     </p>
                     {payment.status === "failed" && payment.attemptCount && (
                       <p className="text-xs text-red-600 mt-1">
-                        {payment.attemptCount} attempt{payment.attemptCount > 1 ? "s" : ""}
+                        {payment.attemptCount} attempt
+                        {payment.attemptCount > 1 ? "s" : ""}
                       </p>
                     )}
                   </div>
@@ -313,20 +452,24 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
             <CardContent>
               <div className="text-center py-4">
                 <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500 mb-3" />
-                <p className="font-medium text-yellow-900 mb-1">Needs Attention</p>
-                <p className="text-sm text-gray-500">
-                  Follow up recommended
+                <p className="font-medium text-yellow-900 mb-1">
+                  Needs Attention
                 </p>
+                <p className="text-sm text-gray-500">Follow up recommended</p>
               </div>
 
               <div className="mt-6 pt-4 border-t space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Successful:</span>
-                  <span className="font-medium text-green-600">{completedPayments}</span>
+                  <span className="font-medium text-green-600">
+                    {completedPayments}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Failed:</span>
-                  <span className="font-medium text-red-600">{failedPayments.length}</span>
+                  <span className="font-medium text-red-600">
+                    {failedPayments.length}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Pending:</span>
@@ -339,7 +482,9 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
               <div className="mt-4 pt-4 border-t">
                 <div className="text-sm mb-2">
                   <span className="text-gray-500">Progress:</span>
-                  <span className="font-medium ml-2">{progressPercentage}%</span>
+                  <span className="font-medium ml-2">
+                    {progressPercentage}%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -374,6 +519,29 @@ export function HasIssuesPlayerView({ player, paymentMethod, cityId }: HasIssues
       </div>
 
       {/* Modals */}
+      {selectedPayment && cardInfo?.isValid && (
+        <ChargeCardModal
+          open={showChargeModal}
+          onOpenChange={setShowChargeModal}
+          player={player}
+          payment={selectedPayment}
+          cardInfo={cardInfo}
+          paymentMethod={paymentMethod}
+          cityId={cityId}
+        />
+      )}
+
+      {selectedPayment && (
+        <SendPaymentLinkModal
+          open={showPaymentLinkModal}
+          onOpenChange={setShowPaymentLinkModal}
+          player={player}
+          payment={selectedPayment}
+          paymentMethod={paymentMethod}
+          cityId={cityId}
+        />
+      )}
+
       {selectedPayment && (
         <SendSpecificReminderModal
           open={showReminderModal}

@@ -20,7 +20,6 @@ export interface IGame extends mongoose.Document {
   status: boolean;
   started: boolean;
   division: mongoose.Types.ObjectId;
-  location: string;
   players: mongoose.Types.ObjectId[];
   playerOfTheGame?: mongoose.Types.ObjectId;
   youtubeLink?: string;
@@ -75,10 +74,7 @@ const gameSchema = new Schema<IGame>(
       ref: "Division",
       required: [true, "Division is required"],
     },
-    location: {
-      type: String,
-      required: [true, "Location is required"],
-    },
+
     players: [
       {
         type: Schema.Types.ObjectId,

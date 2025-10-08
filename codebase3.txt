@@ -1,0 +1,5626 @@
+
+
+----- components\ui\label.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+)
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+))
+Label.displayName = LabelPrimitive.Root.displayName
+
+export { Label }
+
+
+----- components\ui\popover.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as PopoverPrimitive from "@radix-ui/react-popover"
+
+import { cn } from "@/lib/utils"
+
+const Popover = PopoverPrimitive.Root
+
+const PopoverTrigger = PopoverPrimitive.Trigger
+
+const PopoverAnchor = PopoverPrimitive.Anchor
+
+const PopoverContent = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+>(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
+  <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Content
+      ref={ref}
+      align={align}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-popover-content-transform-origin]",
+        className
+      )}
+      {...props}
+    />
+  </PopoverPrimitive.Portal>
+))
+PopoverContent.displayName = PopoverPrimitive.Content.displayName
+
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
+
+
+----- components\ui\scroll-area.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+
+import { cn } from "@/lib/utils"
+
+const ScrollArea = React.forwardRef<
+  React.ElementRef<typeof ScrollAreaPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
+>(({ className, children, ...props }, ref) => (
+  <ScrollAreaPrimitive.Root
+    ref={ref}
+    className={cn("relative overflow-hidden", className)}
+    {...props}
+  >
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+      {children}
+    </ScrollAreaPrimitive.Viewport>
+    <ScrollBar />
+    <ScrollAreaPrimitive.Corner />
+  </ScrollAreaPrimitive.Root>
+))
+ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
+
+const ScrollBar = React.forwardRef<
+  React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
+>(({ className, orientation = "vertical", ...props }, ref) => (
+  <ScrollAreaPrimitive.ScrollAreaScrollbar
+    ref={ref}
+    orientation={orientation}
+    className={cn(
+      "flex touch-none select-none transition-colors",
+      orientation === "vertical" &&
+        "h-full w-2.5 border-l border-l-transparent p-[1px]",
+      orientation === "horizontal" &&
+        "h-2.5 flex-col border-t border-t-transparent p-[1px]",
+      className
+    )}
+    {...props}
+  >
+    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
+  </ScrollAreaPrimitive.ScrollAreaScrollbar>
+))
+ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName
+
+export { ScrollArea, ScrollBar }
+
+
+----- components\ui\select.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import { Check, ChevronDown, ChevronUp } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Select = SelectPrimitive.Root
+
+const SelectGroup = SelectPrimitive.Group
+
+const SelectValue = SelectPrimitive.Value
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+))
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronUp className="h-4 w-4" />
+  </SelectPrimitive.ScrollUpButton>
+))
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4" />
+  </SelectPrimitive.ScrollDownButton>
+))
+SelectScrollDownButton.displayName =
+  SelectPrimitive.ScrollDownButton.displayName
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-select-content-transform-origin]",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+))
+SelectContent.displayName = SelectPrimitive.Content.displayName
+
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-sm font-semibold", className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
+
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+))
+SelectItem.displayName = SelectPrimitive.Item.displayName
+
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+))
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+}
+
+
+----- components\ui\skeleton.tsx -----
+
+import { cn } from "@/lib/utils"
+
+function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-primary/10", className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton }
+
+
+----- components\ui\sonner.tsx -----
+
+"use client"
+
+import { useTheme } from "next-themes"
+import { Toaster as Sonner } from "sonner"
+
+type ToasterProps = React.ComponentProps<typeof Sonner>
+
+const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
+  return (
+    <Sonner
+      theme={theme as ToasterProps["theme"]}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+        },
+      }}
+      {...props}
+    />
+  )
+}
+
+export { Toaster }
+
+
+----- components\ui\table.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  </div>
+))
+Table.displayName = "Table"
+
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+))
+TableHeader.displayName = "TableHeader"
+
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn("[&_tr:last-child]:border-0", className)}
+    {...props}
+  />
+))
+TableBody.displayName = "TableBody"
+
+const TableFooter = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tfoot
+    ref={ref}
+    className={cn(
+      "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      className
+    )}
+    {...props}
+  />
+))
+TableFooter.displayName = "TableFooter"
+
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      className
+    )}
+    {...props}
+  />
+))
+TableRow.displayName = "TableRow"
+
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(
+      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      className
+    )}
+    {...props}
+  />
+))
+TableHead.displayName = "TableHead"
+
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn(
+      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      className
+    )}
+    {...props}
+  />
+))
+TableCell.displayName = "TableCell"
+
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
+  <caption
+    ref={ref}
+    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+TableCaption.displayName = "TableCaption"
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+}
+
+
+----- components\ui\tabs.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
+
+import { cn } from "@/lib/utils"
+
+const Tabs = TabsPrimitive.Root
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+))
+TabsList.displayName = TabsPrimitive.List.displayName
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      className
+    )}
+    {...props}
+  />
+))
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+))
+TabsContent.displayName = TabsPrimitive.Content.displayName
+
+export { Tabs, TabsList, TabsTrigger, TabsContent }
+
+
+----- components\ui\textarea.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.ComponentProps<"textarea">
+>(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
+
+export { Textarea }
+
+
+----- components\ui\toast.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as ToastPrimitives from "@radix-ui/react-toast"
+import { cva, type VariantProps } from "class-variance-authority"
+import { X } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const ToastProvider = ToastPrimitives.Provider
+
+const ToastViewport = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Viewport>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Viewport
+    ref={ref}
+    className={cn(
+      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      className
+    )}
+    {...props}
+  />
+))
+ToastViewport.displayName = ToastPrimitives.Viewport.displayName
+
+const toastVariants = cva(
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  {
+    variants: {
+      variant: {
+        default: "border bg-background text-foreground",
+        destructive:
+          "destructive group border-destructive bg-destructive text-destructive-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+const Toast = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
+    VariantProps<typeof toastVariants>
+>(({ className, variant, ...props }, ref) => {
+  return (
+    <ToastPrimitives.Root
+      ref={ref}
+      className={cn(toastVariants({ variant }), className)}
+      {...props}
+    />
+  )
+})
+Toast.displayName = ToastPrimitives.Root.displayName
+
+const ToastAction = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Action
+    ref={ref}
+    className={cn(
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      className
+    )}
+    {...props}
+  />
+))
+ToastAction.displayName = ToastPrimitives.Action.displayName
+
+const ToastClose = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Close>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Close
+    ref={ref}
+    className={cn(
+      "absolute right-1 top-1 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      className
+    )}
+    toast-close=""
+    {...props}
+  >
+    <X className="h-4 w-4" />
+  </ToastPrimitives.Close>
+))
+ToastClose.displayName = ToastPrimitives.Close.displayName
+
+const ToastTitle = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Title>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Title
+    ref={ref}
+    className={cn("text-sm font-semibold [&+div]:text-xs", className)}
+    {...props}
+  />
+))
+ToastTitle.displayName = ToastPrimitives.Title.displayName
+
+const ToastDescription = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Description>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Description
+    ref={ref}
+    className={cn("text-sm opacity-90", className)}
+    {...props}
+  />
+))
+ToastDescription.displayName = ToastPrimitives.Description.displayName
+
+type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
+
+type ToastActionElement = React.ReactElement<typeof ToastAction>
+
+export {
+  type ToastProps,
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+}
+
+
+----- components\ui\toaster.tsx -----
+
+"use client"
+
+import { useToast } from "@/hooks/use-toast"
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast"
+
+export function Toaster() {
+  const { toasts } = useToast()
+
+  return (
+    <ToastProvider>
+      {toasts.map(function ({ id, title, description, action, ...props }) {
+        return (
+          <Toast key={id} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && (
+                <ToastDescription>{description}</ToastDescription>
+              )}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        )
+      })}
+      <ToastViewport />
+    </ToastProvider>
+  )
+}
+
+
+----- components\ui\tooltip.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+
+import { cn } from "@/lib/utils"
+
+const TooltipProvider = TooltipPrimitive.Provider
+
+const Tooltip = TooltipPrimitive.Root
+
+const TooltipTrigger = TooltipPrimitive.Trigger
+
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-tooltip-content-transform-origin]",
+        className
+      )}
+      {...props}
+    />
+  </TooltipPrimitive.Portal>
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+
+
+----- constants\navigation.ts -----
+
+// src/constants/navigation.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Navigation structure definition ONLY
+ */
+
+/**
+ * DRY Principle
+ * Single source of truth for navigation
+ */
+// src/constants/navigation.ts
+
+import { Permission } from "./permissions";
+
+export interface NavItem {
+  label: string;
+  href?: string;
+  icon: string;
+  permission: Permission;
+  children?: NavItem[];
+}
+
+export const navigationItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: "LayoutDashboard",
+    permission: "view_dashboard",
+  },
+  {
+    label: "League Management",
+    icon: "Trophy",
+    permission: "view_divisions",
+    children: [
+      {
+        label: "Cities",
+        href: "/league/cities",
+        icon: "Building2",
+        permission: "manage_cities",
+      },
+      {
+        label: "Locations",
+        href: "/league/locations",
+        icon: "MapPin",
+        permission: "manage_locations",
+      },
+      {
+        label: "Levels",
+        href: "/league/levels",
+        icon: "TrendingUp",
+        permission: "manage_levels",
+      },
+      {
+        label: "Prices",
+        href: "/league/prices",
+        icon: "DollarSign",
+        permission: "manage_prices",
+      },
+      {
+        label: "Divisions",
+        href: "/league/divisions",
+        icon: "List",
+        permission: "view_divisions",
+      },
+      {
+        label: "Teams",
+        href: "/league/teams",
+        icon: "Users",
+        permission: "view_teams",
+      },
+      {
+        label: "Players",
+        href: "/league/players",
+        icon: "User",
+        permission: "view_players",
+      },
+    ],
+  },
+  {
+    label: "Game Management",
+    href: "/games",
+    icon: "Calendar",
+    permission: "view_games",
+  },
+  {
+    label: "Payment Management",
+    href: "/payments",
+    icon: "CreditCard",
+    permission: "view_payments",
+  },
+  {
+    label: "Jersey Management",
+    href: "/jerseys",
+    icon: "Shirt",
+    permission: "view_jerseys",
+  },
+  {
+    label: "Photos Management",
+    href: "/photos",
+    icon: "Camera",
+    permission: "view_photos",
+  },
+  {
+    label: "Scorekeeper",
+    href: "/scorekeeper",
+    icon: "ClipboardList",
+    permission: "manage_scores",
+  },
+  {
+    label: "Communications",
+    href: "/communications",
+    icon: "MessageSquare",
+    permission: "view_communications",
+  },
+  {
+    label: "Settings",
+    icon: "Settings",
+    permission: "view_dashboard",
+    children: [
+      {
+        label: "Staff Management",
+        href: "/settings/admins",
+        icon: "Shield",
+        permission: "manage_admins",
+      },
+      {
+        label: "Profile",
+        href: "/settings/profile",
+        icon: "User",
+        permission: "view_dashboard",
+      },
+    ],
+  },
+];
+
+export function filterNavigationByPermissions(
+  items: NavItem[],
+  userPermissions: Permission[]
+): NavItem[] {
+  return items
+    .filter((item) => userPermissions.includes(item.permission))
+    .map((item) => {
+      if (item.children) {
+        return {
+          ...item,
+          children: item.children.filter((child) =>
+            userPermissions.includes(child.permission)
+          ),
+        };
+      }
+      return item;
+    })
+    .filter((item) => !item.children || item.children.length > 0);
+}
+
+
+----- constants\permissions.ts -----
+
+// src/constants/permissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Define permissions and role mappings ONLY
+ */
+
+/**
+ * DRY Principle
+ * Single source of truth for all permissions
+ */
+// src/constants/permissions.ts
+
+import { AdminRole } from "@/models/Admin";
+
+export type Permission =
+  // Dashboard
+  | "view_dashboard"
+
+  // League Management - EXECUTIVE only
+  | "manage_cities"
+  | "manage_locations"
+  | "manage_levels"
+
+  // League Management - EXECUTIVE + COMMISSIONER
+  | "manage_divisions"
+  | "view_divisions"
+  | "manage_teams"
+  | "view_teams"
+  | "manage_players"
+  | "view_players"
+
+  // Admin Management
+  | "manage_admins"
+
+  // Game Management
+  | "manage_games"
+  | "view_games"
+
+  // Payment Management
+  | "manage_prices"
+  | "manage_payments"
+  | "view_payments"
+
+  // Jersey Management
+  | "manage_jerseys"
+  | "view_jerseys"
+
+  // Photos Management
+  | "manage_photos"
+  | "view_photos"
+
+  // Scorekeeper Tools
+  | "manage_scores"
+
+  // Communications
+  | "manage_communications"
+  | "view_communications";
+
+export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
+  EXECUTIVE: [
+    "view_dashboard",
+    "manage_cities",
+    "manage_locations",
+    "manage_levels",
+    "manage_divisions",
+    "view_divisions",
+    "manage_teams",
+    "view_teams",
+    "manage_players",
+    "view_players",
+    "manage_admins",
+    "manage_games",
+    "view_games",
+    "manage_prices",
+    "manage_payments",
+    "view_payments",
+    "manage_jerseys",
+    "view_jerseys",
+    "manage_photos",
+    "view_photos",
+    "manage_scores",
+    "manage_communications",
+    "view_communications",
+  ],
+
+  COMMISSIONER: [
+    "view_dashboard",
+    // NO manage_cities, manage_locations, manage_levels
+    "manage_divisions",
+    "view_divisions",
+    "manage_teams",
+    "view_teams",
+    "manage_players",
+    "view_players",
+    "manage_games",
+    "view_games",
+    "manage_payments",
+    "view_payments",
+    "manage_jerseys",
+    "view_jerseys",
+    "manage_photos",
+    "view_photos",
+    "manage_scores",
+    "manage_communications",
+    "view_communications",
+  ],
+
+  SCOREKEEPER: ["view_dashboard", "manage_scores", "view_games"],
+
+  PHOTOGRAPHER: [
+    "view_dashboard",
+    "manage_photos",
+    "view_photos",
+    "view_games",
+  ],
+};
+
+export function hasPermission(
+  role: AdminRole,
+  permission: Permission
+): boolean {
+  return ROLE_PERMISSIONS[role].includes(permission);
+}
+
+export function hasAnyPermission(
+  role: AdminRole,
+  permissions: Permission[]
+): boolean {
+  return permissions.some((permission) => hasPermission(role, permission));
+}
+
+
+----- hooks\use-toast.ts -----
+
+"use client"
+
+// Inspired by react-hot-toast library
+import * as React from "react"
+
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
+
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000000
+
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+}
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const
+
+let count = 0
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
+}
+
+type ActionType = typeof actionTypes
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"]
+      toast: ToasterToast
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"]
+      toast: Partial<ToasterToast>
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+
+interface State {
+  toasts: ToasterToast[]
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    })
+  }, TOAST_REMOVE_DELAY)
+
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      }
+
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      }
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action
+
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
+      if (toastId) {
+        addToRemoveQueue(toastId)
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id)
+        })
+      }
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      }
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        }
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      }
+  }
+}
+
+const listeners: Array<(state: State) => void> = []
+
+let memoryState: State = { toasts: [] }
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(memoryState)
+  })
+}
+
+type Toast = Omit<ToasterToast, "id">
+
+function toast({ ...props }: Toast) {
+  const id = genId()
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    })
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss()
+      },
+    },
+  })
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  }
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState)
+
+  React.useEffect(() => {
+    listeners.push(setState)
+    return () => {
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }, [state])
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  }
+}
+
+export { useToast, toast }
+
+
+----- hooks\useAuth.ts -----
+
+// src/hooks/useAuth.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Auth hook provides session access ONLY
+ */
+
+/**
+ * Design Pattern - Adapter Pattern
+ * Wraps NextAuth's useSession for type safety
+ */
+
+"use client";
+
+import { useSession } from "next-auth/react";
+import { AdminRole } from "@/models/Admin";
+
+export function useAuth() {
+  const { data: session, status } = useSession();
+
+  return {
+    user: session?.user || null,
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+    isExecutive: session?.user?.role === "EXECUTIVE",
+    isCommissioner: session?.user?.role === "COMMISSIONER",
+    hasFullAccess: session?.user?.allLocations === true,
+  };
+}
+
+
+----- hooks\usePermissions.ts -----
+
+// src/hooks/usePermissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Permission checking hook ONLY
+ */
+
+/**
+ * Performance Optimization
+ * Memoized permission checks
+ */
+
+"use client";
+
+import { useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { Permission, ROLE_PERMISSIONS } from "@/constants/permissions";
+
+export function usePermissions() {
+  const { data: session } = useSession();
+
+  const permissions = useMemo(() => {
+    if (!session?.user?.role) return [];
+    return ROLE_PERMISSIONS[session.user.role];
+  }, [session?.user?.role]);
+
+  const hasPermission = useMemo(
+    () => (permission: Permission) => permissions.includes(permission),
+    [permissions]
+  );
+
+  const hasAnyPermission = useMemo(
+    () => (perms: Permission[]) =>
+      perms.some((permission) => permissions.includes(permission)),
+    [permissions]
+  );
+
+  const hasLocationAccess = useMemo(
+    () => (locationId: string) => {
+      if (!session?.user) return false;
+      if (session.user.allLocations) return true;
+      return session.user.assignedLocations.includes(locationId);
+    },
+    [session?.user]
+  );
+
+  return {
+    permissions,
+    hasPermission,
+    hasAnyPermission,
+    hasLocationAccess,
+  };
+}
+
+
+----- lib\auth\auth.config.ts -----
+
+// src/lib/auth/auth.config.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file handles ONLY NextAuth configuration
+ * No business logic, just auth setup
+ */
+
+/**
+ * Security
+ * - JWT strategy (no database sessions)
+ * - Credentials provider for admin login
+ * - Password verification with bcrypt
+ */
+
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { getAdminByEmail, updateLastLogin } from "@/lib/db/queries/admins";
+import { AdminRole } from "@/models/Admin";
+
+// Extend NextAuth types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: AdminRole;
+      allLocations: boolean;
+      assignedLocations: string[];
+      isActive: boolean;
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: AdminRole;
+    allLocations: boolean;
+    assignedLocations: string[];
+    isActive: boolean;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    email: string;
+    name: string;
+    role: AdminRole;
+    allLocations: boolean;
+    assignedLocations: string[];
+    isActive: boolean;
+  }
+}
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      id: "admin-credentials",
+      name: "Admin Credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "admin@example.com",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
+
+        try {
+          // Find admin with password
+          const admin = await getAdminByEmail(credentials.email);
+
+          if (!admin) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Check if active
+          if (!admin.isActive) {
+            throw new Error("Account is inactive");
+          }
+
+          // Verify password
+          const isValidPassword = await admin.comparePassword(
+            credentials.password
+          );
+
+          if (!isValidPassword) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Update last login
+          await updateLastLogin(admin._id.toString());
+
+          // Return user object (without password)
+          return {
+            id: admin._id.toString(),
+            email: admin.email,
+            name: admin.name,
+            role: admin.role,
+            allLocations: admin.allLocations,
+            assignedLocations: admin.assignedLocations.map((loc: any) =>
+              loc.toString()
+            ),
+            isActive: admin.isActive,
+          };
+        } catch (error: any) {
+          throw new Error(error.message || "Authentication failed");
+        }
+      },
+    }),
+  ],
+
+  callbacks: {
+    async jwt({ token, user }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.role = user.role;
+        token.allLocations = user.allLocations;
+        token.assignedLocations = user.assignedLocations;
+        token.isActive = user.isActive;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.user = {
+          id: token.id,
+          email: token.email,
+          name: token.name,
+          role: token.role,
+          allLocations: token.allLocations,
+          assignedLocations: token.assignedLocations,
+          isActive: token.isActive,
+        };
+      }
+
+      return session;
+    },
+  },
+
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+
+  secret: process.env.NEXTAUTH_SECRET,
+
+  debug: process.env.NODE_ENV === "development",
+};
+
+
+----- lib\auth\permissions.ts -----
+
+// src/lib/auth/permissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Permission checking utilities ONLY
+ */
+
+/**
+ * DRY Principle
+ * Centralized permission logic used across the app
+ */
+
+import { Session } from "next-auth";
+import { AdminRole } from "@/models/Admin";
+import { Permission, ROLE_PERMISSIONS } from "@/constants/permissions";
+
+/**
+ * Check if session has specific permission
+ */
+export function hasPermission(
+  session: Session | null,
+  permission: Permission
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const permissions = ROLE_PERMISSIONS[session.user.role];
+
+  return permissions.includes(permission);
+}
+
+/**
+ * Check if session has any of the specified permissions
+ */
+export function hasAnyPermission(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const userPermissions = ROLE_PERMISSIONS[session.user.role];
+  return permissions.some((p) => userPermissions.includes(p));
+}
+
+/**
+ * Check if session has all specified permissions
+ */
+export function hasAllPermissions(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const userPermissions = ROLE_PERMISSIONS[session.user.role];
+  return permissions.every((p) => userPermissions.includes(p));
+}
+
+/**
+ * Check if admin has access to specific location
+ */
+export function hasLocationAccess(
+  session: Session | null,
+  locationId: string
+): boolean {
+  if (!session?.user) return false;
+
+  // EXECUTIVE and COMMISSIONER have access to all locations
+  if (session.user.allLocations) return true;
+
+  // Check if location is in assigned locations
+  return session.user.assignedLocations.includes(locationId);
+}
+
+/**
+ * Get accessible location IDs for filtering queries
+ */
+export function getAccessibleLocationIds(
+  session: Session | null,
+  allLocationsInCity: string[]
+): string[] {
+  if (!session?.user) return [];
+
+  // EXECUTIVE and COMMISSIONER see all locations
+  if (session.user.allLocations) return allLocationsInCity;
+
+  // Return intersection of assigned locations and locations in the city
+  return session.user.assignedLocations.filter((loc) =>
+    allLocationsInCity.includes(loc)
+  );
+}
+
+
+----- lib\db\mongodb.ts -----
+
+// src/lib/db/mongodb.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file has ONE job: manage MongoDB connection
+ * No queries, no business logic, just connection management
+ */
+
+/**
+ * Performance Optimization
+ * - Global connection caching prevents multiple connections
+ * - Connection pooling for better performance
+ */
+
+/**
+ * Error Handling & Resilience
+ * - Graceful error messages
+ * - Connection retry logic built into Mongoose
+ */
+
+// src/lib/db/mongodb.ts
+import mongoose from "mongoose";
+
+if (!process.env.MONGODB_URI) {
+  throw new Error("Please add your MONGODB_URI to .env.local");
+}
+
+const MONGODB_URI: string = process.env.MONGODB_URI;
+
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached: MongooseCache = global.mongoose || {
+  conn: null,
+  promise: null,
+};
+
+if (!global.mongoose) {
+  global.mongoose = cached;
+}
+
+export async function connectDB(): Promise<typeof mongoose> {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 10000,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("✅ MongoDB connected successfully");
+
+      // Register all models after connection
+      require("@/models/Admin");
+      require("@/models/City");
+      require("@/models/Location");
+      require("@/models/Level");
+      require("@/models/Division");
+      require("@/models/Team");
+      require("@/models/Player");
+      require("@/models/User");
+      require("@/models/Game");
+      require("@/models/Price");
+      require("@/models/PaymentMethod");
+      require("@/models/JerseyOrder");
+      require("@/models/GamePhoto");
+      require("@/models/ChatChannel");
+      require("@/models/ChatMessage");
+      require("@/models/MessageForward");
+
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    console.error("❌ MongoDB connection error:", error);
+    throw error;
+  }
+
+  return cached.conn;
+}
+
+export async function disconnectDB(): Promise<void> {
+  if (cached.conn) {
+    await cached.conn.disconnect();
+    cached.conn = null;
+    cached.promise = null;
+    console.log("MongoDB disconnected");
+  }
+}
+
+export function isConnected(): boolean {
+  return cached.conn !== null && mongoose.connection.readyState === 1;
+}
+
+
+----- lib\db\queries\admins.ts -----
+
+// src/lib/db/queries/admins.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file handles ONLY admin database queries
+ * No validation, no business logic, just data access
+ */
+
+/**
+ * DRY Principle
+ * Centralized admin queries - used by API routes and pages
+ */
+
+import { connectDB } from "../mongodb";
+import Admin, { IAdmin } from "@/models/Admin";
+import Location from "@/models/Location";
+import bcrypt from "bcryptjs";
+
+// Type for lean query results (plain objects without Mongoose methods)
+type LeanAdmin = Omit<IAdmin, keyof Document>;
+
+/**
+ * Get all admins (without passwords)
+ */
+export async function getAdmins(): Promise<IAdmin[]> {
+  await connectDB();
+  return Admin.find()
+    .select("-password")
+    .populate("assignedLocations", "name address")
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+/**
+ * Get admin by ID
+ */
+export async function getAdminById(id: string): Promise<IAdmin | null> {
+  await connectDB();
+  return Admin.findById(id)
+    .select("-password")
+    .populate("assignedLocations", "name address")
+    .lean();
+}
+
+/**
+ * Get admin by email (with password for auth)
+ */
+export async function getAdminByEmail(email: string) {
+  await connectDB();
+  return Admin.findOne({ email: email.toLowerCase() }).select("+password");
+}
+
+/**
+ * Create new admin
+ * Hashes password before storing
+ */
+export async function createAdmin(data: {
+  name: string;
+  email: string;
+  password: string;
+  role: IAdmin["role"];
+  phoneNumber?: string;
+  assignedLocations?: string[];
+}): Promise<IAdmin> {
+  await connectDB();
+
+  // Hash password before storing
+  const hashedPassword = await bcrypt.hash(data.password, 12);
+
+  const admin = await Admin.create({
+    ...data,
+    password: hashedPassword,
+    email: data.email.toLowerCase(),
+    isActive: true,
+  });
+
+  // Return without password
+  return Admin.findById(admin._id)
+    .select("-password")
+    .lean() as Promise<IAdmin>;
+}
+
+/**
+ * Update admin's last login
+ */
+export async function updateLastLogin(adminId: string): Promise<void> {
+  await connectDB();
+  await Admin.findByIdAndUpdate(adminId, { lastLogin: new Date() });
+}
+
+/**
+ * Check if email exists
+ */
+export async function emailExists(email: string): Promise<boolean> {
+  await connectDB();
+  const count = await Admin.countDocuments({ email: email.toLowerCase() });
+  return count > 0;
+}
+
+
+----- lib\db\queries\cities.ts -----
+
+// src/lib/db/queries/cities.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import City from "@/models/City";
+import Location from "@/models/Location";
+
+/**
+ * Get all cities (active and inactive)
+ */
+export async function getAllCities() {
+  await connectDB();
+  return City.find().populate("locations", "name").sort({ cityName: 1 }).lean();
+}
+
+/**
+ * Get only active cities
+ */
+export async function getActiveCities() {
+  await connectDB();
+  return City.find({ active: true }).sort({ cityName: 1 }).lean();
+}
+
+/**
+ * Get city by ID
+ */
+export async function getCityById(id: string) {
+  await connectDB();
+  return City.findById(id).populate("locations", "name address").lean();
+}
+
+/**
+ * Create new city
+ */
+export async function createCity(data: {
+  cityName: string;
+  region: string;
+  country: string;
+  timezone: string;
+}) {
+  await connectDB();
+
+  const city = await City.create({
+    ...data,
+    active: true,
+  });
+
+  return city.toObject();
+}
+
+/**
+ * Update city
+ */
+export async function updateCity(
+  id: string,
+  data: {
+    cityName?: string;
+    region?: string;
+    country?: string;
+    timezone?: string;
+    active?: boolean;
+  }
+) {
+  await connectDB();
+
+  return City.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Delete city (hard delete)
+ */
+export async function deleteCity(id: string) {
+  await connectDB();
+  return City.findByIdAndDelete(id);
+}
+
+/**
+ * Check if city name exists
+ */
+export async function cityNameExists(
+  cityName: string,
+  region: string,
+  country: string,
+  excludeId?: string
+) {
+  await connectDB();
+
+  const query: any = { cityName, region, country };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await City.countDocuments(query);
+  return count > 0;
+}
+
+
+----- lib\db\queries\dashboard.ts -----
+
+// src/lib/db/queries/dashboard.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Dashboard statistics queries ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Division from "@/models/Division";
+import Team from "@/models/Team";
+import Player from "@/models/Player";
+import Game from "@/models/Game";
+
+export async function getDashboardStats(cityId: string, locationIds: string[]) {
+  await connectDB();
+
+  const filter =
+    locationIds.length > 0
+      ? { city: cityId, location: { $in: locationIds } }
+      : { city: cityId };
+
+  const [divisions, teams, players, games] = await Promise.all([
+    Division.countDocuments({ ...filter, active: true }),
+    Team.countDocuments(filter),
+    Player.countDocuments({ division: { $exists: true } }),
+    Game.countDocuments(filter),
+  ]);
+
+  return {
+    divisions,
+    teams,
+    players,
+    games,
+  };
+}
+
+export async function getUpcomingGames(cityId: string, locationIds: string[]) {
+  await connectDB();
+
+  const filter =
+    locationIds.length > 0
+      ? { city: cityId, location: { $in: locationIds } }
+      : { city: cityId };
+
+  return Game.find({
+    ...filter,
+    date: { $gte: new Date() },
+    status: false,
+  })
+    .populate("homeTeam", "teamName")
+    .populate("awayTeam", "teamName")
+    .sort({ date: 1 })
+    .limit(5)
+    .lean();
+}
+
+
+----- lib\db\queries\divisions.ts -----
+
+// src/lib/db/queries/divisions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division data access functions ONLY
+ */
+
+import { PopulatedDivision } from "@/types/division";
+import { connectDB } from "../mongodb";
+import Division from "@/models/Division";
+
+/**
+ * Get divisions with pagination and filters
+ */
+export async function getDivisions({
+  cityId,
+  page = 1,
+  limit = 12,
+  activeFilter = "all",
+  locationId,
+  levelId,
+  day,
+  search,
+}: {
+  cityId: string;
+  page?: number;
+  limit?: number;
+  activeFilter?: "all" | "active" | "inactive" | "registration";
+  locationId?: string;
+  levelId?: string;
+  day?: string;
+  search?: string;
+}) {
+  await connectDB();
+
+  const skip = (page - 1) * limit;
+
+  // Build filter
+  const filter: any = { city: cityId };
+
+  if (activeFilter === "active") filter.active = true;
+  if (activeFilter === "inactive") filter.active = false;
+  if (activeFilter === "registration") filter.register = true;
+  if (locationId) filter.location = locationId;
+  if (levelId) filter.level = levelId;
+  if (day) filter.day = day;
+  if (search) filter.divisionName = { $regex: search, $options: "i" };
+
+  // Get divisions and total count in parallel
+  const [divisions, total] = await Promise.all([
+    Division.find(filter)
+      .populate("location")
+      .populate("level")
+      .sort({ startDate: -1 }) // Latest first
+      .skip(skip)
+      .limit(limit)
+      .lean<PopulatedDivision[]>(), // force the result shape
+    Division.countDocuments(filter),
+  ]);
+
+  return {
+    divisions,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+/**
+ * Get division by ID
+ */
+export async function getDivisionById(
+  id: string
+): Promise<PopulatedDivision | null> {
+  await connectDB();
+  return Division.findById(id)
+    .populate("city", "cityName region")
+    .populate("location", "name")
+    .populate("level", "name grade")
+    .populate("prices.earlyBird")
+    .populate("prices.regular")
+    .populate("prices.installment")
+    .populate("prices.regularInstallment")
+    .populate("prices.firstInstallment")
+    .populate("prices.free")
+    .lean() as Promise<PopulatedDivision | null>;
+}
+
+/**
+ * Create new division
+ */
+export async function createDivision(data: {
+  divisionName: string;
+  description: string;
+  city: string;
+  location: string;
+  level: string;
+  day: string;
+  startDate?: string;
+  startTime?: string;
+  endTime?: string;
+  prices: {
+    earlyBird: string;
+    regular: string;
+    installment: string;
+    regularInstallment: string;
+    firstInstallment: string;
+    free: string;
+  };
+  active: boolean;
+  register: boolean;
+}) {
+  await connectDB();
+
+  const division = await Division.create({
+    ...data,
+    startDate: data.startDate ? new Date(data.startDate) : undefined,
+  });
+
+  return division.toObject();
+}
+
+/**
+ * Update division
+ */
+export async function updateDivision(
+  id: string,
+  data: {
+    divisionName?: string;
+    description?: string;
+    location?: string;
+    level?: string;
+    day?: string;
+    startDate?: string;
+    startTime?: string;
+    endTime?: string;
+    active?: boolean;
+    register?: boolean;
+  }
+) {
+  await connectDB();
+
+  const updateData: any = { ...data };
+  if (data.startDate) {
+    updateData.startDate = new Date(data.startDate);
+  }
+
+  return Division.findByIdAndUpdate(id, updateData, { new: true }).lean();
+}
+
+/**
+ * Check for location conflicts
+ */
+export async function checkLocationConflict(
+  locationId: string,
+  day: string,
+  startTime: string,
+  endTime: string,
+  excludeDivisionId?: string
+): Promise<{ hasConflict: boolean; conflictingDivision?: any }> {
+  await connectDB();
+
+  const query: any = {
+    location: locationId,
+    day,
+    startTime: { $exists: true },
+    endTime: { $exists: true },
+  };
+
+  if (excludeDivisionId) {
+    query._id = { $ne: excludeDivisionId };
+  }
+
+  const divisions = await Division.find(query)
+    .select("divisionName startTime endTime")
+    .lean();
+
+  // Check for time overlap
+  for (const div of divisions) {
+    if (timeOverlaps(startTime, endTime, div.startTime, div.endTime)) {
+      return {
+        hasConflict: true,
+        conflictingDivision: div,
+      };
+    }
+  }
+
+  return { hasConflict: false };
+}
+
+/**
+ * Helper: Check if two time ranges overlap
+ */
+function timeOverlaps(
+  start1: string,
+  end1: string,
+  start2: string,
+  end2: string
+): boolean {
+  const s1 = parseTime(start1);
+  const e1 = parseTime(end1);
+  const s2 = parseTime(start2);
+  const e2 = parseTime(end2);
+
+  return s1 < e2 && e1 > s2;
+}
+
+/**
+ * Helper: Convert time string to minutes
+ */
+function parseTime(time: string): number {
+  const [timePart, period] = time.split(" ");
+  let [hours, minutes] = timePart.split(":").map(Number);
+
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+/**
+ * Get team count for division
+ */
+export async function getDivisionTeamCount(
+  divisionId: string
+): Promise<number> {
+  await connectDB();
+
+  const Team = (await import("@/models/Team")).default;
+  return Team.countDocuments({ division: divisionId });
+}
+
+
+----- lib\db\queries\levels.ts -----
+
+// src/lib/db/queries/levels.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Level from "@/models/Level";
+
+/**
+ * Get all levels (sorted by grade ascending - 1 is highest)
+ */
+export async function getAllLevels() {
+  await connectDB();
+  return Level.find().sort({ grade: 1 }).lean();
+}
+
+/**
+ * Get level by ID
+ */
+export async function getLevelById(id: string) {
+  await connectDB();
+  return Level.findById(id).lean();
+}
+
+/**
+ * Create new level
+ */
+export async function createLevel(data: { name: string; grade: number }) {
+  await connectDB();
+
+  const level = await Level.create(data);
+
+  return level.toObject();
+}
+
+/**
+ * Update level
+ */
+export async function updateLevel(
+  id: string,
+  data: {
+    name?: string;
+    grade?: number;
+  }
+) {
+  await connectDB();
+  return Level.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Check if level name exists
+ */
+export async function levelNameExists(
+  name: string,
+  excludeId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = { name };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await Level.countDocuments(query);
+  return count > 0;
+}
+
+/**
+ * Check if grade exists
+ */
+export async function gradeExists(
+  grade: number,
+  excludeId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = { grade };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await Level.countDocuments(query);
+  return count > 0;
+}
+
+
+----- lib\db\queries\locations.ts -----
+
+// src/lib/db/queries/locations.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Location from "@/models/Location";
+import Division from "@/models/Division";
+import { LeanLocation } from "@/types/location";
+
+/**
+ * Get all locations
+ */
+export async function getAllLocations() {
+  await connectDB();
+  return Location.find().sort({ name: 1 }).lean();
+}
+
+/**
+ * Get locations by city
+ */
+export async function getLocationsByCity(cityId: string) {
+  await connectDB();
+
+  // First get city to find its locations
+  const City = (await import("@/models/City")).default;
+  const city = await City.findById(cityId)
+    .populate("locations")
+    .lean<{ locations: LeanLocation[] }>();
+
+  if (!city) return [];
+
+  return city.locations || [];
+}
+
+/**
+ * Get location by ID
+ */
+export async function getLocationById(id: string) {
+  await connectDB();
+  return Location.findById(id).lean();
+}
+
+/**
+ * Create new location
+ */
+export async function createLocation(data: {
+  name: string;
+  address: string;
+  city: string;
+  coordinates?: {
+    latitude?: number;
+    longitude?: number;
+  };
+}) {
+  await connectDB();
+
+  const location = await Location.create(data);
+
+  // Add location to city's locations array
+  const City = (await import("@/models/City")).default;
+  await City.findByIdAndUpdate(data.city, {
+    $push: { locations: location._id },
+  });
+
+  return location.toObject();
+}
+
+/**
+ * Update location
+ */
+export async function updateLocation(
+  id: string,
+  data: {
+    name?: string;
+    address?: string;
+    coordinates?: {
+      latitude?: number;
+      longitude?: number;
+    };
+  }
+) {
+  await connectDB();
+  return Location.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Delete location
+ */
+export async function deleteLocation(id: string) {
+  await connectDB();
+
+  // Remove from city's locations array
+  const location = await Location.findById(id);
+  if (location) {
+    const City = (await import("@/models/City")).default;
+    await City.updateMany({ locations: id }, { $pull: { locations: id } });
+  }
+
+  return Location.findByIdAndDelete(id);
+}
+
+/**
+ * Check if location has active divisions
+ */
+export async function locationHasActiveDivisions(
+  locationId: string
+): Promise<boolean> {
+  await connectDB();
+  const count = await Division.countDocuments({
+    location: locationId,
+    active: true,
+  });
+  return count > 0;
+}
+
+/**
+ * Get division count for location
+ */
+export async function getLocationDivisionCount(
+  locationId: string
+): Promise<number> {
+  await connectDB();
+  return Division.countDocuments({ location: locationId });
+}
+
+
+----- lib\db\queries\payments.ts -----
+
+// src/lib/db/queries/payments.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Payment data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Player from "@/models/Player";
+import PaymentMethod from "@/models/PaymentMethod";
+import Division from "@/models/Division";
+
+/**
+ * Get payment status for a player
+ */
+export async function getPlayerPaymentStatus(playerId: string) {
+  await connectDB();
+
+  const player = await Player.findById(playerId)
+    .populate("paymentMethods")
+    .lean();
+
+  if (!player || !player.paymentMethods || player.paymentMethods.length === 0) {
+    return { status: "unpaid", paymentMethod: null };
+  }
+
+  const paymentMethod = player.paymentMethods[0] as any;
+
+  if (paymentMethod.status === "COMPLETED") {
+    return { status: "paid", paymentMethod };
+  }
+
+  if (paymentMethod.paymentType === "INSTALLMENTS") {
+    const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
+    const failedCount = subscriptionPayments.filter((p: any) => p.status === "failed").length;
+
+    if (failedCount === 0) return { status: "on-track", paymentMethod };
+    if (failedCount >= 3) return { status: "critical", paymentMethod };
+    return { status: "has-issues", paymentMethod };
+  }
+
+  return { status: "unpaid", paymentMethod };
+}
+
+/**
+ * Get all players with payment status for dashboard
+ */
+export async function getPlayersWithPaymentStatus({
+  cityId,
+  locationId,
+  divisionId,
+  teamId,
+  paymentStatusFilter = "all",
+  search,
+}: {
+  cityId?: string;
+  locationId?: string;
+  divisionId?: string;
+  teamId?: string;
+  paymentStatusFilter?: string;
+  search?: string;
+}) {
+  await connectDB();
+
+  // Build filter for active divisions only
+  const divisionFilter: any = { active: true, register: true };
+  if (cityId) divisionFilter.city = cityId;
+  if (locationId) divisionFilter.location = locationId;
+  if (divisionId) divisionFilter._id = divisionId;
+
+  const divisions = await Division.find(divisionFilter).select("_id");
+  const divisionIds = divisions.map((d) => d._id);
+
+  // Build player filter
+  const playerFilter: any = { division: { $in: divisionIds } };
+  if (teamId) playerFilter.team = teamId;
+  if (search) {
+    playerFilter.playerName = { $regex: search, $options: "i" };
+  }
+
+  const players = await Player.find(playerFilter)
+    .populate({
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName" },
+      ],
+    })
+    .populate("team", "teamName")
+    .populate("user", "name email phoneNumber")
+    .populate("paymentMethods")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Calculate payment status for each player
+  const playersWithStatus = players.map((player: any) => {
+    let status = "unpaid";
+    let paymentMethod = null;
+
+    if (player.paymentMethods && player.paymentMethods.length > 0) {
+      paymentMethod = player.paymentMethods[0];
+
+      if (paymentMethod.status === "COMPLETED") {
+        status = "paid";
+      } else if (paymentMethod.paymentType === "INSTALLMENTS") {
+        const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
+        const failedCount = subscriptionPayments.filter((p: any) => p.status === "failed").length;
+
+        if (failedCount === 0) status = "on-track";
+        else if (failedCount >= 3) status = "critical";
+        else status = "has-issues";
+      }
+    }
+
+    return { ...player, paymentStatus: status, paymentMethod };
+  });
+
+  // Filter by payment status if needed
+  if (paymentStatusFilter !== "all") {
+    return playersWithStatus.filter((p) => p.paymentStatus === paymentStatusFilter);
+  }
+
+  return playersWithStatus;
+}
+
+----- lib\db\queries\players.ts -----
+
+// src/lib/db/queries/players.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player data access functions ONLY
+ */
+// src/lib/db/queries/players.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Player from "@/models/Player";
+import Team from "@/models/Team";
+import Division from "@/models/Division";
+
+/**
+ * Calculate player payment status with installment details
+ */
+async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
+  await connectDB();
+
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+
+  const payment = await PaymentMethod.findOne({
+    player: playerId,
+    division: divisionId,
+  }).lean();
+
+  if (!payment) {
+    return {
+      status: "unpaid",
+      type: null,
+      installmentProgress: null,
+    };
+  }
+
+  if (payment.status === "COMPLETED") {
+    return {
+      status: "paid",
+      type: payment.paymentType,
+      installmentProgress: null,
+    };
+  }
+
+  if (
+    payment.paymentType === "INSTALLMENTS" &&
+    payment.status === "IN_PROGRESS"
+  ) {
+    // Build installment progress (7 weeks)
+    const totalWeeks = 7;
+    const progress = Array(totalWeeks)
+      .fill("pending")
+      .map((_, index) => {
+        const weekNumber = index + 1;
+        const weekPayment = payment.installments?.subscriptionPayments?.find(
+          (p: any) => p.paymentNumber === weekNumber
+        );
+
+        if (!weekPayment)
+          return { week: weekNumber, status: "pending" as const };
+
+        return {
+          week: weekNumber,
+          status:
+            weekPayment.status === "succeeded"
+              ? ("succeeded" as const)
+              : ("failed" as const),
+          amountPaid: weekPayment.amountPaid,
+          dueDate: weekPayment.dueDate,
+        };
+      });
+
+    return {
+      status: "in_progress",
+      type: "INSTALLMENTS",
+      installmentProgress: progress,
+      remainingBalance: payment.installments?.remainingBalance,
+      nextPaymentDate: payment.installments?.nextPaymentDate,
+    };
+  }
+
+  return {
+    status: "unpaid",
+    type: payment.paymentType,
+    installmentProgress: null,
+  };
+}
+
+/**
+ * Get players with filters and payment status
+ */
+export async function getPlayers({
+  cityId,
+  page = 1,
+  limit = 12,
+  divisionId,
+  teamId,
+  paymentFilter = "all",
+  freeAgentsOnly = false,
+  hasUserAccount,
+  search,
+}: {
+  cityId: string;
+  page?: number;
+  limit?: number;
+  divisionId?: string;
+  teamId?: string;
+  paymentFilter?: "all" | "paid" | "in_progress" | "unpaid";
+  freeAgentsOnly?: boolean;
+  hasUserAccount?: boolean;
+  search?: string;
+}) {
+  await connectDB();
+
+  const skip = (page - 1) * limit;
+  const filter: any = {};
+
+  // Filter by division/city
+  if (divisionId) {
+    filter.division = divisionId;
+  } else if (cityId) {
+    const divisions = await Division.find({ city: cityId }).select("_id");
+    filter.division = { $in: divisions.map((d) => d._id) };
+  }
+
+  // Filter by team
+  if (teamId) {
+    filter.team = teamId;
+  }
+
+  // Free agents only
+  if (freeAgentsOnly) {
+    filter.$or = [{ team: { $exists: false } }, { team: null }];
+  }
+
+  // Has user account
+  if (hasUserAccount !== undefined) {
+    if (hasUserAccount) {
+      filter.user = { $exists: true, $ne: null };
+    } else {
+      filter.$or = [{ user: { $exists: false } }, { user: null }];
+    }
+  }
+
+  // Search
+  if (search) {
+    // find all active + register divisions
+    const validDivisions = await Division.find({
+      active: true,
+      register: true,
+    }).select("_id");
+
+    filter.$and = [
+      { division: { $in: validDivisions.map((d) => d._id) } }, // only active + register
+      {
+        $or: [
+          { playerName: { $regex: search, $options: "i" } },
+          // you can add more fields here (like email, teamName, etc.)
+        ],
+      },
+    ];
+  }
+
+  const [players, total] = await Promise.all([
+    Player.find(filter)
+      .populate("team", "teamName teamCode")
+      .populate("division", "divisionName")
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Player.countDocuments(filter),
+  ]);
+
+  // Get payment status with installment details
+  const playersWithPayment = await Promise.all(
+    players.map(async (player: any) => {
+      const divisionId = player.division?._id || player.division;
+      const paymentInfo = await getPlayerPaymentStatus(
+        player._id.toString(),
+        divisionId.toString()
+      );
+
+      return {
+        ...player,
+        paymentStatus: paymentInfo.status,
+        paymentType: paymentInfo.type,
+        installmentProgress: paymentInfo.installmentProgress,
+        remainingBalance: paymentInfo.remainingBalance,
+        nextPaymentDate: paymentInfo.nextPaymentDate,
+      };
+    })
+  );
+
+  // Filter by payment status
+  let filteredPlayers = playersWithPayment;
+  if (paymentFilter === "paid") {
+    filteredPlayers = playersWithPayment.filter(
+      (p) => p.paymentStatus === "paid"
+    );
+  } else if (paymentFilter === "in_progress") {
+    filteredPlayers = playersWithPayment.filter(
+      (p) => p.paymentStatus === "in_progress"
+    );
+  } else if (paymentFilter === "unpaid") {
+    filteredPlayers = playersWithPayment.filter(
+      (p) => p.paymentStatus === "unpaid"
+    );
+  }
+
+  return {
+    players: filteredPlayers,
+    pagination: {
+      total: filteredPlayers.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filteredPlayers.length / limit),
+    },
+  };
+}
+
+/**
+ * Get free agents in a division
+ */
+export async function getFreeAgentsByDivision(divisionId: string) {
+  await connectDB();
+
+  return Player.find({
+    division: divisionId,
+    $or: [{ team: { $exists: false } }, { team: null }],
+  })
+    .select("playerName jerseyNumber user")
+    .lean();
+}
+
+/**
+ * Get player by ID
+ */
+export async function getPlayerById(id: string) {
+  await connectDB();
+
+  const player = await Player.findById(id)
+    .populate("team", "teamName teamCode")
+    .populate({
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName region" },
+        { path: "level", select: "name grade" },
+      ],
+    })
+    .populate("user", "name email phoneNumber instagram")
+    .lean();
+
+  if (!player) return null;
+
+  // Get payment status
+  const divisionId = (player.division as any)?._id || player.division;
+  const paymentInfo = await getPlayerPaymentStatus(id, divisionId.toString());
+
+  return {
+    ...player,
+    paymentStatus: paymentInfo.status,
+    paymentType: paymentInfo.type,
+    installmentProgress: paymentInfo.installmentProgress,
+    remainingBalance: paymentInfo.remainingBalance,
+    nextPaymentDate: paymentInfo.nextPaymentDate,
+  };
+}
+
+/**
+ * Create new player
+ */
+export async function createPlayer(data: {
+  playerName: string;
+  division: string;
+  team?: string;
+  jerseyNumber?: number | null;
+  jerseySize?: string;
+  jerseyName?: string;
+  instagram?: string;
+  user?: string;
+}) {
+  await connectDB();
+
+  // Filter out null values before creating
+  const cleanData: any = {
+    playerName: data.playerName,
+    division: data.division,
+  };
+
+  if (data.team) cleanData.team = data.team;
+  if (data.jerseyNumber !== null && data.jerseyNumber !== undefined) {
+    cleanData.jerseyNumber = data.jerseyNumber;
+  }
+  if (data.jerseySize) cleanData.jerseySize = data.jerseySize;
+  if (data.jerseyName) cleanData.jerseyName = data.jerseyName;
+  if (data.instagram) cleanData.instagram = data.instagram;
+  if (data.user) cleanData.user = data.user;
+
+  const player = await Player.create(data);
+
+  // If team specified, add player to team's players array
+  if (data.team) {
+    await Team.findByIdAndUpdate(data.team, {
+      $addToSet: { players: player._id },
+    });
+  }
+
+  return player.toObject();
+}
+
+/**
+ * Update player
+ */
+export async function updatePlayer(
+  id: string,
+  data: {
+    playerName?: string;
+    division?: string;
+    team?: string | null;
+    jerseyNumber?: number | null;
+    jerseySize?: string | null;
+    jerseyName?: string | null;
+    instagram?: string | null;
+    user?: string | null;
+  }
+) {
+  await connectDB();
+
+  const player = await Player.findById(id);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Handle team changes
+  if (data.team !== undefined) {
+    const oldTeam = player.team;
+
+    // Remove from old team if exists
+    if (oldTeam) {
+      await Team.findByIdAndUpdate(oldTeam, {
+        $pull: { players: player._id },
+      });
+    }
+
+    // Add to new team if specified
+    if (data.team) {
+      await Team.findByIdAndUpdate(data.team, {
+        $addToSet: { players: player._id },
+      });
+    }
+  }
+
+  // Update player
+  Object.assign(player, data);
+  await player.save();
+
+  return player.toObject();
+}
+
+/**
+ * Delete player
+ */
+export async function deletePlayer(id: string) {
+  await connectDB();
+
+  const player = await Player.findById(id);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Check if player has payment records
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+  const hasPayments = await PaymentMethod.exists({ player: id });
+
+  if (hasPayments) {
+    throw new Error(
+      "Cannot delete player with payment records. Archive instead."
+    );
+  }
+
+  // Remove from team if assigned
+  if (player.team) {
+    await Team.findByIdAndUpdate(player.team, {
+      $pull: { players: player._id },
+    });
+  }
+
+  // Remove from user if linked
+  if (player.user) {
+    const User = (await import("@/models/User")).default;
+    await User.findByIdAndUpdate(player.user, {
+      $pull: { basketball: player._id },
+    });
+  }
+
+  await Player.findByIdAndDelete(id);
+}
+
+/**
+ * Add player to team
+ */
+export async function addPlayerToTeam(playerId: string, teamId: string) {
+  await connectDB();
+
+  const player = await Player.findById(playerId);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Remove from old team if exists
+  if (player.team) {
+    await Team.findByIdAndUpdate(player.team, {
+      $pull: { players: playerId },
+    });
+  }
+
+  // Update player's team
+  await Player.findByIdAndUpdate(playerId, { team: teamId });
+
+  // Add player to team's players array
+  await Team.findByIdAndUpdate(teamId, {
+    $addToSet: { players: playerId },
+  });
+}
+
+/**
+ * Remove player from team (make free agent)
+ */
+export async function removePlayerFromTeam(playerId: string, teamId: string) {
+  await connectDB();
+
+  // Remove team from player
+  await Player.findByIdAndUpdate(playerId, { team: null });
+
+  // Remove player from team's players array
+  await Team.findByIdAndUpdate(teamId, {
+    $pull: { players: playerId },
+  });
+
+  // If player was captain, remove captain assignment
+  const team = await Team.findById(teamId);
+  if (team?.teamCaptain?.toString() === playerId) {
+    await Team.findByIdAndUpdate(teamId, { teamCaptain: null });
+  }
+}
+
+
+----- lib\db\queries\prices.ts -----
+
+// src/lib/db/queries/prices.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Price from "@/models/Price";
+
+/**
+ * Get all prices (sorted by type, then amount)
+ */
+export async function getAllPrices() {
+  await connectDB();
+  return Price.find().sort({ type: 1, amount: 1 }).lean();
+}
+
+/**
+ * Get prices by type
+ */
+export async function getPricesByType(type: string) {
+  await connectDB();
+  return Price.find({ type }).sort({ amount: 1 }).lean();
+}
+
+/**
+ * Get price by ID
+ */
+export async function getPriceById(id: string) {
+  await connectDB();
+  return Price.findById(id).lean();
+}
+
+/**
+ * Create new price
+ */
+export async function createPrice(data: {
+  name: string;
+  priceId: string;
+  amount: number;
+  type: string;
+}) {
+  await connectDB();
+
+  const price = await Price.create(data);
+
+  return price.toObject();
+}
+
+/**
+ * Check if Stripe price ID exists
+ */
+export async function stripePriceIdExists(priceId: string): Promise<boolean> {
+  await connectDB();
+
+  const count = await Price.countDocuments({ priceId });
+  return count > 0;
+}
+
+/**
+ * Get division count using this price
+ */
+export async function getPriceDivisionCount(priceId: string): Promise<number> {
+  await connectDB();
+
+  const Division = (await import("@/models/Division")).default;
+
+  const count = await Division.countDocuments({
+    $or: [
+      { "prices.earlyBird": priceId },
+      { "prices.regular": priceId },
+      { "prices.installment": priceId },
+      { "prices.firstInstallment": priceId },
+      { "prices.free": priceId },
+    ],
+  });
+
+  return count;
+}
+
+
+----- lib\db\queries\teams.ts -----
+
+// src/lib/db/queries/teams.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Team from "@/models/Team";
+import Division from "@/models/Division";
+import Player from "@/models/Player";
+
+/**
+ * Get teams with pagination and filters
+ */
+export async function getTeams({
+  cityId,
+  page = 1,
+  limit = 12,
+  paymentFilter = "all",
+  divisionId,
+  locationId,
+  search,
+  viewMode = "card",
+}: {
+  cityId: string;
+  page?: number;
+  limit?: number;
+  paymentFilter?: "all" | "paid" | "unpaid";
+  divisionId?: string;
+  locationId?: string;
+  search?: string;
+  viewMode?: "card" | "list";
+}) {
+  await connectDB();
+
+  const skip = (page - 1) * limit;
+
+  // Build filter
+  const filter: any = {};
+
+  // Filter by city through division
+  if (cityId) {
+    const divisions = await Division.find({ city: cityId }).select("_id");
+    filter.division = { $in: divisions.map((d) => d._id) };
+  }
+
+  if (divisionId) filter.division = divisionId;
+  if (search) {
+    filter.$or = [
+      { teamName: { $regex: search, $options: "i" } },
+      { teamCode: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  // Get teams with populated data
+  const teamsQuery = Team.find(filter)
+    .populate({
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName region" },
+      ],
+    })
+    .populate("teamCaptain", "playerName")
+    .populate("players", "playerName jerseyNumber")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const [teams, total] = await Promise.all([
+    teamsQuery,
+    Team.countDocuments(filter),
+  ]);
+
+  // Calculate payment status for each team
+  const teamsWithPaymentStatus = await Promise.all(
+    teams.map(async (team: any) => {
+      const paymentStatus = await calculateTeamPaymentStatus(
+        team._id.toString()
+      );
+      return { ...team, paymentStatus };
+    })
+  );
+
+  // Filter by payment status if needed
+  let filteredTeams = teamsWithPaymentStatus;
+  if (paymentFilter === "paid") {
+    filteredTeams = teamsWithPaymentStatus.filter(
+      (t) => t.paymentStatus === "paid"
+    );
+  } else if (paymentFilter === "unpaid") {
+    filteredTeams = teamsWithPaymentStatus.filter(
+      (t) => t.paymentStatus === "unpaid"
+    );
+  }
+
+  return {
+    teams: filteredTeams,
+    pagination: {
+      total: filteredTeams.length,
+      page,
+      limit,
+      totalPages: Math.ceil(filteredTeams.length / limit),
+    },
+  };
+}
+
+/**
+ * Calculate team payment status
+ */
+async function calculateTeamPaymentStatus(
+  teamId: string
+): Promise<"paid" | "unpaid" | "no-players"> {
+  await connectDB();
+
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+
+  const team = await Team.findById(teamId).populate("players").lean();
+
+  if (!team || team.players.length === 0) return "no-players";
+
+  // Check if all players have completed payment
+  const playerIds = team.players.map((p: any) => p._id);
+
+  const paidCount = await PaymentMethod.countDocuments({
+    player: { $in: playerIds },
+    status: "COMPLETED",
+  });
+
+  return paidCount === team.players.length ? "paid" : "unpaid";
+}
+
+/**
+ * Get team by ID
+ */
+export async function getTeamById(id: string) {
+  await connectDB();
+  return Team.findById(id)
+    .populate({
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName region" },
+        { path: "level", select: "name grade" },
+      ],
+    })
+    .populate("teamCaptain", "playerName jerseyNumber")
+    .populate("players", "playerName jerseyNumber")
+    .populate("games")
+    .lean();
+}
+
+/**
+ * Create new team
+ */
+export async function createTeam(data: {
+  teamName: string;
+  teamNameShort: string;
+  teamCode: string;
+  division: string;
+}) {
+  await connectDB();
+
+  const team = await Team.create({
+    ...data,
+    teamCode: data.teamCode.toUpperCase(),
+    createdManually: true,
+    wins: 0,
+    losses: 0,
+    pointDifference: 0,
+    players: [],
+    games: [],
+  });
+
+  return team.toObject();
+}
+
+/**
+ * Update team
+ */
+export async function updateTeam(
+  id: string,
+  data: {
+    teamName?: string;
+    teamNameShort?: string;
+    teamCode?: string;
+    division?: string;
+    teamCaptain?: string | null;
+    primaryColor?: string;
+    secondaryColor?: string;
+    tertiaryColor?: string;
+    jerseyEdition?: string;
+    isCustomJersey?: boolean;
+  }
+) {
+  await connectDB();
+
+  const updateData: any = { ...data };
+  if (data.teamCode) {
+    updateData.teamCode = data.teamCode.toUpperCase();
+  }
+
+  return Team.findByIdAndUpdate(id, updateData, { new: true }).lean();
+}
+
+/**
+ * Delete team
+ */
+export async function deleteTeam(id: string) {
+  await connectDB();
+
+  const team = await Team.findById(id);
+
+  if (!team) {
+    throw new Error("Team not found");
+  }
+
+  if (team.players.length > 0) {
+    throw new Error(
+      "Cannot delete team with players. Remove all players first."
+    );
+  }
+
+  if (team.games.length > 0) {
+    throw new Error("Cannot delete team with game history.");
+  }
+
+  await Team.findByIdAndDelete(id);
+}
+
+/**
+ * Check if team code exists in division
+ */
+export async function teamCodeExistsInDivision(
+  teamCode: string,
+  divisionId: string,
+  excludeTeamId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = {
+    teamCode: teamCode.toUpperCase(),
+    division: divisionId,
+  };
+
+  if (excludeTeamId) {
+    query._id = { $ne: excludeTeamId };
+  }
+
+  const count = await Team.countDocuments(query);
+  return count > 0;
+}
+
+/**
+ * Get team stats
+ */
+export async function getTeamStats(teamId: string) {
+  await connectDB();
+
+  const team = await Team.findById(teamId).lean();
+
+  if (!team) return null;
+
+  return {
+    wins: team.wins,
+    losses: team.losses,
+    pointDifference: team.pointDifference,
+    record: `${team.wins}-${team.losses}`,
+  };
+}
+
+
+----- lib\services\stripe-customer-service.ts -----
+
+// src/lib/services/stripe-customer-service.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Stripe customer payment method info ONLY
+ */
+
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-09-30.clover",
+});
+
+export interface CardInfo {
+  hasCard: boolean;
+  brand?: string; // "visa", "mastercard", etc.
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
+  isExpired: boolean;
+  isValid: boolean;
+  paymentMethodId?: string;
+}
+
+/**
+ * Get customer's default payment method info
+ */
+export async function getCustomerCardInfo(
+  customerId: string
+): Promise<CardInfo> {
+  try {
+    const customer = await stripe.customers.retrieve(customerId, {
+      expand: ["invoice_settings.default_payment_method"],
+    });
+
+    if (customer.deleted) {
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    const defaultPaymentMethod =
+      customer.invoice_settings?.default_payment_method;
+
+    if (!defaultPaymentMethod || typeof defaultPaymentMethod === "string") {
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    const card = defaultPaymentMethod.card;
+
+    if (!card) {
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    // Check if card is expired
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 0-indexed
+
+    const isExpired =
+      card.exp_year < currentYear ||
+      (card.exp_year === currentYear && card.exp_month < currentMonth);
+
+    return {
+      hasCard: true,
+      brand: card.brand,
+      last4: card.last4,
+      expMonth: card.exp_month,
+      expYear: card.exp_year,
+      isExpired,
+      isValid: !isExpired,
+      paymentMethodId: defaultPaymentMethod.id,
+    };
+  } catch (error: any) {
+    console.error("Error getting customer card info:", error);
+    return { hasCard: false, isExpired: false, isValid: false };
+  }
+}
+
+/**
+ * Charge customer's card
+ */
+export async function chargeCustomerCard({
+  customerId,
+  amount,
+  description,
+  metadata,
+}: {
+  customerId: string;
+  amount: number;
+  description: string;
+  metadata: Record<string, string>;
+}) {
+  const customer = await stripe.customers.retrieve(customerId, {
+    expand: ["invoice_settings.default_payment_method"],
+  });
+
+  if (customer.deleted) {
+    throw new Error("Customer not found");
+  }
+
+  const defaultPaymentMethod =
+    customer.invoice_settings?.default_payment_method;
+
+  if (!defaultPaymentMethod) {
+    throw new Error("No payment method on file");
+  }
+
+  const paymentMethodId =
+    typeof defaultPaymentMethod === "string"
+      ? defaultPaymentMethod
+      : defaultPaymentMethod.id;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: "usd",
+    customer: customerId,
+    payment_method: paymentMethodId,
+    confirm: true,
+    description,
+    metadata,
+    automatic_payment_methods: {
+      enabled: true,
+      allow_redirects: "never",
+    },
+  });
+
+  return paymentIntent;
+}
+
+
+----- lib\utils\time.ts -----
+
+// src/lib/utils/time.ts
+
+/**
+ * Convert military time (HH:mm) to 12-hour format (h:mm AM/PM)
+ */
+export function formatTime(militaryTime?: string): string {
+  if (!militaryTime) return "";
+
+  const [hours, minutes] = militaryTime.split(":").map(Number);
+
+  if (isNaN(hours) || isNaN(minutes)) return militaryTime;
+
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
+/**
+ * Format time range for display
+ */
+export function formatTimeRange(startTime?: string, endTime?: string): string {
+  if (!startTime || !endTime) return "";
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+
+----- lib\utils.ts -----
+
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+
+----- lib\validations\city.ts -----
+
+// src/lib/validations/city.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City validation schemas ONLY
+ */
+
+/**
+ * DRY Principle
+ * Shared between API routes and form components
+ */
+
+import { z } from "zod";
+
+export const createCitySchema = z.object({
+  cityName: z.string().min(2, "City name must be at least 2 characters"),
+  region: z.string().min(2, "Region is required"),
+  country: z.string().min(2, "Country is required"),
+  timezone: z.string().min(2, "Timezone is required"),
+});
+
+export const updateCitySchema = z.object({
+  id: z.string(),
+  cityName: z.string().min(2).optional(),
+  region: z.string().min(2).optional(),
+  country: z.string().min(2).optional(),
+  timezone: z.string().min(2).optional(),
+  active: z.boolean().optional(),
+});
+
+export type CreateCityInput = z.infer<typeof createCitySchema>;
+export type UpdateCityInput = z.infer<typeof updateCitySchema>;
+
+
+----- lib\validations\division.ts -----
+
+// src/lib/validations/division.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createDivisionSchema = z.object({
+  divisionName: z
+    .string()
+    .min(2, "Division name must be at least 2 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  city: z.string().min(1, "City is required"),
+  location: z.string().min(1, "Location is required"),
+  level: z.string().min(1, "Level is required"),
+  day: z.enum([
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ]),
+  startDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  prices: z.object({
+    earlyBird: z.string().min(1, "Early Bird price is required"),
+    regular: z.string().min(1, "Regular price is required"),
+    installment: z.string().min(1, "Early Bird installment price is required"),
+    regularInstallment: z
+      .string()
+      .min(1, "Regular installment price is required"),
+    firstInstallment: z.string().min(1, "Down payment price is required"),
+    free: z.string().min(1, "Free price is required"),
+  }),
+  active: z.boolean(),
+  register: z.boolean(),
+});
+
+export const updateDivisionSchema = z.object({
+  id: z.string(),
+  divisionName: z.string().min(2).optional(),
+  description: z.string().min(10).optional(),
+  location: z.string().optional(),
+  level: z.string().optional(),
+  day: z
+    .enum([
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ])
+    .optional(),
+  startDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  active: z.boolean().optional(),
+  register: z.boolean().optional(),
+});
+
+export type CreateDivisionInput = z.infer<typeof createDivisionSchema>;
+export type UpdateDivisionInput = z.infer<typeof updateDivisionSchema>;
+
+
+----- lib\validations\level.ts -----
+
+// src/lib/validations/level.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createLevelSchema = z.object({
+  name: z.string().min(2, "Level name must be at least 2 characters"),
+  grade: z.number().min(1, "Grade must be at least 1"),
+});
+
+export const updateLevelSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2).optional(),
+  grade: z.number().min(1).optional(),
+});
+
+export type CreateLevelInput = z.infer<typeof createLevelSchema>;
+export type UpdateLevelInput = z.infer<typeof updateLevelSchema>;
+
+
+----- lib\validations\location.ts -----
+
+// src/lib/validations/location.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createLocationSchema = z.object({
+  name: z.string().min(2, "Location name must be at least 2 characters"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  coordinates: z
+    .object({
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    })
+    .optional(),
+});
+
+export const updateLocationSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2).optional(),
+  address: z.string().min(5).optional(),
+  city: z.string().optional(),
+  coordinates: z
+    .object({
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    })
+    .optional(),
+});
+
+export type CreateLocationInput = z.infer<typeof createLocationSchema>;
+export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
+
+
+----- lib\validations\player.ts -----
+
+// src/lib/validations/player.ts - Update jersey sizes
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createPlayerSchema = z.object({
+  playerName: z.string().min(2, "Player name must be at least 2 characters"),
+  division: z.string().min(1, "Division is required"),
+  team: z.string().optional(),
+  jerseyNumber: z
+    .number()
+    .min(0, "Jersey number must be 0 or greater")
+    .max(99, "Jersey number must be 99 or less")
+    .optional()
+    .nullable(),
+  jerseySize: z
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
+    .optional(),
+  jerseyName: z
+    .string()
+    .max(15, "Jersey name must be 15 characters or less")
+    .optional(),
+  instagram: z.string().optional(),
+  user: z.string().optional(),
+});
+
+export const updatePlayerSchema = z.object({
+  id: z.string(),
+  playerName: z.string().min(2).optional(),
+  division: z.string().optional(),
+  team: z.string().nullable().optional(),
+  jerseyNumber: z.number().min(0).max(99).nullable().optional(),
+  jerseySize: z
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
+    .optional()
+    .nullable(),
+  jerseyName: z.string().max(15).optional().nullable(),
+  instagram: z.string().optional().nullable(),
+  user: z.string().nullable().optional(),
+});
+
+export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
+export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
+
+
+----- lib\validations\price.ts -----
+
+// src/lib/validations/price.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createPriceSchema = z.object({
+  name: z.string().min(2, "Price name must be at least 2 characters"),
+  priceId: z
+    .string()
+    .min(5, "Stripe price ID is required")
+    .startsWith("price_", "Must be a valid Stripe price ID"),
+  amount: z.number().min(0, "Amount must be 0 or greater"),
+  type: z.enum([
+    "earlyBird",
+    "regular",
+    "installment",
+    "regularInstallment",
+    "firstInstallment",
+    "free",
+  ]),
+});
+
+export type CreatePriceInput = z.infer<typeof createPriceSchema>;
+
+
+----- lib\validations\team.ts -----
+
+// src/lib/validations/team.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createTeamSchema = z.object({
+  teamName: z.string().min(2, "Team name must be at least 2 characters"),
+  teamNameShort: z.string().min(2, "Short name must be at least 2 characters"),
+  teamCode: z.string().min(2, "Team code must be at least 2 characters"),
+  city: z.string().min(1, "City is required"),
+  location: z.string().min(1, "Location is required"),
+  division: z.string().min(1, "Division is required"),
+});
+
+export const updateTeamSchema = z.object({
+  id: z.string(),
+  teamName: z.string().min(2).optional(),
+  teamNameShort: z.string().min(2).optional(),
+  teamCode: z.string().min(2).optional(),
+  division: z.string().optional(),
+  teamCaptain: z.string().nullable().optional(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  tertiaryColor: z.string().optional(),
+  jerseyEdition: z.string().optional(),
+  isCustomJersey: z.boolean().optional(),
+});
+
+export type CreateTeamInput = z.infer<typeof createTeamSchema>;
+export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
+
+
+----- middleware.ts -----
+
+// src/middleware.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Route protection ONLY
+ */
+
+/**
+ * Security
+ * Protects all admin routes from unauthorized access
+ */
+
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
+
+    // Check if admin is active
+    if (token && !token.isActive) {
+      return NextResponse.redirect(new URL("/login?error=inactive", req.url));
+    }
+
+    // Admin management routes - EXECUTIVE only
+    if (path.includes("/settings/admins") && token?.role !== "EXECUTIVE") {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/login",
+    },
+  }
+);
+
+// Protect all admin routes
+export const config = {
+  matcher: ["/admin/:path*", "/api/v1/:path*"],
+};
+
+
+----- models\Admin.ts -----
+
+// src/models/Admin.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This model defines ONLY the Admin data structure and schema
+ * No business logic, no queries - just the data model
+ */
+
+/**
+ * Security
+ * - Password hashing with bcrypt
+ * - Password never returned in queries
+ */
+
+import mongoose, { Document, Model } from "mongoose";
+import bcrypt from "bcryptjs";
+
+const Schema = mongoose.Schema;
+
+// Type definitions
+export type AdminRole =
+  | "EXECUTIVE"
+  | "COMMISSIONER"
+  | "SCOREKEEPER"
+  | "PHOTOGRAPHER";
+
+// TypeScript interface
+export interface IAdmin extends Document {
+  name: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+  role: AdminRole;
+  assignedLocations: mongoose.Types.ObjectId[];
+  allLocations: boolean;
+  isActive: boolean;
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+// Schema definition
+const adminSchema = new Schema<IAdmin>(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      select: false, // Never include password in queries by default
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: ["EXECUTIVE", "COMMISSIONER", "SCOREKEEPER", "PHOTOGRAPHER"],
+      required: [true, "Role is required"],
+    },
+    assignedLocations: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
+    allLocations: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true, // Adds createdAt and updatedAt
+  }
+);
+
+// Indexes for performance
+adminSchema.index({ email: 1 });
+adminSchema.index({ role: 1 });
+adminSchema.index({ isActive: 1 });
+
+// Hash password before saving
+adminSchema.pre("save", async function (next) {
+  // Only hash if password is modified
+  if (!this.isModified("password")) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Instance method to compare passwords
+adminSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Middleware to set allLocations based on role
+adminSchema.pre("save", function (next) {
+  if (this.role === "EXECUTIVE" || this.role === "COMMISSIONER") {
+    this.allLocations = true;
+  }
+  next();
+});
+
+// Export model
+export default (mongoose.models.Admin as Model<IAdmin>) ||
+  mongoose.model<IAdmin>("Admin", adminSchema);
+
+
+----- models\ChatChannel.ts -----
+
+// src/models/ChatChannel.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * ChatChannel model - chat channel data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export type ChatChannelType =
+  | "division"
+  | "team"
+  | "game"
+  | "direct"
+  | "support";
+
+export interface IChatChannel extends mongoose.Document {
+  channelName: string;
+  channelType: ChatChannelType;
+  referenceId?: mongoose.Types.ObjectId;
+  participants: Array<{
+    userId: mongoose.Types.ObjectId;
+    userName: string;
+    joinedAt: Date;
+  }>;
+  isActive: boolean;
+  lastMessageAt: Date;
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const chatChannelSchema = new Schema<IChatChannel>(
+  {
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+      unique: true,
+    },
+    channelType: {
+      type: String,
+      enum: ["division", "team", "game", "direct", "support"],
+      required: [true, "Channel type is required"],
+    },
+    referenceId: {
+      type: Schema.Types.ObjectId,
+    },
+    participants: [
+      {
+        userId: {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+        userName: {
+          type: String,
+          required: true,
+        },
+        joinedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastMessageAt: {
+      type: Date,
+      default: Date.now,
+    },
+    messageCount: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+chatChannelSchema.index({ channelName: 1 });
+chatChannelSchema.index({ channelType: 1 });
+chatChannelSchema.index({ "participants.userId": 1 });
+chatChannelSchema.index({ isActive: 1, lastMessageAt: -1 });
+
+export default (mongoose.models.ChatChannel as mongoose.Model<IChatChannel>) ||
+  mongoose.model<IChatChannel>("ChatChannel", chatChannelSchema);
+
+
+----- models\ChatMessage.ts -----
+
+// src/models/ChatMessage.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * ChatMessage model - chat message data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IChatMessage extends mongoose.Document {
+  channelId: mongoose.Types.ObjectId;
+  channelName: string;
+  userId: mongoose.Types.ObjectId;
+  userName: string;
+  userEmail: string;
+  content: string;
+  message: string;
+  messageType: "text" | "system" | "announcement";
+  metadata: Record<string, any>;
+  edited: boolean;
+  editedAt?: Date;
+  reactions: Array<{
+    userId: string;
+    userName: string;
+    emoji: string;
+    timestamp: Date;
+  }>;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const chatMessageSchema = new Schema<IChatMessage>(
+  {
+    channelId: {
+      type: Schema.Types.ObjectId,
+      ref: "ChatChannel",
+    },
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    userName: {
+      type: String,
+      required: [true, "User name is required"],
+    },
+    userEmail: {
+      type: String,
+      required: [true, "User email is required"],
+    },
+    content: {
+      type: String,
+      required: [true, "Content is required"],
+    },
+    message: {
+      type: String,
+      required: [true, "Message is required"],
+    },
+    messageType: {
+      type: String,
+      enum: ["text", "system", "announcement"],
+      default: "text",
+    },
+    metadata: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    edited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: Date,
+    reactions: [
+      {
+        userId: String,
+        userName: String,
+        emoji: String,
+        timestamp: Date,
+      },
+    ],
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+chatMessageSchema.index({ channelName: 1, createdAt: -1 });
+chatMessageSchema.index({ userId: 1, createdAt: -1 });
+
+export default (mongoose.models.ChatMessage as mongoose.Model<IChatMessage>) ||
+  mongoose.model<IChatMessage>("ChatMessage", chatMessageSchema);
+
+
+----- models\City.ts -----
+
+// src/models/City.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City model - ONLY city data structure
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ICity extends mongoose.Document {
+  cityName: string;
+  region: string;
+  country: string;
+  timezone: string;
+  active: boolean;
+  locations: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const citySchema = new Schema<ICity>(
+  {
+    cityName: {
+      type: String,
+      required: [true, "City name is required"],
+      trim: true,
+    },
+    region: {
+      type: String,
+      required: [true, "Region is required"],
+      trim: true,
+    },
+    country: {
+      type: String,
+      required: [true, "Country is required"],
+      trim: true,
+    },
+    timezone: {
+      type: String,
+      required: [true, "Timezone is required"],
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+    locations: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+citySchema.index({ cityName: 1, region: 1, country: 1 }, { unique: true });
+citySchema.index({ active: 1 });
+
+export default (mongoose.models.City as mongoose.Model<ICity>) ||
+  mongoose.model<ICity>("City", citySchema);
+
+
+----- models\Division.ts -----
+
+// src/models/Division.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division model - division data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IDivision extends mongoose.Document {
+  divisionName: string;
+  city: mongoose.Types.ObjectId;
+  location: mongoose.Types.ObjectId;
+  level: mongoose.Types.ObjectId;
+  day: string;
+  startDate: Date;
+  startTime: string;
+  endTime: string;
+  active: boolean;
+  register: boolean;
+  description: string;
+  teams: mongoose.Types.ObjectId[];
+  games: mongoose.Types.ObjectId[];
+  earlyBirdOpen: boolean;
+  prices: {
+    earlyBird?: mongoose.Types.ObjectId;
+    regular?: mongoose.Types.ObjectId;
+    installment?: mongoose.Types.ObjectId;
+    firstInstallment?: mongoose.Types.ObjectId;
+    free?: mongoose.Types.ObjectId;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const divisionSchema = new Schema<IDivision>(
+  {
+    divisionName: {
+      type: String,
+      required: [true, "Division name is required"],
+      trim: true,
+    },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: "City",
+      required: [true, "City is required"],
+    },
+    location: {
+      type: Schema.Types.ObjectId,
+      ref: "Location",
+      required: [true, "Location is required"],
+    },
+    level: {
+      type: Schema.Types.ObjectId,
+      ref: "Level",
+      required: [true, "Level is required"],
+    },
+    day: {
+      type: String,
+      required: [true, "Day is required"],
+    },
+    startDate: {
+      type: Date,
+    },
+    startTime: {
+      type: String,
+    },
+    endTime: {
+      type: String,
+    },
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    register: {
+      type: Boolean,
+      default: false,
+    },
+    description: {
+      type: String,
+      required: [true, "Description is required"],
+    },
+    teams: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Team",
+      },
+    ],
+    games: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+
+    prices: {
+      earlyBird: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      regular: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      installment: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      regularInstallment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      firstInstallment: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      free: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+divisionSchema.index({ city: 1, location: 1 });
+divisionSchema.index({ active: 1 });
+divisionSchema.index({ register: 1 });
+divisionSchema.index({ level: 1 });
+
+export default (mongoose.models.Division as mongoose.Model<IDivision>) ||
+  mongoose.model<IDivision>("Division", divisionSchema);
+
+
+----- models\Game.ts -----
+
+// src/models/Game.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Game model - game data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IGame extends mongoose.Document {
+  gameName: string;
+  date: Date;
+  time: string;
+  homeTeam: mongoose.Types.ObjectId;
+  awayTeam: mongoose.Types.ObjectId;
+  homeTeamScore: number;
+  awayTeamScore: number;
+  status: boolean;
+  started: boolean;
+  division: mongoose.Types.ObjectId;
+  players: mongoose.Types.ObjectId[];
+  playerOfTheGame?: mongoose.Types.ObjectId;
+  youtubeLink?: string;
+  isPlayoffGame: boolean;
+  gamePhotosCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const gameSchema = new Schema<IGame>(
+  {
+    gameName: {
+      type: String,
+      required: [true, "Game name is required"],
+    },
+    date: {
+      type: Date,
+      required: [true, "Game date is required"],
+    },
+    time: {
+      type: String,
+      required: [true, "Game time is required"],
+    },
+    homeTeam: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Home team is required"],
+    },
+    awayTeam: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Away team is required"],
+    },
+    homeTeamScore: {
+      type: Number,
+      default: 0,
+    },
+    awayTeamScore: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: Boolean,
+      default: false,
+    },
+    started: {
+      type: Boolean,
+      default: false,
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+
+    players: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    playerOfTheGame: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+    },
+    youtubeLink: String,
+    isPlayoffGame: {
+      type: Boolean,
+      default: false,
+    },
+    gamePhotosCount: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+gameSchema.index({ division: 1, date: -1 });
+gameSchema.index({ date: -1 });
+gameSchema.index({ status: 1 });
+gameSchema.index({ gamePhotosCount: 1 });
+
+export default (mongoose.models.Game as mongoose.Model<IGame>) ||
+  mongoose.model<IGame>("Game", gameSchema);
+
+
+----- models\GamePhoto.ts -----
+
+// src/models/GamePhoto.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * GamePhoto model - game photo data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IGamePhoto extends mongoose.Document {
+  url: string;
+  publicId: string;
+  thumbnail: string;
+  game: mongoose.Types.ObjectId;
+  tags: string[];
+  isHighlight: boolean;
+  uploadedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const gamePhotoSchema = new Schema<IGamePhoto>(
+  {
+    url: {
+      type: String,
+      required: [true, "Photo URL is required"],
+    },
+    publicId: {
+      type: String,
+      required: [true, "Cloudinary public ID is required"],
+      unique: true,
+    },
+    thumbnail: {
+      type: String,
+      required: [true, "Thumbnail URL is required"],
+    },
+    game: {
+      type: Schema.Types.ObjectId,
+      ref: "Game",
+      required: [true, "Game is required"],
+    },
+    tags: [String],
+    isHighlight: {
+      type: Boolean,
+      default: false,
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+gamePhotoSchema.index({ game: 1, uploadedAt: -1 });
+gamePhotoSchema.index({ publicId: 1 }, { unique: true });
+gamePhotoSchema.index({ isHighlight: 1 });
+
+export default (mongoose.models.GamePhoto as mongoose.Model<IGamePhoto>) ||
+  mongoose.model<IGamePhoto>("GamePhoto", gamePhotoSchema);
+
+
+----- models\JerseyOrder.ts -----
+
+// src/models/JerseyOrder.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * JerseyOrder model - jersey order tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IJerseyOrder extends mongoose.Document {
+  team: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  type: "MANUFACTURER_ORDER" | "IN_STOCK";
+  players: Array<{
+    playerId: mongoose.Types.ObjectId;
+    jerseyNumber?: number;
+    jerseySize?: string;
+    jerseyName?: string;
+  }>;
+  adminStatus:
+    | "INCOMPLETE"
+    | "PENDING_REVIEW"
+    | "READY_TO_ORDER"
+    | "ORDERED"
+    | "COMPLETED";
+  manufacturerStatus:
+    | "PENDING"
+    | "IN_PRODUCTION"
+    | "QUALITY_CHECK"
+    | "COMPLETED"
+    | "SHIPPED";
+  inStockStatus: "PENDING" | "ASSIGNED" | "DELIVERED";
+  adminNotes?: string;
+  manufacturerNotes?: string;
+  dateOrdered?: Date;
+  dateProductionCompleted?: Date;
+  dateAssigned?: Date;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const jerseyOrderSchema = new Schema<IJerseyOrder>(
+  {
+    team: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Team is required"],
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    type: {
+      type: String,
+      enum: ["MANUFACTURER_ORDER", "IN_STOCK"],
+      required: [true, "Order type is required"],
+    },
+    players: [
+      {
+        playerId: {
+          type: Schema.Types.ObjectId,
+          ref: "Player",
+        },
+        jerseyNumber: Number,
+        jerseySize: String,
+        jerseyName: String,
+      },
+    ],
+    adminStatus: {
+      type: String,
+      enum: [
+        "INCOMPLETE",
+        "PENDING_REVIEW",
+        "READY_TO_ORDER",
+        "ORDERED",
+        "COMPLETED",
+      ],
+      default: "INCOMPLETE",
+    },
+    manufacturerStatus: {
+      type: String,
+      enum: [
+        "PENDING",
+        "IN_PRODUCTION",
+        "QUALITY_CHECK",
+        "COMPLETED",
+        "SHIPPED",
+      ],
+      default: "PENDING",
+    },
+    inStockStatus: {
+      type: String,
+      enum: ["PENDING", "ASSIGNED", "DELIVERED"],
+      default: "PENDING",
+    },
+    adminNotes: String,
+    manufacturerNotes: String,
+    dateOrdered: Date,
+    dateProductionCompleted: Date,
+    dateAssigned: Date,
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+jerseyOrderSchema.index({ team: 1 });
+jerseyOrderSchema.index({ division: 1 });
+jerseyOrderSchema.index({ type: 1 });
+jerseyOrderSchema.index({ adminStatus: 1 });
+jerseyOrderSchema.index({ manufacturerStatus: 1 });
+jerseyOrderSchema.index({ "players.playerId": 1 });
+
+export default (mongoose.models.JerseyOrder as mongoose.Model<IJerseyOrder>) ||
+  mongoose.model<IJerseyOrder>("JerseyOrder", jerseyOrderSchema);
+
+
+----- models\Level.ts -----
+
+// src/models/Level.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level model - skill tier data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ILevel extends mongoose.Document {
+  name: string;
+  grade: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const levelSchema = new Schema<ILevel>(
+  {
+    name: {
+      type: String,
+      required: [true, "Level name is required"],
+      unique: true,
+      trim: true,
+    },
+    grade: {
+      type: Number,
+      required: [true, "Grade is required"],
+      min: [1, "Grade must be at least 1"],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+levelSchema.index({ grade: 1 });
+levelSchema.index({ name: 1 });
+
+export default (mongoose.models.Level as mongoose.Model<ILevel>) ||
+  mongoose.model<ILevel>("Level", levelSchema);
+
+
+----- models\Location.ts -----
+
+// src/models/Location.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location model - ONLY location data structure
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ILocation extends mongoose.Document {
+  name: string;
+  address: string;
+  city: mongoose.Types.ObjectId;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const locationSchema = new Schema<ILocation>(
+  {
+    name: {
+      type: String,
+      required: [true, "Location name is required"],
+      trim: true,
+    },
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+      trim: true,
+    },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: "City",
+      required: [true, "City is required"],
+    },
+    coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+locationSchema.index({ city: 1 });
+locationSchema.index({ isActive: 1 });
+locationSchema.index({ "coordinates.latitude": 1, "coordinates.longitude": 1 });
+
+export default (mongoose.models.Location as mongoose.Model<ILocation>) ||
+  mongoose.model<ILocation>("Location", locationSchema);
+
+
+----- models\MessageForward.ts -----
+
+// src/models/MessageForward.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * MessageForward model - message forwarding tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IMessageForward extends mongoose.Document {
+  userId: mongoose.Types.ObjectId;
+  channelName: string;
+  messageContent: string;
+  sentBy: string;
+  channels: ("sms" | "email")[];
+  results: {
+    sms?: "sent" | "failed" | "skipped";
+    email?: "sent" | "failed" | "skipped";
+  };
+  errorMessages?: {
+    sms?: string;
+    email?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const messageForwardSchema = new Schema<IMessageForward>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User ID is required"],
+    },
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+    },
+    messageContent: {
+      type: String,
+      required: [true, "Message content is required"],
+    },
+    sentBy: {
+      type: String,
+      default: "Support Team",
+    },
+    channels: [
+      {
+        type: String,
+        enum: ["sms", "email"],
+        required: true,
+      },
+    ],
+    results: {
+      sms: {
+        type: String,
+        enum: ["sent", "failed", "skipped"],
+      },
+      email: {
+        type: String,
+        enum: ["sent", "failed", "skipped"],
+      },
+    },
+    errorMessages: {
+      sms: String,
+      email: String,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes for rate limiting
+messageForwardSchema.index({ userId: 1, createdAt: -1 });
+messageForwardSchema.index({ channelName: 1, createdAt: -1 });
+
+export default (mongoose.models
+  .MessageForward as mongoose.Model<IMessageForward>) ||
+  mongoose.model<IMessageForward>("MessageForward", messageForwardSchema);
+
+
+----- models\PaymentMethod.ts -----
+
+// src/models/PaymentMethod.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * PaymentMethod model - payment tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IPaymentMethod extends mongoose.Document {
+  player: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS";
+  pricingTier: "EARLY_BIRD" | "REGULAR";
+  originalPrice: number;
+  amountPaid: number;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  installments?: {
+    subscriptionId: string;
+    totalAmountDue: number;
+    remainingBalance: number;
+    nextPaymentDate?: Date;
+    subscriptionPayments: Array<{
+      invoiceId: string;
+      status: "succeeded" | "failed" | "pending";
+      amountPaid: number;
+      attemptCount: number;
+      lastAttempt?: Date;
+      paymentLink: string;
+      paymentNumber: number;
+      dueDate?: Date;
+    }>;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const paymentMethodSchema = new Schema<IPaymentMethod>(
+  {
+    player: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+      required: [true, "Player is required"],
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    paymentType: {
+      type: String,
+      enum: ["FULL_PAYMENT", "INSTALLMENTS"],
+      required: [true, "Payment type is required"],
+    },
+    pricingTier: {
+      type: String,
+      enum: ["EARLY_BIRD", "REGULAR"],
+      required: [true, "Pricing tier is required"],
+    },
+    originalPrice: {
+      type: Number,
+      required: [true, "Original price is required"],
+    },
+    amountPaid: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["PENDING", "IN_PROGRESS", "COMPLETED"],
+      default: "PENDING",
+    },
+    installments: {
+      subscriptionId: String,
+      totalAmountDue: Number,
+      remainingBalance: Number,
+      nextPaymentDate: Date,
+      subscriptionPayments: [
+        {
+          invoiceId: String,
+          status: {
+            type: String,
+            enum: ["succeeded", "failed", "pending"],
+          },
+          amountPaid: Number,
+          attemptCount: Number,
+          lastAttempt: Date,
+          paymentLink: String,
+          paymentNumber: Number,
+          dueDate: Date,
+        },
+      ],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+paymentMethodSchema.index({ player: 1, division: 1 });
+paymentMethodSchema.index({ division: 1, status: 1 });
+paymentMethodSchema.index({ status: 1 });
+
+// Middleware: Auto-calculate remaining balance when installment payments update
+paymentMethodSchema.pre("save", function (next) {
+  if (
+    this.paymentType === "INSTALLMENTS" &&
+    this.installments?.subscriptionPayments
+  ) {
+    const totalPaid = this.installments.subscriptionPayments
+      .filter((payment) => payment.status === "succeeded")
+      .reduce((sum, payment) => sum + (payment.amountPaid || 0), 0);
+
+    if (this.installments.totalAmountDue) {
+      this.installments.remainingBalance =
+        this.installments.totalAmountDue - totalPaid;
+    }
+    this.amountPaid = totalPaid;
+
+    // Auto-complete if all payments succeeded
+    const allPaid = this.installments.subscriptionPayments.every(
+      (p) => p.status === "succeeded"
+    );
+    if (allPaid && this.installments.remainingBalance === 0) {
+      this.status = "COMPLETED";
+    }
+  }
+  next();
+});
+
+export default (mongoose.models
+  .PaymentMethod as mongoose.Model<IPaymentMethod>) ||
+  mongoose.model<IPaymentMethod>("PaymentMethod", paymentMethodSchema);
+
+
+----- models\Player.ts -----
+
+// src/models/Player.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player model - player profile data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+// src/models/Player.ts - Add paymentMethods to interface
+
+export interface IPlayer extends mongoose.Document {
+  createdAt: Date;
+  freeAgent: boolean;
+  agreeToRefundPolicy: boolean;
+  agreeToTerms: boolean;
+  receiveNews: boolean;
+  customerId?: string;
+  subscriptionPayments: Array<any>;
+  playerName: string;
+  playerImage?: {
+    id: string;
+    image: string;
+  };
+  instagram?: string;
+  jerseyNumber?: number;
+  jerseyNumberTwo?: number;
+  jerseyNumberThree?: number;
+  jerseySize?: string;
+  jerseyName?: string;
+  team?: mongoose.Types.ObjectId;
+  teamCaptain: boolean;
+  paymentStatus: {
+    hasPaid?: boolean;
+    reminderCount?: number;
+    teamCreatedDate?: Date;
+    lastAttempt?: Date;
+    email?: string;
+    phoneNumber?: string;
+  };
+  paymentMethods: mongoose.Types.ObjectId[]; // ADD THIS LINE
+  user?: mongoose.Types.ObjectId;
+  division?: mongoose.Types.ObjectId;
+  averageStats?: any;
+  allStats: Array<any>;
+}
+
+const playerSchema = new Schema<IPlayer>(
+  {
+    playerName: {
+      type: String,
+      required: [true, "Player name is required"],
+      trim: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    team: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+    },
+    paymentStatus: {
+      hasPaid: Boolean,
+      reminderCount: Number,
+      teamCreatedDate: Date,
+      lastAttempt: Date,
+      email: String,
+      phoneNumber: String,
+    },
+  
+    paymentMethods: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PaymentMethod",
+      },
+    ],
+    jerseyNumber: Number,
+    jerseySize: String,
+    jerseyName: String,
+    instagram: String,
+    teamCaptain: {
+      type: Boolean,
+      default: false,
+    },
+    freeAgent: {
+      type: Boolean,
+      default: false,
+    },
+    agreeToRefundPolicy: {
+      type: Boolean,
+      default: false,
+    },
+    agreeToTerms: {
+      type: Boolean,
+      default: false,
+    },
+    receiveNews: {
+      type: Boolean,
+      default: false,
+    },
+    customerId: String,
+    playerImage: {
+      id: String,
+      image: String,
+    },
+    averageStats: {
+      points: { type: Number, default: 0 },
+      rebounds: { type: Number, default: 0 },
+      assists: { type: Number, default: 0 },
+      blocks: { type: Number, default: 0 },
+      steals: { type: Number, default: 0 },
+      threesMade: { type: Number, default: 0 },
+      twosMade: { type: Number, default: 0 },
+      freeThrowsMade: { type: Number, default: 0 },
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+playerSchema.index({ playerName: "text" });
+playerSchema.index({ user: 1 });
+playerSchema.index({ team: 1 });
+playerSchema.index({ division: 1 });
+playerSchema.index({ freeAgent: 1 });
+
+export default (mongoose.models.Player as mongoose.Model<IPlayer>) ||
+  mongoose.model<IPlayer>("Player", playerSchema);
+
+
+----- models\Price.ts -----
+
+// src/models/Price.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price model - pricing data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IPrice extends mongoose.Document {
+  name: string;
+  priceId: string;
+  amount: number;
+  type:
+    | "earlyBird"
+    | "regular"
+    | "installment"
+    | "regularInstallment"
+    | "firstInstallment"
+    | "free";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const priceSchema = new Schema<IPrice>(
+  {
+    name: {
+      type: String,
+      required: [true, "Price name is required"],
+    },
+    priceId: {
+      type: String,
+      required: [true, "Stripe price ID is required"],
+      unique: true,
+    },
+    amount: {
+      type: Number,
+      required: [true, "Amount is required"],
+    },
+    type: {
+      type: String,
+      enum: [
+        "earlyBird",
+        "regular",
+        "installment",
+        "regularInstallment",
+        "firstInstallment",
+        "free",
+      ],
+      required: [true, "Price type is required"],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+priceSchema.index({ priceId: 1 });
+priceSchema.index({ type: 1 });
+
+export default (mongoose.models.Price as mongoose.Model<IPrice>) ||
+  mongoose.model<IPrice>("Price", priceSchema);
+
+
+----- models\Team.ts -----
+
+// src/models/Team.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team model - team data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ITeam extends mongoose.Document {
+  teamName: string;
+  teamNameShort: string;
+  teamCode: string;
+  teamCaptain?: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  players: mongoose.Types.ObjectId[];
+  games: mongoose.Types.ObjectId[];
+  primaryColor?: string;
+  secondaryColor?: string;
+  tertiaryColor?: string;
+  wins: number;
+  losses: number;
+  pointDifference: number;
+  createdManually: boolean;
+  isCustomJersey: boolean;
+  jerseyEdition?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const teamSchema = new Schema<ITeam>(
+  {
+    teamName: {
+      type: String,
+      required: [true, "Team name is required"],
+      trim: true,
+    },
+    teamNameShort: {
+      type: String,
+      required: [true, "Short team name is required"],
+      trim: true,
+    },
+    teamCode: {
+      type: String,
+      required: [true, "Team code is required"],
+      unique: true,
+      uppercase: true,
+    },
+    teamCaptain: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+    },
+
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    players: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    games: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    primaryColor: String,
+    secondaryColor: String,
+    tertiaryColor: String,
+    wins: {
+      type: Number,
+      default: 0,
+    },
+    losses: {
+      type: Number,
+      default: 0,
+    },
+    pointDifference: {
+      type: Number,
+      default: 0,
+    },
+
+    createdManually: {
+      type: Boolean,
+      default: false,
+    },
+    isCustomJersey: {
+      type: Boolean,
+      default: false,
+    },
+    jerseyEdition: String,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+teamSchema.index({ division: 1 });
+teamSchema.index({ teamCode: 1 });
+teamSchema.index({ players: 1 });
+
+export default (mongoose.models.Team as mongoose.Model<ITeam>) ||
+  mongoose.model<ITeam>("Team", teamSchema);
+
+
+----- models\User.ts -----
+
+// src/models/User.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * User model - customer account data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IUser extends mongoose.Document {
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  instagram?: string;
+  password?: string;
+  type: string;
+  stripeCustomerId?: string;
+  jerseyInformation?: {
+    jerseySize?: string;
+    jerseyName?: string;
+    jerseyNumber?: string;
+  };
+  basketball: mongoose.Types.ObjectId[];
+  resetToken?: string;
+  resetTokenExpiry?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    phoneNumber: String,
+    instagram: String,
+    password: String,
+    type: {
+      type: String,
+      required: [true, "User type is required"],
+    },
+    stripeCustomerId: {
+      type: String,
+      sparse: true,
+    },
+    jerseyInformation: {
+      jerseySize: String,
+      jerseyName: String,
+      jerseyNumber: String,
+    },
+    basketball: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    resetToken: String,
+    resetTokenExpiry: Date,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+userSchema.index({ email: 1 });
+userSchema.index({ stripeCustomerId: 1 });
+
+export default (mongoose.models.User as mongoose.Model<IUser>) ||
+  mongoose.model<IUser>("User", userSchema);
+
+
+----- types\auth.ts -----
+
+// src/types/auth.ts
+
+/**
+ * SOLID - Interface Segregation Principle (ISP)
+ * Define focused auth-related types only
+ */
+
+import { AdminRole } from "@/models/Admin";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+  allLocations: boolean;
+  assignedLocations: string[];
+  isActive: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+
+----- types\city.ts -----
+
+// src/types/city.ts
+import { ICity } from "@/models/City";
+
+export interface LeanCity extends Omit<ICity, "_id"> {
+  _id: string;
+}
+
+
+----- types\division.ts -----
+
+// src/types/division.ts
+import { ILocation } from "@/models/Location";
+import { ILevel } from "@/models/Level";
+import { IDivision } from "@/models/Division";
+
+export interface PopulatedDivision {
+  _id: string;
+  divisionName: string;
+  description: string;
+  city: string | { _id: string; cityName: string; region: string };
+  location: { _id: string; name: string };
+  level: { _id: string; name: string; grade: number };
+  day: string;
+  startDate?: Date;
+  startTime?: string;
+  endTime?: string;
+  active: boolean;
+  register: boolean;
+  prices: {
+    earlyBird?: { _id: string; amount: number; name: string };
+    regular?: { _id: string; amount: number; name: string };
+    installment?: { _id: string; amount: number; name: string };
+    regularInstallment?: { _id: string; amount: number; name: string };
+    firstInstallment?: { _id: string; amount: number; name: string };
+    free?: { _id: string; amount: number; name: string };
+  };
+}
+
+
+----- types\level.ts -----
+
+// src/types/level.ts
+import { ILevel } from "@/models/Level";
+
+export interface LeanLevel extends Omit<ILevel, "_id"> {
+  _id: string;
+}
+
+
+----- types\location.ts -----
+
+// src/types/location.ts
+import { ILocation } from "@/models/Location";
+
+export interface LeanLocation extends Omit<ILocation, "_id"> {
+  _id: string;
+}
+
+
+----- types\team.ts -----
+
+// src/types/team.ts
+
+/**
+ * Team with populated references
+ */
+import { ITeam } from "@/models/Team";
+import { IPlayer } from "@/models/Player";
+import { IDivision } from "@/models/Division";
+
+export interface PopulatedTeam
+  extends Omit<ITeam, "division" | "teamCaptain" | "players" | "_id"> {
+  _id: string;
+  division: {
+    _id: string;
+    divisionName: string;
+    location: { name: string };
+    city: { cityName: string };
+  };
+  teamCaptain?: {
+    _id: string;
+    playerName: string;
+  };
+  players: Array<{
+    _id: string;
+    playerName: string;
+    jerseyNumber?: number;
+  }>;
+}
+
+export interface LeanTeam extends Omit<ITeam, "_id"> {
+  _id: string;
+}
