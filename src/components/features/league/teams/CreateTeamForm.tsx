@@ -110,7 +110,7 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
       }
 
       toast.success("Team created successfully!");
-      router.push(`/admin/${cityId}/league/teams/${result.data._id}`);
+      router.push(`/admin/league/teams/${result.data._id}`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create team");

@@ -83,7 +83,7 @@ export function HasIssuesPlayerView({
 
       try {
         const response = await fetch(
-          `/api/v1/${cityId}/payments/card-info/${player.customerId}`
+          `/api/v1/payments/card-info/${player.customerId}`
         );
         console.log("response:", response);
 
@@ -166,7 +166,7 @@ export function HasIssuesPlayerView({
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/admin/${cityId}/payments`}>
+          <Link href={`/admin/payments`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Payments
           </Link>

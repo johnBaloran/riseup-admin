@@ -62,7 +62,6 @@ export default async function PlayersPage({
       search: searchParams.search,
     }),
     getDivisions({
-      cityId: params.cityId,
       page: 1,
       limit: 100,
       activeFilter: "active",
