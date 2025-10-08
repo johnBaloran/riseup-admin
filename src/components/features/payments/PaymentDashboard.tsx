@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,8 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, Download, Filter, X } from "lucide-react";
+import { Search, Download, Filter, X, Loader2 } from "lucide-react";
 import { PaymentsList } from "./PaymentsList";
+import { toast } from "sonner";
 
 interface PaymentDashboardProps {
   players: any[];
@@ -45,6 +46,33 @@ export function PaymentDashboard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
+  const [isExporting, setIsExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const playersPerPage = 12;
+
+  // Calculate stats
+  const stats = useMemo(() => {
+    const total = players.length;
+    const unpaid = players.filter((p) => p.paymentStatus === "unpaid").length;
+    const onTrack = players.filter(
+      (p) => p.paymentStatus === "on-track"
+    ).length;
+    const hasIssues = players.filter(
+      (p) => p.paymentStatus === "has-issues"
+    ).length;
+    const critical = players.filter(
+      (p) => p.paymentStatus === "critical"
+    ).length;
+    const paid = players.filter((p) => p.paymentStatus === "paid").length;
+
+    return { total, unpaid, onTrack, hasIssues, critical, paid };
+  }, [players]);
+
+  // Pagination
+  const totalPages = Math.ceil(players.length / playersPerPage);
+  const startIndex = (currentPage - 1) * playersPerPage;
+  const endIndex = startIndex + playersPerPage;
+  const paginatedPlayers = players.slice(startIndex, endIndex);
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -58,11 +86,13 @@ export function PaymentDashboard({
     });
 
     router.push(`/admin/${cityId}/payments?${params.toString()}`);
+    setCurrentPage(1); // Reset to page 1 when filters change
   };
 
   const clearAllFilters = () => {
     router.push(`/admin/${cityId}/payments`);
     setSearchValue("");
+    setCurrentPage(1);
   };
 
   const handleSearch = (value: string) => {
@@ -70,9 +100,44 @@ export function PaymentDashboard({
     updateFilters({ search: value || undefined });
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const response = await fetch(`/api/v1/${cityId}/payments/export`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filters: currentFilters,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payment-report-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("Export completed successfully!");
+    } catch (error) {
+      toast.error("Failed to export. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getFilteredDivisions = () => {
     if (!currentFilters.location) return divisions;
-    return divisions.filter((d: any) => d.location._id === currentFilters.location);
+    return divisions.filter(
+      (d: any) => d.location._id === currentFilters.location
+    );
   };
 
   const hasActiveFilters =
@@ -87,6 +152,20 @@ export function PaymentDashboard({
       {/* Filter Section */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="space-y-4">
+          {/* Header with Total Count */}
+          <div className="flex items-center justify-between pb-4 border-b">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Payment Overview
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {stats.total} total players • {stats.unpaid} unpaid •{" "}
+                {stats.onTrack} on track • {stats.hasIssues} has issues •{" "}
+                {stats.critical} critical • {stats.paid} paid
+              </p>
+            </div>
+          </div>
+
           {/* Row 1: Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -158,7 +237,9 @@ export function PaymentDashboard({
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="on-track">On Track (Installments)</SelectItem>
+                  <SelectItem value="on-track">
+                    On Track (Installments)
+                  </SelectItem>
                   <SelectItem value="has-issues">Has Issues</SelectItem>
                   <SelectItem value="critical">Critical</SelectItem>
                   <SelectItem value="paid">Fully Paid</SelectItem>
@@ -190,9 +271,22 @@ export function PaymentDashboard({
                 className="pl-10"
               />
             </div>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              disabled={isExporting || players.length === 0}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </>
+              )}
             </Button>
           </div>
 
@@ -232,7 +326,71 @@ export function PaymentDashboard({
       </div>
 
       {/* Players List */}
-      <PaymentsList players={players} cityId={cityId} />
+      <PaymentsList players={paginatedPlayers} cityId={cityId} />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white rounded-lg shadow p-4">
+          <div className="text-sm text-gray-600">
+            Showing {startIndex + 1} to {Math.min(endIndex, players.length)} of{" "}
+            {players.length} players
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => {
+                  // Show first page, last page, current page, and pages around current
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 1 && page <= currentPage + 1)
+                  ) {
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="min-w-[40px]"
+                      >
+                        {page}
+                      </Button>
+                    );
+                  } else if (
+                    page === currentPage - 2 ||
+                    page === currentPage + 2
+                  ) {
+                    return (
+                      <span key={page} className="px-2 text-gray-400">
+                        ...
+                      </span>
+                    );
+                  }
+                  return null;
+                }
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

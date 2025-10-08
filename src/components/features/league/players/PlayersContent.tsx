@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import { PlayersGrid } from "./PlayersGrid";
 import { Pagination } from "@/components/common/Pagination";
+import { debounce } from "lodash";
 
 interface PlayersContentProps {
   players: any[];
@@ -73,10 +74,27 @@ export function PlayersContent({
     router.push(`/admin/${cityId}/league/players?${params.toString()}`);
   };
 
+  // create a stable debounced version of updateFilters
+  const debouncedUpdateFilters = useMemo(
+    () =>
+      debounce((value: string) => {
+        updateFilters({ search: value || undefined });
+      }, 500), // 500ms delay
+    [searchParams] // dependencies
+  );
+
   const handleSearch = (value: string) => {
     setSearchValue(value);
-    updateFilters({ search: value || undefined });
+    debouncedUpdateFilters(value);
   };
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdateFilters.cancel();
+    };
+  }, [debouncedUpdateFilters]);
+
+  console.log("players:", players);
 
   return (
     <div className="space-y-6">
@@ -159,15 +177,13 @@ export function PlayersContent({
       <PlayersGrid players={players} cityId={cityId} />
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <Pagination
-          currentPage={pagination.page}
-          totalPages={pagination.totalPages}
-          total={pagination.total}
-          limit={pagination.limit}
-          onPageChange={(page) => updateFilters({ page: page.toString() })}
-        />
-      )}
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        total={pagination.total}
+        limit={pagination.limit}
+        onPageChange={(page) => updateFilters({ page: page.toString() })}
+      />
     </div>
   );
 }

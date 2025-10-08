@@ -232,7 +232,7 @@ export default async function PlayerDetailPage({
                         Weekly Progress
                       </p>
                       <InstallmentProgress
-                        progress={player.installmentProgress}
+                        payments={player.installmentProgress}
                         size="md"
                       />
                       <div className="mt-3 pt-3 border-t space-y-2">

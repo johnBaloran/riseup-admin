@@ -65,7 +65,7 @@ export default async function PlayersPage({
       cityId: params.cityId,
       page: 1,
       limit: 100,
-      activeFilter: "all",
+      activeFilter: "active",
     }),
   ]);
 

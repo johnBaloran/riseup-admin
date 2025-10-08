@@ -31,28 +31,34 @@ export function InstallmentProgress({
     }
   };
 
-  // Ensure we always show 8 dots (1 down + 7 weekly)
-  const allPayments = Array(8)
-    .fill(null)
-    .map((_, index) => {
-      const payment = payments.find((p: any) => p.paymentNumber === index + 1);
-      return {
-        paymentNumber: index + 1,
-        status: payment?.status || "pending",
-      };
-    });
+  let allPayments;
+  if (payments) {
+    // Always show 8 dots, map by array index instead of paymentNumber
+    allPayments = Array(8)
+      .fill(null)
+      .map((_, index) => {
+        const payment = payments[index]; // take the payment directly by array order
+        return {
+          paymentNumber: index + 1,
+          status: payment?.status || "pending",
+        };
+      });
+  }
 
   return (
     <div className="flex items-center gap-1">
-      {allPayments.map((payment) => (
-        <div
-          key={payment.paymentNumber}
-          className={`${dotSize[size]} rounded-full ${getStatusColor(
-            payment.status
-          )} transition-colors`}
-          title={`Payment ${payment.paymentNumber}: ${payment.status}`}
-        />
-      ))}
+      {allPayments &&
+        allPayments.map((payment, index) => (
+          <div
+            key={index}
+            className={`${dotSize[size]} rounded-full ${getStatusColor(
+              payment.status
+            )} transition-colors`}
+            title={`Payment ${payment.paymentNumber}: ${
+              index === 0 ? `${payment.status} (Down Payment)` : payment.status
+            }`}
+          />
+        ))}
     </div>
   );
 }

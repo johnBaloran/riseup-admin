@@ -147,7 +147,21 @@ export async function getPlayers({
 
   // Search
   if (search) {
-    filter.playerName = { $regex: search, $options: "i" };
+    // find all active + register divisions
+    const validDivisions = await Division.find({
+      active: true,
+      register: true,
+    }).select("_id");
+
+    filter.$and = [
+      { division: { $in: validDivisions.map((d) => d._id) } }, // only active + register
+      {
+        $or: [
+          { playerName: { $regex: search, $options: "i" } },
+          // you can add more fields here (like email, teamName, etc.)
+        ],
+      },
+    ];
   }
 
   const [players, total] = await Promise.all([

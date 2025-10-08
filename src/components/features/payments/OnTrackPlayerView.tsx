@@ -30,13 +30,28 @@ interface OnTrackPlayerViewProps {
   cityId: string;
 }
 
-export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlayerViewProps) {
-  const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
-  const completedPayments = subscriptionPayments.filter((p: any) => p.status === "succeeded").length;
+export function OnTrackPlayerView({
+  player,
+  paymentMethod,
+  cityId,
+}: OnTrackPlayerViewProps) {
+  const subscriptionPayments =
+    paymentMethod.installments?.subscriptionPayments || [];
+  const completedPayments = subscriptionPayments.filter(
+    (p: any) => p.status === "succeeded"
+  ).length;
   const totalPayments = 8; // 1 down + 7 weekly
-  const progressPercentage = Math.round((completedPayments / totalPayments) * 100);
-  
-  const nextPayment = subscriptionPayments.find((p: any) => p.status === "pending");
+  const progressPercentage = Math.round(
+    (completedPayments / totalPayments) * 100
+  );
+
+  const nextPayment = subscriptionPayments.find(
+    (p: any) => p.status === "pending"
+  );
+
+  console.log("player:", player);
+  console.log("paymentMethod:", paymentMethod);
+  console.log("subscriptionPayments:", subscriptionPayments);
 
   return (
     <div className="p-6 space-y-6">
@@ -53,7 +68,9 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
       {/* Player Overview */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{player.playerName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {player.playerName}
+          </h1>
           <Badge className="bg-green-100 text-green-800 border-green-200">
             <TrendingUp className="h-3 w-3 mr-1" />
             On Track
@@ -70,7 +87,8 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
         <div>
           <p className="font-medium text-green-900">Payment Plan Active</p>
           <p className="text-sm text-green-700 mt-1">
-            All payments made on time. {completedPayments} of {totalPayments} payments completed ({progressPercentage}%).
+            All payments made on time. {completedPayments} of {totalPayments}{" "}
+            payments completed ({progressPercentage}%).
           </p>
         </div>
       </div>
@@ -116,10 +134,12 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
 
               {/* Payment Timeline */}
               <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700">Payment Timeline</p>
-                {subscriptionPayments.map((payment: any) => (
+                <p className="text-sm font-medium text-gray-700">
+                  Payment Timeline
+                </p>
+                {subscriptionPayments.map((payment: any, index: number) => (
                   <div
-                    key={payment.paymentNumber}
+                    key={payment.paymentNumber || index}
                     className="flex items-center gap-4 p-3 rounded-lg border"
                   >
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
@@ -133,8 +153,10 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">
-                        Payment #{payment.paymentNumber}
-                        {payment.paymentNumber === 1 && " (Down Payment)"}
+                        Payment #{payment.paymentNumber || index + 1}
+                        {payment.paymentNumber === 1 || index === 0
+                          ? " (Down Payment)"
+                          : ""}
                       </p>
                       <p className="text-xs text-gray-500">
                         {payment.dueDate
@@ -155,10 +177,12 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
                 {Array(8)
                   .fill(null)
                   .map((_, index) => {
-                    const payment = subscriptionPayments.find(
-                      (p: any) => p.paymentNumber === index + 1
-                    );
+                    // get payment at this index directly from array (instead of by paymentNumber)
+                    const payment = subscriptionPayments[index];
+
+                    // fallback if payment doesn't exist
                     const isCompleted = payment?.status === "succeeded";
+
                     return (
                       <div
                         key={index}
@@ -185,7 +209,9 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
                 <Users className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-500">Team</p>
-                  <p className="font-medium">{player.team?.teamName || "No Team Assigned"}</p>
+                  <p className="font-medium">
+                    {player.team?.teamName || "No Team Assigned"}
+                  </p>
                 </div>
               </div>
 
@@ -268,7 +294,9 @@ export function OnTrackPlayerView({ player, paymentMethod, cityId }: OnTrackPlay
               <div className="mt-6 pt-4 border-t space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Successful:</span>
-                  <span className="font-medium text-green-600">{completedPayments}</span>
+                  <span className="font-medium text-green-600">
+                    {completedPayments}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Pending:</span>
