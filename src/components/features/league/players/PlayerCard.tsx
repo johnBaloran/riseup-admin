@@ -86,7 +86,7 @@ export function PlayerCard({ player, cityId }: PlayerCardProps) {
                 </Badge>
               )}
             </div>
-            <Link href={`/admin/${cityId}/league/players/${player._id}`}>
+            <Link href={`/admin/league/players/${player._id}`}>
               <h3 className="font-semibold text-lg leading-tight hover:underline">
                 {player.playerName}
               </h3>
@@ -104,9 +104,7 @@ export function PlayerCard({ player, cityId }: PlayerCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(
-                    `/admin/${cityId}/league/players/${player._id}/edit`
-                  )
+                  router.push(`/admin/league/players/${player._id}/edit`)
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />

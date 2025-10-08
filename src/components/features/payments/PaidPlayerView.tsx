@@ -30,13 +30,17 @@ interface PaidPlayerViewProps {
   cityId: string;
 }
 
-export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerViewProps) {
+export function PaidPlayerView({
+  player,
+  paymentMethod,
+  cityId,
+}: PaidPlayerViewProps) {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/admin/${cityId}/payments`}>
+          <Link href={`/admin/payments`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Payments
           </Link>
@@ -46,7 +50,9 @@ export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerView
       {/* Player Overview */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{player.playerName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {player.playerName}
+          </h1>
           <Badge className="bg-green-100 text-green-800 border-green-200">
             Payment Complete
           </Badge>
@@ -102,7 +108,10 @@ export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerView
                   <p className="text-sm text-gray-500">Payment Date</p>
                   <p className="font-medium">
                     {paymentMethod.createdAt
-                      ? format(new Date(paymentMethod.createdAt), "MMM dd, yyyy")
+                      ? format(
+                          new Date(paymentMethod.createdAt),
+                          "MMM dd, yyyy"
+                        )
                       : "Unknown"}
                   </p>
                 </div>
@@ -136,7 +145,9 @@ export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerView
                 <Users className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-500">Team</p>
-                  <p className="font-medium">{player.team?.teamName || "No Team Assigned"}</p>
+                  <p className="font-medium">
+                    {player.team?.teamName || "No Team Assigned"}
+                  </p>
                 </div>
               </div>
 
@@ -210,7 +221,9 @@ export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerView
             <CardContent>
               <div className="text-center py-6">
                 <CheckCircle2 className="mx-auto h-16 w-16 text-green-500 mb-4" />
-                <p className="font-medium text-green-900 mb-1">Payment Complete</p>
+                <p className="font-medium text-green-900 mb-1">
+                  Payment Complete
+                </p>
                 <p className="text-sm text-gray-500">
                   {paymentMethod.createdAt
                     ? format(new Date(paymentMethod.createdAt), "MMM dd, yyyy")
@@ -250,7 +263,10 @@ export function PaidPlayerView({ player, paymentMethod, cityId }: PaidPlayerView
                     <p className="text-sm font-medium">Payment Completed</p>
                     <p className="text-xs text-gray-500">
                       {paymentMethod.createdAt
-                        ? format(new Date(paymentMethod.createdAt), "MMM dd, yyyy")
+                        ? format(
+                            new Date(paymentMethod.createdAt),
+                            "MMM dd, yyyy"
+                          )
                         : "Unknown"}
                     </p>
                   </div>

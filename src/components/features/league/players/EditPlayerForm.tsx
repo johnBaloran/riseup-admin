@@ -199,7 +199,7 @@ export function EditPlayerForm({
       }
 
       toast.success("Player updated successfully!");
-      router.push(`/admin/${cityId}/league/players/${player._id}`);
+      router.push(`/admin/league/players/${player._id}`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to update player");

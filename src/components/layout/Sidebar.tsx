@@ -81,9 +81,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <li key={item.href}>
                   <NavItem
                     label={item.label}
-                    href={`/admin/${cityId}${item.href}`}
+                    href={`/admin/${item.href}`}
                     icon={item.icon}
-                    isActive={pathname === `/admin/${cityId}${item.href}`}
+                    isActive={pathname === `/admin/${item.href}`}
                     onClick={onClose}
                   />
                 </li>

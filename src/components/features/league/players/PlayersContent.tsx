@@ -71,7 +71,7 @@ export function PlayersContent({
       params.set("page", "1");
     }
 
-    router.push(`/admin/${cityId}/league/players?${params.toString()}`);
+    router.push(`/admin/league/players?${params.toString()}`);
   };
 
   // create a stable debounced version of updateFilters

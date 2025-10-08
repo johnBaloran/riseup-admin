@@ -38,7 +38,10 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
   const [showCaptainModal, setShowCaptainModal] = useState(false);
 
   const daysSinceRegistration = player.createdAt
-    ? Math.floor((Date.now() - new Date(player.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor(
+        (Date.now() - new Date(player.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
     : 0;
 
   return (
@@ -46,7 +49,7 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/admin/${cityId}/payments`}>
+          <Link href={`/admin/payments`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Payments
           </Link>
@@ -56,7 +59,9 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
       {/* Player Overview */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{player.playerName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {player.playerName}
+          </h1>
           <Badge className="bg-red-100 text-red-800 border-red-200">
             Payment Required
           </Badge>
@@ -72,7 +77,8 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
         <div>
           <p className="font-medium text-red-900">No Payment Method on File</p>
           <p className="text-sm text-red-700 mt-1">
-            Registered {daysSinceRegistration} days ago. Payment required to participate.
+            Registered {daysSinceRegistration} days ago. Payment required to
+            participate.
           </p>
         </div>
       </div>
@@ -89,7 +95,9 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
                 <Users className="h-5 w-5 text-gray-400" />
                 <div>
                   <p className="text-sm text-gray-500">Team</p>
-                  <p className="font-medium">{player.team?.teamName || "No Team Assigned"}</p>
+                  <p className="font-medium">
+                    {player.team?.teamName || "No Team Assigned"}
+                  </p>
                 </div>
               </div>
 

@@ -76,7 +76,7 @@ export function CreateLocationForm({
       }
 
       toast.success("Location created successfully!");
-      router.push(`/admin/${cityId}/league/locations`);
+      router.push(`/admin/league/locations`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create location");

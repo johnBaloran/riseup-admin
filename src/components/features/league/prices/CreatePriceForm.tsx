@@ -62,7 +62,7 @@ export function CreatePriceForm({ cityId }: CreatePriceFormProps) {
       }
 
       toast.success("Price created successfully!");
-      router.push(`/admin/${cityId}/league/prices`);
+      router.push(`/admin/league/prices`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create price");

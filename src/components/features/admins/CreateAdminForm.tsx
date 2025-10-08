@@ -98,7 +98,7 @@ export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
       }
 
       toast.success("Admin created successfully!");
-      router.push(`/admin/${cityId}/settings/admins`);
+      router.push(`/admin/settings/admins`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create admin");

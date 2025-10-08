@@ -129,7 +129,7 @@ export function CreatePlayerForm({ cityId, cities }: CreatePlayerFormProps) {
       }
 
       toast.success("Player created successfully!");
-      router.push(`/admin/${cityId}/league/players/${result.data._id}`);
+      router.push(`/admin/league/players/${result.data._id}`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create player");

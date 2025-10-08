@@ -32,7 +32,7 @@ export function NavItemWithChildren({
   const Icon = (LucideIcons as any)[item.icon];
 
   const isActiveParent = item.children?.some(
-    (child) => pathname === `/admin/${cityId}${child.href}`
+    (child) => pathname === `/admin/${child.href}`
   );
 
   return (
@@ -62,12 +62,12 @@ export function NavItemWithChildren({
         <ul className="mt-1 ml-4 space-y-1 border-l border-gray-700 pl-4">
           {item.children.map((child) => {
             const ChildIcon = (LucideIcons as any)[child.icon];
-            const isActive = pathname === `/admin/${cityId}${child.href}`;
+            const isActive = pathname === `/admin/${child.href}`;
 
             return (
               <li key={child.href}>
                 <Link
-                  href={`/admin/${cityId}${child.href}`}
+                  href={`/admin/${child.href}`}
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm",
