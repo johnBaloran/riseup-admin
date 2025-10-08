@@ -197,9 +197,7 @@ export function DivisionCard({ division, cityId }: DivisionCardProps) {
 
         <div className="flex items-center gap-2 text-gray-600">
           <TrendingUp className="h-4 w-4 flex-shrink-0" />
-          <span>
-            Grade {division.level?.grade} - {division.level?.name}
-          </span>
+          <span>Level: {division.level?.name}</span>
         </div>
 
         <div className="flex items-center gap-2 text-gray-600">

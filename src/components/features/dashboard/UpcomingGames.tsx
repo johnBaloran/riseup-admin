@@ -13,18 +13,10 @@ import { Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/common/EmptyState";
-
-interface Game {
-  _id: string;
-  date: Date;
-  time: string;
-  homeTeam: { teamName: string };
-  awayTeam: { teamName: string };
-  location: string;
-}
+import { IGame } from "@/models/Game";
 
 interface UpcomingGamesProps {
-  games: Game[];
+  games: IGame[];
   cityId: string;
 }
 
@@ -59,9 +51,9 @@ export function UpcomingGames({ games, cityId }: UpcomingGamesProps) {
               href={`/admin/${cityId}/games/${game._id}`}
               className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className="font-medium">
+              {/* <div className="font-medium">
                 {game.homeTeam.teamName} vs {game.awayTeam.teamName}
-              </div>
+              </div> */}
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                 <span>{format(new Date(game.date), "MMM dd, yyyy")}</span>
                 <span>{game.time}</span>

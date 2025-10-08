@@ -28,7 +28,7 @@ import {
   CreditCard,
   Zap,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, sub } from "date-fns";
 import { SendSpecificReminderModal } from "./SendSpecificReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
 import { ChargeCardModal } from "./ChargeCardModal";
@@ -65,6 +65,8 @@ export function HasIssuesPlayerView({
   const progressPercentage = Math.round(
     (completedPayments / totalPayments) * 100
   );
+
+  console.log("subscriptionPayments:", subscriptionPayments);
 
   const handleSendReminder = (payment: any) => {
     setSelectedPayment(payment);
@@ -295,9 +297,9 @@ export function HasIssuesPlayerView({
               <CardTitle>Payment Timeline</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {subscriptionPayments.map((payment: any) => (
+              {subscriptionPayments.map((payment: any, index: number) => (
                 <div
-                  key={payment.paymentNumber}
+                  key={payment.paymentNumber || index + 1}
                   className={`flex items-center gap-4 p-3 rounded-lg border ${
                     payment.status === "failed"
                       ? "bg-red-50 border-red-200"
@@ -325,8 +327,10 @@ export function HasIssuesPlayerView({
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">
-                      Payment #{payment.paymentNumber}
-                      {payment.paymentNumber === 1 && " (Down Payment)"}
+                      Payment #{payment.paymentNumber || index + 1}
+                      {payment.paymentNumber === 1 || index === 0
+                        ? " (Down Payment)"
+                        : ""}
                     </p>
                     <p className="text-xs text-gray-500">
                       {payment.dueDate
@@ -364,9 +368,12 @@ export function HasIssuesPlayerView({
                 {Array(8)
                   .fill(null)
                   .map((_, index) => {
-                    const payment = subscriptionPayments.find(
-                      (p: any) => p.paymentNumber === index + 1
-                    );
+                    // const payment = subscriptionPayments.find(
+                    //   (p: any) => p.paymentNumber === index + 1
+                    // );
+
+                    const payment = subscriptionPayments[index]; // take the payment directly by array order
+
                     return (
                       <div
                         key={index}

@@ -124,11 +124,11 @@ export function OnTrackPlayerView({
                   <p className="text-sm font-medium text-blue-900 mb-1">
                     Next Payment Due
                   </p>
-                  <p className="text-sm text-blue-700">
+                  {/* <p className="text-sm text-blue-700">
                     {nextPayment.dueDate
                       ? format(new Date(nextPayment.dueDate), "MMMM dd, yyyy")
                       : "Date pending"}
-                  </p>
+                  </p> */}
                 </div>
               )}
 
@@ -158,11 +158,11 @@ export function OnTrackPlayerView({
                           ? " (Down Payment)"
                           : ""}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      {/* <p className="text-xs text-gray-500">
                         {payment.dueDate
                           ? format(new Date(payment.dueDate), "MMM dd, yyyy")
                           : "Date pending"}
-                      </p>
+                      </p> */}
                     </div>
                     <Badge className="bg-green-100 text-green-800 border-green-200">
                       {payment.status === "succeeded" ? "Paid" : "Pending"}

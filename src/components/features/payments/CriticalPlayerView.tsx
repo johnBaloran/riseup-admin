@@ -38,20 +38,34 @@ interface CriticalPlayerViewProps {
   cityId: string;
 }
 
-export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPlayerViewProps) {
+export function CriticalPlayerView({
+  player,
+  paymentMethod,
+  cityId,
+}: CriticalPlayerViewProps) {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
 
-  const subscriptionPayments = paymentMethod.installments?.subscriptionPayments || [];
-  const completedPayments = subscriptionPayments.filter((p: any) => p.status === "succeeded").length;
-  const failedPayments = subscriptionPayments.filter((p: any) => p.status === "failed");
+  const subscriptionPayments =
+    paymentMethod.installments?.subscriptionPayments || [];
+  const completedPayments = subscriptionPayments.filter(
+    (p: any) => p.status === "succeeded"
+  ).length;
+  const failedPayments = subscriptionPayments.filter(
+    (p: any) => p.status === "failed"
+  );
   const totalPayments = 8;
-  const progressPercentage = Math.round((completedPayments / totalPayments) * 100);
+  const progressPercentage = Math.round(
+    (completedPayments / totalPayments) * 100
+  );
 
   const daysSinceRegistration = player.createdAt
-    ? Math.floor((Date.now() - new Date(player.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.floor(
+        (Date.now() - new Date(player.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
     : 0;
 
   const handleSendReminder = (payment: any) => {
@@ -74,7 +88,9 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
       {/* Player Overview */}
       <div>
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{player.playerName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {player.playerName}
+          </h1>
           <Badge className="bg-red-100 text-red-800 border-red-200">
             <AlertOctagon className="h-3 w-3 mr-1" />
             Critical
@@ -91,8 +107,9 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
         <div>
           <p className="font-bold text-red-900">Immediate Action Required</p>
           <p className="text-sm text-red-700 mt-1">
-            {failedPayments.length} payments failed. Registered {daysSinceRegistration} days ago. 
-            Escalation or suspension consideration needed.
+            {failedPayments.length} payments failed. Registered{" "}
+            {daysSinceRegistration} days ago. Escalation or suspension
+            consideration needed.
           </p>
         </div>
       </div>
@@ -120,11 +137,16 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
                         {payment.paymentNumber === 1 && " (Down Payment)"}
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
-                        Failed {payment.attemptCount || 1} time{payment.attemptCount > 1 ? "s" : ""}
+                        Failed {payment.attemptCount || 1} time
+                        {payment.attemptCount > 1 ? "s" : ""}
                       </p>
                       {payment.lastAttempt && (
                         <p className="text-xs text-gray-500 mt-1">
-                          Last attempt: {format(new Date(payment.lastAttempt), "MMM dd, yyyy")}
+                          Last attempt:{" "}
+                          {format(
+                            new Date(payment.lastAttempt),
+                            "MMM dd, yyyy"
+                          )}
                         </p>
                       )}
                     </div>
@@ -143,23 +165,22 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
                       Send Reminder
                     </Button>
                     {payment.paymentLink && (
-  <Button
-    size="sm"
-    variant="outline"
-    className="border-red-300"
-    asChild
-  >
-    <a
-      href={payment.paymentLink}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <ExternalLink className="h-4 w-4 mr-2" />
-      View Link
-    </a>
-  </Button>
-)}
-
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300"
+                        asChild
+                      >
+                        <a
+                          href={payment.paymentLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Link
+                        </a>
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -176,7 +197,9 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
                 <div
                   key={payment.paymentNumber}
                   className={`flex items-center gap-4 p-3 rounded-lg border ${
-                    payment.status === "failed" ? "bg-red-50 border-red-300" : ""
+                    payment.status === "failed"
+                      ? "bg-red-50 border-red-300"
+                      : ""
                   }`}
                 >
                   <div
@@ -210,7 +233,8 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
                     </p>
                     {payment.status === "failed" && payment.attemptCount && (
                       <p className="text-xs text-red-600 font-medium mt-1">
-                        {payment.attemptCount} attempt{payment.attemptCount > 1 ? "s" : ""}
+                        {payment.attemptCount} attempt
+                        {payment.attemptCount > 1 ? "s" : ""}
                       </p>
                     )}
                   </div>
@@ -344,11 +368,15 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
               <div className="mt-6 pt-4 border-t space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Successful:</span>
-                  <span className="font-medium text-green-600">{completedPayments}</span>
+                  <span className="font-medium text-green-600">
+                    {completedPayments}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Failed:</span>
-                  <span className="font-bold text-red-600">{failedPayments.length}</span>
+                  <span className="font-bold text-red-600">
+                    {failedPayments.length}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Pending:</span>
@@ -361,7 +389,9 @@ export function CriticalPlayerView({ player, paymentMethod, cityId }: CriticalPl
               <div className="mt-4 pt-4 border-t">
                 <div className="text-sm mb-2">
                   <span className="text-gray-500">Progress:</span>
-                  <span className="font-medium ml-2">{progressPercentage}%</span>
+                  <span className="font-medium ml-2">
+                    {progressPercentage}%
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div

@@ -74,13 +74,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if grade exists
-    const gradeAlreadyExists = await gradeExists(validatedData.grade);
-    if (gradeAlreadyExists) {
-      return NextResponse.json(
-        { success: false, error: "Grade number already exists" },
-        { status: 409 }
-      );
-    }
+    // const gradeAlreadyExists = await gradeExists(validatedData.grade);
+    // if (gradeAlreadyExists) {
+    //   return NextResponse.json(
+    //     { success: false, error: "Grade number already exists" },
+    //     { status: 409 }
+    //   );
+    // }
 
     const level = await createLevel(validatedData);
 
@@ -132,16 +132,16 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    // Check if grade exists (excluding current level)
-    if (updateData.grade) {
-      const gradeAlreadyExists = await gradeExists(updateData.grade, id);
-      if (gradeAlreadyExists) {
-        return NextResponse.json(
-          { success: false, error: "Grade number already exists" },
-          { status: 409 }
-        );
-      }
-    }
+    // // Check if grade exists (excluding current level)
+    // if (updateData.grade) {
+    //   const gradeAlreadyExists = await gradeExists(updateData.grade, id);
+    //   if (gradeAlreadyExists) {
+    //     return NextResponse.json(
+    //       { success: false, error: "Grade number already exists" },
+    //       { status: 409 }
+    //     );
+    //   }
+    // }
 
     const level = await updateLevel(id, updateData);
 
