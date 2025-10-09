@@ -50,7 +50,7 @@ export default async function PlayerDetailPage({
   const player = await getPlayerById(params.id);
 
   if (!player) {
-    redirect(`/admin/${params.cityId}/league/players`);
+    redirect(`/admin/league/players`);
   }
 
   return (
@@ -59,7 +59,7 @@ export default async function PlayerDetailPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link href={`/admin/${params.cityId}/league/players`}>
+            <Link href={`/admin/league/players`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Link>

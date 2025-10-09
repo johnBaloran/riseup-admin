@@ -9,6 +9,8 @@ import { connectDB } from "../mongodb";
 import Player from "@/models/Player";
 import PaymentMethod from "@/models/PaymentMethod";
 import Division from "@/models/Division";
+import Location from "@/models/Location";
+import Team from "@/models/Team";
 
 /**
  * Get payment status for a player
@@ -74,8 +76,20 @@ export async function getPlayersWithPaymentStatus({
   // Build player filter
   const playerFilter: any = { division: { $in: divisionIds } };
   if (teamId) playerFilter.team = teamId;
+
   if (search) {
-    playerFilter.playerName = { $regex: search, $options: "i" };
+    const searchRegex = new RegExp(search, "i");
+
+    // find teams that match search
+    const matchingTeams = await Team.find({
+      teamName: { $regex: searchRegex },
+    }).select("_id");
+
+    playerFilter.$or = [
+      { playerName: { $regex: searchRegex } },
+      { "user.email": { $regex: searchRegex } },
+      { team: { $in: matchingTeams.map((t) => t._id) } },
+    ];
   }
 
   const players = await Player.find(playerFilter)

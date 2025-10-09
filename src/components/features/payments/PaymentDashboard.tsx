@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Download, Filter, X, Loader2 } from "lucide-react";
 import { PaymentsList } from "./PaymentsList";
 import { toast } from "sonner";
+import { Pagination } from "@/components/common/Pagination";
 
 interface PaymentDashboardProps {
   players: any[];
@@ -30,6 +31,7 @@ interface PaymentDashboardProps {
   currentFilters: {
     location?: string;
     division?: string;
+    limit?: number;
     team?: string;
     payment?: string;
     search?: string;
@@ -53,7 +55,9 @@ export function PaymentDashboard({
   // Calculate overall stats (unfiltered)
   const stats = useMemo(() => {
     const total = allPlayers.length;
-    const unpaid = allPlayers.filter((p) => p.paymentStatus === "unpaid").length;
+    const unpaid = allPlayers.filter(
+      (p) => p.paymentStatus === "unpaid"
+    ).length;
     const onTrack = allPlayers.filter(
       (p) => p.paymentStatus === "on-track"
     ).length;
@@ -329,68 +333,14 @@ export function PaymentDashboard({
       <PaymentsList players={paginatedPlayers} />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-600">
-            Showing {startIndex + 1} to {Math.min(endIndex, players.length)} of{" "}
-            {players.length} players
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => {
-                  // Show first page, last page, current page, and pages around current
-                  if (
-                    page === 1 ||
-                    page === totalPages ||
-                    (page >= currentPage - 1 && page <= currentPage + 1)
-                  ) {
-                    return (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className="min-w-[40px]"
-                      >
-                        {page}
-                      </Button>
-                    );
-                  } else if (
-                    page === currentPage - 2 ||
-                    page === currentPage + 2
-                  ) {
-                    return (
-                      <span key={page} className="px-2 text-gray-400">
-                        ...
-                      </span>
-                    );
-                  }
-                  return null;
-                }
-              )}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        total={players.length} // or your total items variable
+        limit={currentFilters.limit} // number of items per page
+        onPageChange={setCurrentPage}
+        label="players" // optional, "divisions", "teams", etc.
+      />
     </div>
   );
 }

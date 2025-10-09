@@ -26,7 +26,7 @@ interface PlayerCardProps {
   cityId: string;
 }
 
-export function PlayerCard({ player, cityId }: PlayerCardProps) {
+export function PlayerCard({ player }: PlayerCardProps) {
   const router = useRouter();
 
   const getPaymentBadge = () => {

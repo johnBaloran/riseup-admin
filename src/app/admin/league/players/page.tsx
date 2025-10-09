@@ -15,6 +15,7 @@ import { PlayersContent } from "@/components/features/league/players/PlayersCont
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { getAllLocations } from "@/lib/db/queries/locations";
 
 interface PlayersPageProps {
   params: { cityId: string };
@@ -22,6 +23,7 @@ interface PlayersPageProps {
     page?: string;
     payment?: string;
     division?: string;
+    location?: string;
     team?: string;
     freeAgents?: string;
     hasUser?: string;
@@ -50,13 +52,13 @@ export default async function PlayersPage({
     ? searchParams.hasUser === "true"
     : undefined;
 
-  const [result, divisions] = await Promise.all([
+  const [result, divisions, locations] = await Promise.all([
     getPlayers({
-      cityId: params.cityId,
       page,
       paymentFilter,
       divisionId: searchParams.division,
       teamId: searchParams.team,
+      locationId: searchParams.location,
       freeAgentsOnly,
       hasUserAccount,
       search: searchParams.search,
@@ -66,6 +68,7 @@ export default async function PlayersPage({
       limit: 100,
       activeFilter: "active",
     }),
+    getAllLocations(),
   ]);
 
   return (
@@ -91,10 +94,12 @@ export default async function PlayersPage({
         players={result.players as any}
         pagination={result.pagination}
         divisions={divisions.divisions as any}
+        locations={locations as any}
         cityId={params.cityId}
         currentFilters={{
           payment: paymentFilter,
           division: searchParams.division,
+          location: searchParams.location,
           team: searchParams.team,
           freeAgents: freeAgentsOnly,
           hasUser: hasUserAccount,

@@ -18,9 +18,9 @@ import { getDivisions } from "@/lib/db/queries/divisions";
 import { PaymentDashboard } from "@/components/features/payments/PaymentDashboard";
 
 interface PaymentPageProps {
-  params: { cityId: string };
   searchParams: {
     location?: string;
+    limit?: number;
     division?: string;
     team?: string;
     payment?: string;
@@ -28,10 +28,7 @@ interface PaymentPageProps {
   };
 }
 
-export default async function PaymentPage({
-  params,
-  searchParams,
-}: PaymentPageProps) {
+export default async function PaymentPage({ searchParams }: PaymentPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -77,6 +74,7 @@ export default async function PaymentPage({
         divisions={JSON.parse(JSON.stringify(divisions.divisions))}
         currentFilters={{
           location: searchParams.location,
+          limit: searchParams.limit,
           division: searchParams.division,
           team: searchParams.team,
           payment: searchParams.payment || "all",

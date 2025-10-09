@@ -15,6 +15,7 @@ import { connectDB } from "../mongodb";
 import Player from "@/models/Player";
 import Team from "@/models/Team";
 import Division from "@/models/Division";
+import Location from "@/models/Location";
 
 /**
  * Calculate player payment status with installment details
@@ -93,82 +94,104 @@ async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
  * Get players with filters and payment status
  */
 export async function getPlayers({
-  cityId,
   page = 1,
   limit = 12,
   divisionId,
   teamId,
+  locationId,
   paymentFilter = "all",
   freeAgentsOnly = false,
   hasUserAccount,
   search,
 }: {
-  cityId: string;
   page?: number;
   limit?: number;
   divisionId?: string;
+  locationId?: string;
   teamId?: string;
-  paymentFilter?: "all" | "paid" | "in_progress" | "unpaid";
+  paymentFilter?: "all" | "paid" | "installments" | "unpaid";
   freeAgentsOnly?: boolean;
   hasUserAccount?: boolean;
   search?: string;
 }) {
   await connectDB();
 
-  const skip = (page - 1) * limit;
-  const filter: any = {};
+  // --- Step 1: Get valid divisions (active or register) and optional location ---
+  const divisionFilter: any = { $or: [{ active: true }, { register: true }] };
+  if (divisionId) divisionFilter._id = divisionId;
+  if (locationId) divisionFilter.location = locationId;
 
-  // Filter by division/city
-  if (divisionId) {
-    filter.division = divisionId;
-  } else if (cityId) {
-    const divisions = await Division.find({ city: cityId }).select("_id");
-    filter.division = { $in: divisions.map((d) => d._id) };
+  const validDivisions = await Division.find(divisionFilter).select("_id");
+  const validDivisionIds = validDivisions.map((d) => d._id);
+
+  if (!validDivisionIds.length) {
+    // No divisions match, return empty result
+    return {
+      players: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
   }
 
-  // Filter by team
-  if (teamId) {
-    filter.team = teamId;
-  }
+  // --- Step 2: Build player filter ---
+  const filter: any = {
+    division: { $in: validDivisionIds },
+  };
 
-  // Free agents only
-  if (freeAgentsOnly) {
-    filter.$or = [{ team: { $exists: false } }, { team: null }];
-  }
+  if (teamId) filter.team = teamId;
 
-  // Has user account
+  if (freeAgentsOnly) filter.team = { $in: [null] }; // only players with no team
+
   if (hasUserAccount !== undefined) {
-    if (hasUserAccount) {
-      filter.user = { $exists: true, $ne: null };
-    } else {
-      filter.$or = [{ user: { $exists: false } }, { user: null }];
-    }
+    filter.user = hasUserAccount
+      ? { $exists: true, $ne: null }
+      : { $in: [null] };
   }
 
-  // Search
   if (search) {
-    // find all active + register divisions
-    const validDivisions = await Division.find({
-      active: true,
-      register: true,
+    const searchRegex = new RegExp(search, "i");
+
+    // find divisions that match search
+    const matchingDivisions = await Division.find({
+      divisionName: { $regex: searchRegex },
     }).select("_id");
 
-    filter.$and = [
-      { division: { $in: validDivisions.map((d) => d._id) } }, // only active + register
+    // find teams that match search
+    const matchingTeams = await Team.find({
+      teamName: { $regex: searchRegex },
+    }).select("_id");
+
+    // find locations that match search
+    const matchingLocations = await Location.find({
+      name: { $regex: searchRegex },
+    }).select("_id");
+
+    filter.$or = [
+      { playerName: { $regex: searchRegex } },
+      { "user.email": { $regex: searchRegex } },
+      { team: { $in: matchingTeams.map((t) => t._id) } },
+      { division: { $in: matchingDivisions.map((d) => d._id) } },
       {
-        $or: [
-          { playerName: { $regex: search, $options: "i" } },
-          // you can add more fields here (like email, teamName, etc.)
-        ],
+        division: {
+          $in: matchingDivisions
+            .filter((d) =>
+              matchingLocations.some((l) => l._id.equals(d.location))
+            )
+            .map((d) => d._id),
+        },
       },
     ];
   }
 
+  const skip = (page - 1) * limit;
+
+  // --- Step 3: Query players with pagination ---
   const [players, total] = await Promise.all([
     Player.find(filter)
       .populate("team", "teamName teamCode")
-      .populate("division", "divisionName")
+      .populate("division", "divisionName location")
       .populate("user", "name email")
+      .populate("paymentMethods")
+
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -176,49 +199,53 @@ export async function getPlayers({
     Player.countDocuments(filter),
   ]);
 
-  // Get payment status with installment details
-  const playersWithPayment = await Promise.all(
-    players.map(async (player: any) => {
-      const divisionId = player.division?._id || player.division;
-      const paymentInfo = await getPlayerPaymentStatus(
-        player._id.toString(),
-        divisionId.toString()
-      );
+  // --- Step 4: Add payment info ---
+  const playersWithPayment = players.map((player: any) => {
+    let status: "paid" | "unpaid" | "installments" = "unpaid";
+    let paymentMethod = null;
 
-      return {
-        ...player,
-        paymentStatus: paymentInfo.status,
-        paymentType: paymentInfo.type,
-        installmentProgress: paymentInfo.installmentProgress,
-        remainingBalance: paymentInfo.remainingBalance,
-        nextPaymentDate: paymentInfo.nextPaymentDate,
-      };
-    })
-  );
+    if (player.paymentMethods && player.paymentMethods.length > 0) {
+      paymentMethod = player.paymentMethods[0]; // use first method
 
-  // Filter by payment status
+      if (paymentMethod.paymentType === "FULL_PAYMENT") {
+        status = paymentMethod.status === "COMPLETED" ? "paid" : "unpaid";
+      } else if (paymentMethod.paymentType === "INSTALLMENTS") {
+        if (paymentMethod.status === "COMPLETED") {
+          status = "paid";
+        } else {
+          status = "installments";
+        }
+      }
+    }
+
+    return {
+      ...player,
+      paymentStatus: status,
+      paymentMethod,
+    };
+  });
+
+  // --- Step 5: Filter by payment status ---
   let filteredPlayers = playersWithPayment;
-  if (paymentFilter === "paid") {
-    filteredPlayers = playersWithPayment.filter(
-      (p) => p.paymentStatus === "paid"
+  if (paymentFilter === "paid")
+    filteredPlayers = filteredPlayers.filter((p) => p.paymentStatus === "paid");
+  else if (paymentFilter === "installments")
+    filteredPlayers = filteredPlayers.filter(
+      (p) => p.paymentStatus === "installments"
     );
-  } else if (paymentFilter === "in_progress") {
-    filteredPlayers = playersWithPayment.filter(
-      (p) => p.paymentStatus === "in_progress"
-    );
-  } else if (paymentFilter === "unpaid") {
-    filteredPlayers = playersWithPayment.filter(
+  else if (paymentFilter === "unpaid")
+    filteredPlayers = filteredPlayers.filter(
       (p) => p.paymentStatus === "unpaid"
     );
-  }
 
+  // --- Step 6: Return result with pagination ---
   return {
     players: filteredPlayers,
     pagination: {
-      total: filteredPlayers.length,
+      total,
       page,
       limit,
-      totalPages: Math.ceil(filteredPlayers.length / limit),
+      totalPages: Math.ceil(total / limit),
     },
   };
 }

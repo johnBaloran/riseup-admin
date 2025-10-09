@@ -20,10 +20,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import { PlayersGrid } from "./PlayersGrid";
 import { Pagination } from "@/components/common/Pagination";
 import { debounce } from "lodash";
+import { Button } from "@/components/ui/button";
 
 interface PlayersContentProps {
   players: any[];
@@ -33,11 +34,13 @@ interface PlayersContentProps {
     limit: number;
     totalPages: number;
   };
+  locations: any[];
   divisions: any[];
   cityId: string;
   currentFilters: {
     payment?: string;
     division?: string;
+    location?: string;
     team?: string;
     freeAgents?: boolean;
     hasUser?: boolean;
@@ -48,6 +51,7 @@ interface PlayersContentProps {
 export function PlayersContent({
   players,
   pagination,
+  locations,
   divisions,
   cityId,
   currentFilters,
@@ -94,12 +98,29 @@ export function PlayersContent({
     };
   }, [debouncedUpdateFilters]);
 
-  console.log("players:", players);
+  const filteredDivisions = useMemo(() => {
+    if (!currentFilters.location || currentFilters.location === "all") {
+      return divisions;
+    }
+    return divisions.filter((d) => d.location?._id === currentFilters.location);
+  }, [divisions, currentFilters.location]);
+
+  const clearAllFilters = () => {
+    router.push(`/admin/league/players`);
+    setSearchValue("");
+  };
+
+  const hasActiveFilters =
+    currentFilters.location ||
+    currentFilters.division ||
+    currentFilters.team ||
+    currentFilters.payment !== "all" ||
+    currentFilters.search;
 
   return (
     <div className="space-y-6">
       {/* Payment Status Tabs */}
-      <Tabs
+      {/* <Tabs
         value={currentFilters.payment || "all"}
         onValueChange={(value) => updateFilters({ payment: value })}
       >
@@ -109,7 +130,7 @@ export function PlayersContent({
           <TabsTrigger value="in_progress">Installments</TabsTrigger>
           <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
         </TabsList>
-      </Tabs>
+      </Tabs> */}
 
       {/* Filters */}
       <div className="flex flex-col gap-4">
@@ -125,6 +146,27 @@ export function PlayersContent({
           </div>
 
           <Select
+            value={currentFilters.location || "all"}
+            onValueChange={(value) =>
+              updateFilters({
+                location: value === "all" ? undefined : value,
+                division: undefined,
+              })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locations.map((location: any) => (
+                <SelectItem key={location._id} value={location._id}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={currentFilters.division || "all"}
             onValueChange={(value) =>
               updateFilters({ division: value === "all" ? undefined : value })
@@ -135,13 +177,24 @@ export function PlayersContent({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Divisions</SelectItem>
-              {divisions.map((division: any) => (
+              {filteredDivisions.map((division: any) => (
                 <SelectItem key={division._id} value={division._id}>
-                  {division.divisionName}
+                  {division.location?.name} - {division.divisionName}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-end">
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              disabled={!hasActiveFilters}
+              className="w-full"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4">
@@ -171,6 +224,38 @@ export function PlayersContent({
             </Label>
           </div>
         </div>
+        {/* Active Filters */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <span className="text-sm text-gray-500">Active Filters:</span>
+            <div className="flex flex-wrap gap-2">
+              {currentFilters.location && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  Location
+                </span>
+              )}
+              {currentFilters.division && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  Division
+                </span>
+              )}
+              {currentFilters.payment !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  {currentFilters.payment}
+                </span>
+              )}
+              {currentFilters.search && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Search className="h-3 w-3" />
+                  {currentFilters.search}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Players Grid */}
@@ -180,9 +265,10 @@ export function PlayersContent({
       <Pagination
         currentPage={pagination.page}
         totalPages={pagination.totalPages}
-        total={pagination.total}
-        limit={pagination.limit}
+        total={pagination.total} // or your total items variable
+        limit={pagination.limit} // number of items per page
         onPageChange={(page) => updateFilters({ page: page.toString() })}
+        label="players" // optional, "divisions", "teams", etc.
       />
     </div>
   );
