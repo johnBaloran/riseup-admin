@@ -138,7 +138,7 @@ export function DivisionsContent({
             <SelectItem value="all">All Levels</SelectItem>
             {levels.map((level) => (
               <SelectItem key={level._id} value={level._id}>
-                Grade {level.grade} - {level.name}
+                {level.name}
               </SelectItem>
             ))}
           </SelectContent>

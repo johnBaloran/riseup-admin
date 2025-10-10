@@ -78,7 +78,10 @@ export default async function RosterPage({ params }: RosterPageProps) {
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <p className="font-medium text-blue-900">
-                  Team Created: {teamCreatedAt ? format(new Date(teamCreatedAt), "MMMM dd, yyyy") : "N/A"}
+                  Team Created:{" "}
+                  {teamCreatedAt
+                    ? format(new Date(teamCreatedAt), "MMMM dd, yyyy")
+                    : "N/A"}
                 </p>
                 {isEarlyBird ? (
                   <Badge className="bg-green-600 hover:bg-green-700">
@@ -93,9 +96,14 @@ export default async function RosterPage({ params }: RosterPageProps) {
               {earlyBirdDeadline && (
                 <p className="text-sm text-blue-700">
                   {isEarlyBird
-                    ? `This team was created before the early bird deadline (${format(earlyBirdDeadline, "MMM dd, yyyy")}). Players will receive default jerseys.`
-                    : `This team was created after the early bird deadline (${format(earlyBirdDeadline, "MMM dd, yyyy")}). Players will NOT receive default jerseys.`
-                  }
+                    ? `This team was created before the early bird deadline (${format(
+                        earlyBirdDeadline,
+                        "MMM dd, yyyy"
+                      )}). Players will receive custom jerseys.`
+                    : `This team was created after the early bird deadline (${format(
+                        earlyBirdDeadline,
+                        "MMM dd, yyyy"
+                      )}). Players will NOT receive custom jerseys.`}
                 </p>
               )}
             </div>

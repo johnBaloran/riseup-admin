@@ -1,4 +1,4 @@
-// src/app/api/v1/[cityId]/teams/route.ts
+// src/app/api/v1/teams/route.ts
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -21,13 +21,10 @@ import { z } from "zod";
 import Team from "@/models/Team";
 
 /**
- * GET /api/v1/[cityId]/teams
+ * GET /api/v1/teams
  * Get teams with pagination (EXECUTIVE + COMMISSIONER)
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -40,20 +37,23 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
-    const paymentFilter = (searchParams.get("tab") as any) || "all";
+    const activeFilter = (searchParams.get("tab") as any) || "active";
     const divisionId = searchParams.get("division") || undefined;
     const locationId = searchParams.get("location") || undefined;
     const search = searchParams.get("search") || undefined;
     const viewMode = (searchParams.get("view") as any) || "card";
+    const noCaptain = searchParams.get("noCaptain") === "true";
+    const noPlayers = searchParams.get("noPlayers") === "true";
 
     const result = await getTeams({
-      cityId: params.cityId,
       page,
-      paymentFilter,
+      activeFilter,
       divisionId,
       locationId,
       search,
       viewMode,
+      noCaptain,
+      noPlayers,
     });
 
     return NextResponse.json({ success: true, data: result }, { status: 200 });
@@ -67,13 +67,10 @@ export async function GET(
 }
 
 /**
- * POST /api/v1/[cityId]/teams
+ * POST /api/v1/teams
  * Create team (EXECUTIVE + COMMISSIONER)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -120,13 +117,10 @@ export async function POST(
 }
 
 /**
- * PATCH /api/v1/[cityId]/teams
+ * PATCH /api/v1/teams
  * Update team (EXECUTIVE + COMMISSIONER)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -189,13 +183,10 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/v1/[cityId]/teams
+ * DELETE /api/v1/teams
  * Delete team (EXECUTIVE + COMMISSIONER)
  */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 

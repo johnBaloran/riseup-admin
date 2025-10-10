@@ -92,7 +92,7 @@ export function EditTeamForm({ team, cityId, cities }: EditTeamFormProps) {
     setLoadingDivisions(true);
     try {
       const response = await fetch(
-        `/api/v1/${cityId}/divisions?page=1&limit=100`
+        `/api/v1/divisions?page=1&limit=100&tab=active`
       );
       const result = await response.json();
 
@@ -149,7 +149,7 @@ export function EditTeamForm({ team, cityId, cities }: EditTeamFormProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/v1/${cityId}/teams`, {
+      const response = await fetch(`/api/v1/teams`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -203,7 +203,7 @@ export function EditTeamForm({ team, cityId, cities }: EditTeamFormProps) {
                 <SelectContent>
                   {divisions.map((division: any) => (
                     <SelectItem key={division._id} value={division._id}>
-                      {division.divisionName} ({division.city?.cityName})
+                      {division.location.name} - {division.divisionName}
                     </SelectItem>
                   ))}
                 </SelectContent>

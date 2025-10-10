@@ -37,7 +37,7 @@ export default async function EditDivisionPage({
   const [division, cities, levels] = await Promise.all([
     getDivisionById(params.id),
     getActiveCities(),
-    getAllLevels(),
+    getAllLevels(null, true), // true = activeOnly for division forms
   ]);
 
   if (!division) {

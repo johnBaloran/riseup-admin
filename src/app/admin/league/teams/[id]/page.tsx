@@ -25,6 +25,7 @@ import {
   Building2,
   TrendingUp,
   Clock,
+  UserCheck,
 } from "lucide-react";
 import { format, subDays, isBefore } from "date-fns";
 
@@ -294,11 +295,23 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                     </div>
                     <div>
                       <p className="font-medium">{player.playerName}</p>
-                      {player._id === team.teamCaptain?._id && (
-                        <Badge variant="outline" className="mt-1">
-                          Captain
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {player._id === team.teamCaptain?._id && (
+                          <Badge variant="outline">
+                            Captain
+                          </Badge>
+                        )}
+                        {player.user ? (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Has Account
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200">
+                            No Account
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <Button variant="ghost" size="sm" asChild>

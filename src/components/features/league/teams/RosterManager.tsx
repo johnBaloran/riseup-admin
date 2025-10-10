@@ -12,11 +12,29 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, Trash2, AlertCircle, Plus } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  Trash2,
+  AlertCircle,
+  Plus,
+  UserCheck,
+  UserMinus,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AddPlayerDialog } from "./AddPlayerDialog";
 import { RemovePlayerDialog } from "./RemovePlayerDialog";
 import { QuickCreatePlayerDialog } from "./QuickCreatePlayerDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface RosterManagerProps {
   team: any;
@@ -29,6 +47,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
   const [loadingFreeAgents, setLoadingFreeAgents] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showQuickCreateDialog, setShowQuickCreateDialog] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,9 +59,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
   const fetchFreeAgents = async () => {
     setLoadingFreeAgents(true);
     try {
-      const response = await fetch(
-        `/api/v1/${cityId}/teams/${team._id}/roster`
-      );
+      const response = await fetch(`/api/v1/teams/${team._id}/roster`);
       const result = await response.json();
 
       if (result.success) {
@@ -89,7 +106,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
     setIsProcessing(true);
     try {
       const response = await fetch(
-        `/api/v1/${cityId}/teams/${team._id}/roster?playerId=${playerId}`,
+        `/api/v1/teams/${team._id}/roster?playerId=${playerId}`,
         {
           method: "DELETE",
         }
@@ -101,13 +118,38 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         throw new Error(result.error || "Failed to remove player");
       }
 
-      toast.success("Player removed from roster");
+      toast.success("Player removed from roster (now free agent)");
       setShowRemoveDialog(false);
       setSelectedPlayer(null);
       router.refresh();
       fetchFreeAgents();
     } catch (error: any) {
       toast.error(error.message || "Failed to remove player");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: string) => {
+    setIsProcessing(true);
+    try {
+      const response = await fetch(`/api/v1/players?id=${playerId}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete player");
+      }
+
+      toast.success("Player deleted successfully");
+      setShowDeleteDialog(false);
+      setSelectedPlayer(null);
+      router.refresh();
+      fetchFreeAgents();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete player");
     } finally {
       setIsProcessing(false);
     }
@@ -182,23 +224,55 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
                     </div>
                     <div>
                       <p className="font-medium">{player.playerName}</p>
-                      {player._id === team.teamCaptain?._id && (
-                        <Badge variant="outline" className="mt-1">
-                          Captain
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {player._id === team.teamCaptain?._id && (
+                          <Badge variant="outline">Captain</Badge>
+                        )}
+                        {player.user ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 border-green-200"
+                          >
+                            <UserCheck className="h-3 w-3 mr-1" />
+                            Has Account
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-gray-50 text-gray-600 border-gray-200"
+                          >
+                            No Account
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPlayer(player);
-                      setShowRemoveDialog(true);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedPlayer(player);
+                        setShowRemoveDialog(true);
+                      }}
+                      title="Make free agent"
+                    >
+                      <UserMinus className="h-4 w-4 text-orange-600" />
+                    </Button>
+                    {!player.user && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPlayer(player);
+                          setShowDeleteDialog(true);
+                        }}
+                        title="Delete player (only for players without accounts)"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -239,6 +313,22 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
                     </div>
                     <div>
                       <p className="font-medium">{player.playerName}</p>
+                      {player.user ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-green-50 text-green-700 border-green-200 mt-1"
+                        >
+                          <UserCheck className="h-3 w-3 mr-1" />
+                          Has Account
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="bg-gray-50 text-gray-600 border-gray-200 mt-1"
+                        >
+                          No Account
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -273,6 +363,42 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
         isProcessing={isProcessing}
         isCaptain={selectedPlayer?._id === team.teamCaptain?._id}
       />
+
+      {/* Delete Player Dialog */}
+      {selectedPlayer && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Player?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to permanently delete{" "}
+                <strong>{selectedPlayer.playerName}</strong>? This action cannot
+                be undone.
+                {selectedPlayer.user && (
+                  <div className="flex items-start gap-2 mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-red-800">
+                      This player has a user account linked. You cannot delete
+                      players with linked accounts. Please make them a free
+                      agent instead.
+                    </p>
+                  </div>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleDeletePlayer(selectedPlayer._id)}
+                disabled={isProcessing || selectedPlayer.user}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isProcessing ? "Deleting..." : "Delete Player"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       <QuickCreatePlayerDialog
         open={showQuickCreateDialog}

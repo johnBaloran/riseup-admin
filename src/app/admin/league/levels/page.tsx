@@ -1,4 +1,4 @@
-// src/app/admin/[cityId]/league/levels/page.tsx
+// src/app/admin/league/levels/page.tsx
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -9,17 +9,13 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
-import { getAllLevels } from "@/lib/db/queries/levels";
-import { LevelsTable } from "@/components/features/league/levels/LevelsTable";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Plus } from "lucide-react";
+import { LevelsContent } from "@/components/features/league/levels/LevelsContent";
 
 interface LevelsPageProps {
-  params: { cityId: string };
+  searchParams: { tab?: string };
 }
 
-export default async function LevelsPage({ params }: LevelsPageProps) {
+export default async function LevelsPage({ searchParams }: LevelsPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -30,7 +26,7 @@ export default async function LevelsPage({ params }: LevelsPageProps) {
     redirect("/unauthorized");
   }
 
-  const levels = await getAllLevels();
+  const activeFilter = searchParams.tab || "active";
 
   return (
     <div className="p-6 space-y-6">
@@ -41,15 +37,9 @@ export default async function LevelsPage({ params }: LevelsPageProps) {
             Manage skill levels for league divisions (Grade 1 = Highest)
           </p>
         </div>
-        <Button asChild>
-          <Link href={`/admin/${params.cityId}/league/levels/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Level
-          </Link>
-        </Button>
       </div>
 
-      <LevelsTable levels={levels} cityId={params.cityId} />
+      <LevelsContent activeFilter={activeFilter} />
     </div>
   );
 }

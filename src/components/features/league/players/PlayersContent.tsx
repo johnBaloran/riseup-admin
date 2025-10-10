@@ -115,11 +115,22 @@ export function PlayersContent({
     };
   }, [debouncedUpdateFilters]);
 
+  // Sort locations by name
+  const sortedLocations = useMemo(() => {
+    return [...locations].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '')
+    );
+  }, [locations]);
+
+  // Filter and sort divisions by location name
   const filteredDivisions = useMemo(() => {
-    if (!currentFilters.location || currentFilters.location === "all") {
-      return divisions;
+    let filtered = divisions;
+    if (currentFilters.location && currentFilters.location !== "all") {
+      filtered = divisions.filter((d) => d.location?._id === currentFilters.location);
     }
-    return divisions.filter((d) => d.location?._id === currentFilters.location);
+    return filtered.sort((a, b) =>
+      (a.location?.name || '').localeCompare(b.location?.name || '')
+    );
   }, [divisions, currentFilters.location]);
 
   const clearAllFilters = () => {
@@ -190,7 +201,7 @@ export function PlayersContent({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location: any) => (
+              {sortedLocations.map((location: any) => (
                 <SelectItem key={location._id} value={location._id}>
                   {location.name}
                 </SelectItem>

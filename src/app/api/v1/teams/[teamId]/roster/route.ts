@@ -1,4 +1,4 @@
-// src/app/api/v1/[cityId]/teams/[teamId]/roster/route.ts
+// src/app/api/v1/teams/[teamId]/roster/route.ts
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -17,12 +17,12 @@ import {
 import { getTeamById } from "@/lib/db/queries/teams";
 
 /**
- * GET /api/v1/[cityId]/teams/[teamId]/roster
+ * GET /api/v1/teams/[teamId]/roster
  * Get free agents for team's division
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { cityId: string; teamId: string } }
+  { params }: { params: { teamId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -62,12 +62,12 @@ export async function GET(
 }
 
 /**
- * POST /api/v1/[cityId]/teams/[teamId]/roster
+ * POST /api/v1/teams/[teamId]/roster
  * Add player to team roster
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { cityId: string; teamId: string } }
+  { params }: { params: { teamId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -105,12 +105,12 @@ export async function POST(
 }
 
 /**
- * DELETE /api/v1/[cityId]/teams/[teamId]/roster
+ * DELETE /api/v1/teams/[teamId]/roster
  * Remove player from team roster
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { cityId: string; teamId: string } }
+  { params }: { params: { teamId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);

@@ -1,4 +1,4 @@
-// src/app/admin/[cityId]/league/teams/page.tsx
+// src/app/adminleague/teams/page.tsx
 
 /**
  * SOLID - Single Responsibility Principle (SRP)

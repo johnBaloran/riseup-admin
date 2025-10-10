@@ -54,7 +54,7 @@ export default async function DivisionsPage({
       search: searchParams.search,
     }),
     getAllLocations(),
-    getAllLevels(),
+    getAllLevels(null, true), // true = activeOnly for division forms
   ]);
 
   return (

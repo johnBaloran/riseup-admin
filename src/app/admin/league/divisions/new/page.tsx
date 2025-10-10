@@ -30,7 +30,7 @@ export default async function CreateDivisionPage() {
 
   const [cities, levels, prices] = await Promise.all([
     getActiveCities(),
-    getAllLevels(),
+    getAllLevels(null, true), // true = activeOnly for division forms
     getAllPrices(),
   ]);
 

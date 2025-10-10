@@ -277,7 +277,7 @@ export function CreateDivisionForm({
               <SelectContent>
                 {levels.map((level) => (
                   <SelectItem key={level._id} value={level._id}>
-                    Grade {level.grade} - {level.name}
+                    {level.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -530,7 +530,6 @@ export function CreateDivisionForm({
               </div>
             </div>
           </div>
-
         </CardContent>
       </Card>
 

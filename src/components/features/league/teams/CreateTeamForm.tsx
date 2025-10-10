@@ -27,14 +27,13 @@ import { toast } from "sonner";
 import { createTeamSchema, CreateTeamInput } from "@/lib/validations/team";
 
 interface CreateTeamFormProps {
-  cityId: string;
   cities: any[];
 }
 
-export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
+export function CreateTeamForm({ cities }: CreateTeamFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCity, setSelectedCity] = useState(cityId);
+  const [selectedCity, setSelectedCity] = useState("");
   const [loadingDivisions, setLoadingDivisions] = useState(false);
   const [divisions, setDivisions] = useState<any[]>([]);
 
@@ -47,7 +46,7 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
   } = useForm<CreateTeamInput>({
     resolver: zodResolver(createTeamSchema),
     defaultValues: {
-      city: cityId,
+      city: cities[0]?._id || "",
     },
   });
 
@@ -60,19 +59,23 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
     return city?.locations || [];
   }, [cities, selectedCity]);
 
-  // Fetch divisions when city or location changes
-  const fetchDivisions = async (cityId: string, locationId?: string) => {
+  // Fetch divisions when location changes (active/register only)
+  const fetchDivisions = async (locationId?: string) => {
+    if (!locationId) {
+      setDivisions([]);
+      return;
+    }
+
     setLoadingDivisions(true);
     try {
       const params = new URLSearchParams({
         page: "1",
         limit: "100",
+        location: locationId,
+        tab: "active", // Only fetch active or register divisions
       });
-      if (locationId) params.append("location", locationId);
 
-      const response = await fetch(
-        `/api/v1/${cityId}/divisions?${params.toString()}`
-      );
+      const response = await fetch(`/api/v1/divisions?${params.toString()}`);
       const result = await response.json();
 
       if (result.success) {
@@ -86,18 +89,20 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
     }
   };
 
-  // Fetch divisions when city changes
+  // Fetch divisions when location changes
   useMemo(() => {
-    if (selectedCity) {
-      fetchDivisions(selectedCity, selectedLocation);
+    if (selectedLocation) {
+      fetchDivisions(selectedLocation);
+    } else {
+      setDivisions([]);
     }
-  }, [selectedCity, selectedLocation]);
+  }, [selectedLocation]);
 
   const onSubmit = async (data: CreateTeamInput) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/v1/${cityId}/teams`, {
+      const response = await fetch(`/api/v1/teams`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -147,7 +152,7 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
               disabled={isLoading}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder={"Select city"} />
               </SelectTrigger>
               <SelectContent>
                 {cities.map((city) => (
@@ -170,10 +175,20 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
                 setValue("location", value, { shouldValidate: true });
                 setValue("division", "", { shouldValidate: false });
               }}
-              disabled={isLoading || availableLocations.length === 0}
+              disabled={
+                isLoading || !selectedCity || availableLocations.length === 0
+              }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select location" />
+                <SelectValue
+                  placeholder={
+                    !selectedCity
+                      ? "Select city first"
+                      : availableLocations.length === 0
+                      ? "No locations available"
+                      : "Select location"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {availableLocations.map((location: any) => (
@@ -191,6 +206,11 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
                 {errors.location.message}
               </p>
             )}
+            {!selectedCity && (
+              <p className="text-sm text-gray-500 mt-1">
+                Please select a city first to see available locations.
+              </p>
+            )}
           </div>
 
           <div>
@@ -200,12 +220,23 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
               onValueChange={(value) =>
                 setValue("division", value, { shouldValidate: true })
               }
-              disabled={isLoading || loadingDivisions || divisions.length === 0}
+              disabled={
+                isLoading ||
+                loadingDivisions ||
+                !selectedLocation ||
+                divisions.length === 0
+              }
             >
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    loadingDivisions ? "Loading..." : "Select division"
+                    !selectedLocation
+                      ? "Select location first"
+                      : loadingDivisions
+                      ? "Loading divisions..."
+                      : divisions.length === 0
+                      ? "No active divisions available"
+                      : "Select division"
                   }
                 />
               </SelectTrigger>
@@ -222,6 +253,18 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
                 {errors.division.message}
               </p>
             )}
+            {!selectedLocation && (
+              <p className="text-sm text-gray-500 mt-1">
+                Please select a location first to see available divisions.
+              </p>
+            )}
+            {!loadingDivisions &&
+              divisions.length === 0 &&
+              selectedLocation && (
+                <p className="text-sm text-gray-500 mt-1">
+                  No active divisions available for this location.
+                </p>
+              )}
           </div>
         </CardContent>
       </Card>
@@ -267,11 +310,10 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
             <Input
               {...register("teamCode")}
               id="teamCode"
-              placeholder="TOR-RAP"
+              placeholder="aBcd123"
               disabled={isLoading}
               onChange={(e) => {
-                const upper = e.target.value.toUpperCase();
-                setValue("teamCode", upper);
+                setValue("teamCode", e.target.value);
               }}
             />
             {errors.teamCode && (
@@ -279,10 +321,6 @@ export function CreateTeamForm({ cityId, cities }: CreateTeamFormProps) {
                 {errors.teamCode.message}
               </p>
             )}
-            <p className="text-sm text-gray-500 mt-1">
-              Will be converted to uppercase. Must be unique within the
-              division.
-            </p>
           </div>
         </CardContent>
       </Card>

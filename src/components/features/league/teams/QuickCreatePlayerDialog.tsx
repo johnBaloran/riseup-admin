@@ -86,7 +86,7 @@ export function QuickCreatePlayerDialog({
         jerseySize: data.jerseySize,
       };
 
-      const response = await fetch(`/api/v1/${cityId}/players`, {
+      const response = await fetch(`/api/v1/players`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(createPayload),

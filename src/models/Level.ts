@@ -12,6 +12,7 @@ const Schema = mongoose.Schema;
 export interface ILevel extends mongoose.Document {
   name: string;
   grade: number;
+  active: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,6 +29,10 @@ const levelSchema = new Schema<ILevel>(
       type: Number,
       required: [true, "Grade is required"],
       min: [1, "Grade must be at least 1"],
+    },
+    active: {
+      type: Boolean,
+      default: true,
     },
   },
   {

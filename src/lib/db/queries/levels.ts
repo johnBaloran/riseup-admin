@@ -11,9 +11,22 @@ import Level from "@/models/Level";
 /**
  * Get all levels (sorted by grade ascending - 1 is highest)
  */
-export async function getAllLevels() {
+export async function getAllLevels(activeFilter?: string | null, activeOnly?: boolean) {
   await connectDB();
-  return Level.find().sort({ grade: 1 }).lean();
+
+  const filter: any = {};
+
+  if (activeOnly) {
+    // For division forms - only show active levels
+    filter.active = true;
+  } else if (activeFilter === "active") {
+    filter.active = true;
+  } else if (activeFilter === "inactive") {
+    filter.active = false;
+  }
+  // If activeFilter is null/undefined, show all
+
+  return Level.find(filter).sort({ grade: 1 }).lean();
 }
 
 /**
@@ -27,7 +40,7 @@ export async function getLevelById(id: string) {
 /**
  * Create new level
  */
-export async function createLevel(data: { name: string; grade: number }) {
+export async function createLevel(data: { name: string; grade: number; active?: boolean }) {
   await connectDB();
 
   const level = await Level.create(data);
@@ -43,6 +56,7 @@ export async function updateLevel(
   data: {
     name?: string;
     grade?: number;
+    active?: boolean;
   }
 ) {
   await connectDB();

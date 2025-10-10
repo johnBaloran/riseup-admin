@@ -271,7 +271,7 @@ export function EditDivisionForm({
               <SelectContent>
                 {levels.map((level: any) => (
                   <SelectItem key={level._id} value={level._id}>
-                    Grade {level.grade} - {level.name}
+                    {level.name}
                   </SelectItem>
                 ))}
               </SelectContent>

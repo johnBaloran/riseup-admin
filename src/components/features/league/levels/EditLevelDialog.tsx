@@ -21,14 +21,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { createLevelSchema, CreateLevelInput } from "@/lib/validations/level";
+import { updateLevelSchema, UpdateLevelInput } from "@/lib/validations/level";
 
 interface Level {
   _id: string;
   name: string;
   grade: number;
+  active: boolean;
 }
 
 interface EditLevelDialogProps {
@@ -50,34 +52,39 @@ export function EditLevelDialog({
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<CreateLevelInput>({
-    resolver: zodResolver(createLevelSchema),
+    watch,
+    setValue,
+  } = useForm<UpdateLevelInput>({
+    resolver: zodResolver(updateLevelSchema),
     defaultValues: {
+      id: level._id,
       name: level.name,
       grade: level.grade,
+      active: level.active,
     },
   });
 
   useEffect(() => {
     if (open) {
       reset({
+        id: level._id,
         name: level.name,
         grade: level.grade,
+        active: level.active,
       });
     }
   }, [open, level, reset]);
 
-  const onSubmit = async (data: CreateLevelInput) => {
+  const activeValue = watch("active");
+
+  const onSubmit = async (data: UpdateLevelInput) => {
     setIsLoading(true);
 
     try {
       const response = await fetch("/api/v1/league/levels", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: level._id,
-          ...data,
-        }),
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
@@ -131,6 +138,21 @@ export function EditLevelDialog({
             <p className="text-sm text-gray-500 mt-1">
               Grade 1 = Highest skill level. Each grade must be unique.
             </p>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="edit-active">Active Status</Label>
+              <p className="text-sm text-gray-500">
+                Only active levels are shown when creating divisions
+              </p>
+            </div>
+            <Switch
+              id="edit-active"
+              checked={activeValue}
+              onCheckedChange={(checked) => setValue("active", checked)}
+              disabled={isLoading}
+            />
           </div>
 
           <div className="flex gap-4 justify-end">

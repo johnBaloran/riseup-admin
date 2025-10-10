@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const levels = await getAllLevels();
+    const { searchParams } = new URL(request.url);
+    const activeFilter = searchParams.get("active");
+    const activeOnly = searchParams.get("activeOnly") === "true";
+
+    const levels = await getAllLevels(activeFilter, activeOnly);
 
     return NextResponse.json({ success: true, data: levels }, { status: 200 });
   } catch (error: any) {

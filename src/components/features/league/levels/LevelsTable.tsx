@@ -31,20 +31,28 @@ interface Level {
   _id: string;
   name: string;
   grade: number;
+  active: boolean;
 }
 
 interface LevelsTableProps {
   levels: Level[];
-  cityId: string;
+  onUpdate?: () => void;
 }
 
-export function LevelsTable({ levels, cityId }: LevelsTableProps) {
+export function LevelsTable({ levels, onUpdate }: LevelsTableProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<Level | null>(null);
 
   const handleEdit = (level: Level) => {
     setSelectedLevel(level);
     setEditDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setEditDialogOpen(open);
+    if (!open && onUpdate) {
+      onUpdate();
+    }
   };
 
   const getGradeBadgeColor = (grade: number) => {
@@ -62,6 +70,7 @@ export function LevelsTable({ levels, cityId }: LevelsTableProps) {
             <TableRow>
               <TableHead>Grade</TableHead>
               <TableHead>Level Name</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Description</TableHead>
               <TableHead className="w-[70px]"></TableHead>
             </TableRow>
@@ -70,7 +79,7 @@ export function LevelsTable({ levels, cityId }: LevelsTableProps) {
             {levels.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={4}
+                  colSpan={5}
                   className="text-center py-8 text-gray-500"
                 >
                   No skill levels found. Create your first level to get started.
@@ -89,6 +98,18 @@ export function LevelsTable({ levels, cityId }: LevelsTableProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="font-medium">{level.name}</TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        level.active
+                          ? "bg-green-50 text-green-700 border-green-200"
+                          : "bg-gray-50 text-gray-600 border-gray-200"
+                      }
+                    >
+                      {level.active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-sm text-gray-600">
                     {level.grade === 1 && "Highest skill level"}
                     {level.grade === 2 && "Intermediate skill level"}
@@ -121,7 +142,7 @@ export function LevelsTable({ levels, cityId }: LevelsTableProps) {
         <EditLevelDialog
           level={selectedLevel}
           open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
+          onOpenChange={handleDialogClose}
         />
       )}
     </>

@@ -41,15 +41,20 @@ export async function getTeams({
   // --- Step 1: Get valid divisions based on active filter ---
   const divisionFilter: any = {};
 
-  if (activeFilter === "active") {
-    divisionFilter.$or = [{ active: true }, { register: true }];
-  } else if (activeFilter === "inactive") {
-    divisionFilter.active = false;
-    divisionFilter.register = false;
+  // If a specific divisionId is provided, bypass active filter
+  if (divisionId) {
+    divisionFilter._id = divisionId;
+  } else {
+    // Only apply active filter when no specific division is requested
+    if (activeFilter === "active") {
+      divisionFilter.$or = [{ active: true }, { register: true }];
+    } else if (activeFilter === "inactive") {
+      divisionFilter.active = false;
+      divisionFilter.register = false;
+    }
+    // If "all", no active/register filter
   }
-  // If "all", no active/register filter
 
-  if (divisionId) divisionFilter._id = divisionId;
   if (locationId) divisionFilter.location = locationId;
 
   const validDivisions = await Division.find(divisionFilter).select("_id");
@@ -132,8 +137,8 @@ export async function getTeamById(id: string) {
         { path: "level", select: "name grade" },
       ],
     })
-    .populate("teamCaptain", "playerName jerseyNumber")
-    .populate("players", "playerName jerseyNumber")
+    .populate("teamCaptain", "playerName jerseyNumber user")
+    .populate("players", "playerName jerseyNumber user")
     .populate("games")
     .lean();
 }
@@ -158,6 +163,11 @@ export async function createTeam(data: {
     pointDifference: 0,
     players: [],
     games: [],
+  });
+
+  // Add team to division's teams array
+  await Division.findByIdAndUpdate(data.division, {
+    $addToSet: { teams: team._id },
   });
 
   return team.toObject();
@@ -188,6 +198,57 @@ export async function updateTeam(
     updateData.teamCode = data.teamCode.toUpperCase();
   }
 
+  // Fetch team for division and captain change handling
+  const team = await Team.findById(id);
+  if (!team) {
+    throw new Error("Team not found");
+  }
+
+  // If division is being changed, update division arrays and player divisions
+  if (data.division) {
+    const oldDivisionId = team.division.toString();
+    const newDivisionId = data.division;
+
+    // Only update if division actually changed
+    if (oldDivisionId !== newDivisionId) {
+      // Remove team from old division's teams array
+      await Division.findByIdAndUpdate(oldDivisionId, {
+        $pull: { teams: team._id },
+      });
+
+      // Add team to new division's teams array
+      await Division.findByIdAndUpdate(newDivisionId, {
+        $addToSet: { teams: team._id },
+      });
+
+      // Update all players in this team to the new division
+      await Player.updateMany(
+        { _id: { $in: team.players } },
+        { $set: { division: newDivisionId } }
+      );
+    }
+  }
+
+  // If team captain is being changed, update player teamCaptain flags
+  if (data.teamCaptain !== undefined) {
+    const oldCaptainId = team.teamCaptain?.toString();
+    const newCaptainId = data.teamCaptain;
+
+    // Remove captain flag from old captain (if exists)
+    if (oldCaptainId && oldCaptainId !== newCaptainId) {
+      await Player.findByIdAndUpdate(oldCaptainId, {
+        $set: { teamCaptain: false },
+      });
+    }
+
+    // Set captain flag for new captain (if not null)
+    if (newCaptainId) {
+      await Player.findByIdAndUpdate(newCaptainId, {
+        $set: { teamCaptain: true },
+      });
+    }
+  }
+
   return Team.findByIdAndUpdate(id, updateData, { new: true }).lean();
 }
 
@@ -212,6 +273,11 @@ export async function deleteTeam(id: string) {
   if (team.games.length > 0) {
     throw new Error("Cannot delete team with game history.");
   }
+
+  // Remove team from division's teams array
+  await Division.findByIdAndUpdate(team.division, {
+    $pull: { teams: team._id },
+  });
 
   await Team.findByIdAndDelete(id);
 }
