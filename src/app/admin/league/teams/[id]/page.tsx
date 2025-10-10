@@ -24,7 +24,9 @@ import {
   AlertCircle,
   Building2,
   TrendingUp,
+  Clock,
 } from "lucide-react";
+import { format, subDays, isBefore } from "date-fns";
 
 interface TeamDetailPageProps {
   params: { cityId: string; id: string };
@@ -52,6 +54,17 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
 
   const noCaptainWarning =
     !team.teamCaptain && team.players && team.players.length > 0;
+
+  // Calculate early bird status
+  const divisionStartDate = (team.division as any)?.startDate;
+  const earlyBirdDeadline = divisionStartDate
+    ? subDays(new Date(divisionStartDate), 42)
+    : null;
+  const teamCreatedAt = (team as any).createdAt;
+  const isEarlyBird =
+    earlyBirdDeadline && teamCreatedAt
+      ? isBefore(new Date(teamCreatedAt), earlyBirdDeadline)
+      : false;
 
   return (
     <div className="p-6 space-y-6">
@@ -150,6 +163,41 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
                     <span className="text-yellow-600">Not assigned</span>
                   )}
                 </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Clock className="h-5 w-5 text-gray-400" />
+              <div>
+                <p className="text-sm text-gray-500">Team Created</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">
+                    {teamCreatedAt
+                      ? format(new Date(teamCreatedAt), "MMM dd, yyyy")
+                      : "N/A"}
+                  </p>
+                  {isEarlyBird ? (
+                    <Badge
+                      variant="outline"
+                      className="bg-green-100 text-green-800 border-green-200"
+                    >
+                      Early Bird
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="bg-gray-100 text-gray-800 border-gray-200"
+                    >
+                      Regular
+                    </Badge>
+                  )}
+                </div>
+                {earlyBirdDeadline && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Early bird ended:{" "}
+                    {format(earlyBirdDeadline, "MMM dd, yyyy")}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>

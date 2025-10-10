@@ -213,6 +213,11 @@ export function DivisionCard({ division }: DivisionCardProps) {
           </div>
         )}
 
+        <div className="flex items-center gap-2 text-gray-600">
+          <Users className="h-4 w-4 flex-shrink-0" />
+          <span>{(division as any).teamCount || 0} teams</span>
+        </div>
+
         {division.startDate && (
           <div className="pt-2 border-t text-gray-600">
             <span className="text-xs">

@@ -21,6 +21,8 @@ export async function getTeams({
   search,
   viewMode = "card",
   activeFilter = "active",
+  noCaptain = false,
+  noPlayers = false,
 }: {
   page?: number;
   limit?: number;
@@ -29,6 +31,8 @@ export async function getTeams({
   search?: string;
   viewMode?: "card" | "list";
   activeFilter?: "active" | "inactive" | "all";
+  noCaptain?: boolean;
+  noPlayers?: boolean;
 }) {
   await connectDB();
 
@@ -71,11 +75,22 @@ export async function getTeams({
     ];
   }
 
+  if (noCaptain) {
+    filter.teamCaptain = { $in: [null] };
+    filter.players = { $exists: true, $ne: [] }; // has players but no captain
+  }
+
+  if (noPlayers) {
+    // Override players filter if noPlayers is set
+    filter.players = { $size: 0 };
+  }
+
   // --- Step 3: Query teams with pagination ---
   const [teams, total] = await Promise.all([
     Team.find(filter)
       .populate({
         path: "division",
+        select: "divisionName startDate",
         populate: [
           { path: "location", select: "name" },
           { path: "city", select: "cityName region" },
@@ -110,6 +125,7 @@ export async function getTeamById(id: string) {
   return Team.findById(id)
     .populate({
       path: "division",
+      select: "divisionName startDate",
       populate: [
         { path: "location", select: "name" },
         { path: "city", select: "cityName region" },

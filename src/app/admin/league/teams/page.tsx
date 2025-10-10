@@ -28,6 +28,8 @@ interface TeamsPageProps {
     location?: string;
     search?: string;
     view?: string;
+    noCaptain?: string;
+    noPlayers?: string;
   };
 }
 
@@ -54,11 +56,11 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
       search: searchParams.search,
       viewMode,
       activeFilter: tab,
+      noCaptain: searchParams.noCaptain === "true",
+      noPlayers: searchParams.noPlayers === "true",
     }),
     getDivisions({
-      page: 1,
-      limit: 100,
-      activeFilter: "all",
+      activeFilter: "active",
     }),
     getAllLocations(),
   ]);
@@ -91,6 +93,8 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
           division: searchParams.division,
           location: searchParams.location,
           search: searchParams.search,
+          noCaptain: searchParams.noCaptain === "true",
+          noPlayers: searchParams.noPlayers === "true",
         }}
       />
     </div>

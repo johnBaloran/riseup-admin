@@ -8,6 +8,7 @@
 import { PopulatedDivision } from "@/types/division";
 import { connectDB } from "../mongodb";
 import Division from "@/models/Division";
+import Team from "@/models/Team";
 
 /**
  * Get divisions with pagination and filters
@@ -57,8 +58,19 @@ export async function getDivisions({
     Division.countDocuments(filter),
   ]);
 
+  // Add team count to each division
+  const divisionsWithTeamCount = await Promise.all(
+    divisions.map(async (division) => {
+      const teamCount = await Team.countDocuments({ division: division._id });
+      return {
+        ...division,
+        teamCount,
+      };
+    })
+  );
+
   return {
-    divisions,
+    divisions: divisionsWithTeamCount,
     pagination: {
       total,
       page,

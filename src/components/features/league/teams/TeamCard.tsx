@@ -29,8 +29,10 @@ import {
   Trash2,
   AlertCircle,
   Building2,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { format, subDays, isBefore } from "date-fns";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +52,17 @@ export function TeamCard({ team }: TeamCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+
+  // Calculate early bird status
+  const divisionStartDate = team.division?.startDate;
+  const earlyBirdDeadline = divisionStartDate
+    ? subDays(new Date(divisionStartDate), 42)
+    : null;
+  const teamCreatedAt = team.createdAt;
+  const isEarlyBird =
+    earlyBirdDeadline && teamCreatedAt
+      ? isBefore(new Date(teamCreatedAt), earlyBirdDeadline)
+      : false;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -146,6 +159,32 @@ export function TeamCard({ team }: TeamCardProps) {
           <div className="flex items-center gap-2 text-gray-600">
             <Users className="h-4 w-4 flex-shrink-0" />
             <span>{team.players?.length || 0} players</span>
+          </div>
+
+          <div className="flex items-center gap-2 text-gray-600">
+            <Clock className="h-4 w-4 flex-shrink-0" />
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs">
+                {teamCreatedAt
+                  ? format(new Date(teamCreatedAt), "MMM dd, yyyy")
+                  : "N/A"}
+              </span>
+              {isEarlyBird ? (
+                <Badge
+                  variant="outline"
+                  className="bg-green-100 text-green-800 border-green-200 text-xs"
+                >
+                  Early Bird
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  className="bg-gray-100 text-gray-800 border-gray-200 text-xs"
+                >
+                  Regular
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="pt-2 border-t">

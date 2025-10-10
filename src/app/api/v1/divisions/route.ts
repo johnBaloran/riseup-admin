@@ -1,4 +1,4 @@
-// src/app/api/v1/[cityId]/divisions/route.ts
+// src/app/api/v1/divisions/route.ts
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -23,7 +23,7 @@ import {
 import { z } from "zod";
 
 /**
- * GET /api/v1/[cityId]/divisions
+ * GET /api/v1/divisions
  * Get divisions with pagination (EXECUTIVE + COMMISSIONER)
  */
 export async function GET(request: NextRequest) {
@@ -65,13 +65,10 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/v1/[cityId]/divisions
+ * POST /api/v1/divisions
  * Create division (EXECUTIVE + COMMISSIONER)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -102,10 +99,7 @@ export async function POST(
       }
     }
 
-    const division = await createDivision({
-      ...validatedData,
-      city: params.cityId,
-    });
+    const division = await createDivision(validatedData);
 
     return NextResponse.json(
       {
@@ -131,18 +125,11 @@ export async function POST(
   }
 }
 
-// src/app/api/v1/[cityId]/divisions/route.ts - Add PATCH method
-
 /**
- * PATCH /api/v1/[cityId]/divisions
+ * PATCH /api/v1/divisions
  * Update division (EXECUTIVE + COMMISSIONER)
  */
-// src/app/api/v1/[cityId]/divisions/route.ts - Update PATCH method
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function PATCH(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 

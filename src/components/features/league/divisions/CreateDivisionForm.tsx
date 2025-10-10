@@ -104,7 +104,6 @@ export function CreateDivisionForm({
       installment: prices.filter((p) => p.type === "installment"),
       regularInstallment: prices.filter((p) => p.type === "regularInstallment"),
       firstInstallment: prices.filter((p) => p.type === "firstInstallment"),
-      free: prices.filter((p) => p.type === "free"),
     };
   }, [prices]);
 
@@ -245,7 +244,7 @@ export function CreateDivisionForm({
                     key={location._id || location}
                     value={location._id || location}
                   >
-                    {location.name || "Location"}
+                    {location.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -532,35 +531,6 @@ export function CreateDivisionForm({
             </div>
           </div>
 
-          {/* Free */}
-          <div>
-            <h4 className="font-medium mb-3">Other</h4>
-            <div className="max-w-xs">
-              <Label htmlFor="free">Free Price *</Label>
-              <Select
-                onValueChange={(value) =>
-                  setValue("prices.free", value, { shouldValidate: true })
-                }
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select price" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pricesByType.free.map((price) => (
-                    <SelectItem key={price._id} value={price._id}>
-                      ${price.amount.toFixed(2)} - {price.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.prices?.free && (
-                <p className="text-sm text-red-600 mt-1">
-                  {errors.prices.free.message}
-                </p>
-              )}
-            </div>
-          </div>
         </CardContent>
       </Card>
 

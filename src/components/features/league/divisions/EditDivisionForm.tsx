@@ -238,7 +238,7 @@ export function EditDivisionForm({
                     key={location._id || location}
                     value={location._id || location}
                   >
-                    {location.name || "Location"}
+                    {location.name}
                   </SelectItem>
                 ))}
               </SelectContent>

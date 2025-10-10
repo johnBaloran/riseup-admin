@@ -22,7 +22,10 @@ export async function getAllCities() {
  */
 export async function getActiveCities() {
   await connectDB();
-  return City.find({ active: true }).sort({ cityName: 1 }).lean();
+  return City.find({ active: true })
+    .populate("locations", "name")
+    .sort({ cityName: 1 })
+    .lean();
 }
 
 /**

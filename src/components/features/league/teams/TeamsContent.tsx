@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -19,10 +19,13 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, LayoutGrid, List } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Search, LayoutGrid, List, X, Filter } from "lucide-react";
 import { TeamsGrid } from "./TeamsGrid";
 import { TeamsList } from "./TeamsList";
 import { Pagination } from "@/components/common/Pagination";
+import { debounce } from "lodash";
 
 interface TeamsContentProps {
   teams: any[];
@@ -40,6 +43,8 @@ interface TeamsContentProps {
     division?: string;
     location?: string;
     search?: string;
+    noCaptain?: boolean;
+    noPlayers?: boolean;
   };
 }
 
@@ -79,14 +84,48 @@ export function TeamsContent({
     updateFilters({ tab });
   };
 
+  // create a stable debounced version of updateFilters
+  const debouncedUpdateFilters = useMemo(
+    () =>
+      debounce((value: string) => {
+        updateFilters({ search: value || undefined });
+      }, 500), // 500ms delay
+    [searchParams] // dependencies
+  );
+
   const handleSearch = (value: string) => {
     setSearchValue(value);
-    updateFilters({ search: value || undefined });
+    debouncedUpdateFilters(value);
   };
+
+  useEffect(() => {
+    return () => {
+      debouncedUpdateFilters.cancel();
+    };
+  }, [debouncedUpdateFilters]);
 
   const handleViewChange = (view: "card" | "list") => {
     updateFilters({ view });
   };
+
+  const filteredDivisions = useMemo(() => {
+    if (!currentFilters.location || currentFilters.location === "all") {
+      return divisions;
+    }
+    return divisions.filter((d) => d.location?._id === currentFilters.location);
+  }, [divisions, currentFilters.location]);
+
+  const clearAllFilters = () => {
+    router.push(`/admin/league/teams?tab=${currentTab}&view=${currentView}`);
+    setSearchValue("");
+  };
+
+  const hasActiveFilters =
+    currentFilters.location ||
+    currentFilters.division ||
+    currentFilters.search ||
+    currentFilters.noCaptain ||
+    currentFilters.noPlayers;
 
   return (
     <div className="space-y-6">
@@ -99,9 +138,9 @@ export function TeamsContent({
         </TabsList>
       </Tabs>
 
-      {/* Filters & View Toggle */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+      {/* Filters */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -113,28 +152,12 @@ export function TeamsContent({
           </div>
 
           <Select
-            value={currentFilters.division || "all"}
-            onValueChange={(value) =>
-              updateFilters({ division: value === "all" ? undefined : value })
-            }
-          >
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="All Divisions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Divisions</SelectItem>
-              {divisions.map((division: any) => (
-                <SelectItem key={division._id} value={division._id}>
-                  {division.divisionName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select
             value={currentFilters.location || "all"}
             onValueChange={(value) =>
-              updateFilters({ location: value === "all" ? undefined : value })
+              updateFilters({
+                location: value === "all" ? undefined : value,
+                division: undefined,
+              })
             }
           >
             <SelectTrigger className="w-full sm:w-[200px]">
@@ -149,25 +172,125 @@ export function TeamsContent({
               ))}
             </SelectContent>
           </Select>
+
+          <Select
+            value={currentFilters.division || "all"}
+            onValueChange={(value) =>
+              updateFilters({ division: value === "all" ? undefined : value })
+            }
+          >
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="All Divisions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Divisions</SelectItem>
+              {filteredDivisions.map((division: any) => (
+                <SelectItem key={division._id} value={division._id}>
+                  {division.location?.name} - {division.divisionName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-end">
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              disabled={!hasActiveFilters}
+              className="w-full"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear Filters
+            </Button>
+          </div>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant={currentView === "card" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleViewChange("card")}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={currentView === "list" ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleViewChange("list")}
-          >
-            <List className="h-4 w-4" />
-          </Button>
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="noCaptain"
+                checked={currentFilters.noCaptain}
+                onCheckedChange={(checked) =>
+                  updateFilters({ noCaptain: checked ? "true" : undefined })
+                }
+              />
+              <Label htmlFor="noCaptain" className="text-sm cursor-pointer">
+                No captain assigned
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="noPlayers"
+                checked={currentFilters.noPlayers}
+                onCheckedChange={(checked) =>
+                  updateFilters({ noPlayers: checked ? "true" : undefined })
+                }
+              />
+              <Label htmlFor="noPlayers" className="text-sm cursor-pointer">
+                No players
+              </Label>
+            </div>
+          </div>
+
+          {/* View Toggle */}
+          <div className="flex gap-2">
+            <Button
+              variant={currentView === "card" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleViewChange("card")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={currentView === "list" ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleViewChange("list")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+
+        {/* Active Filters */}
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2 pt-2 border-t">
+            <span className="text-sm text-gray-500">Active Filters:</span>
+            <div className="flex flex-wrap gap-2">
+              {currentFilters.location && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  Location
+                </span>
+              )}
+              {currentFilters.division && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  Division
+                </span>
+              )}
+              {currentFilters.noCaptain && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  No Captain
+                </span>
+              )}
+              {currentFilters.noPlayers && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  No Players
+                </span>
+              )}
+              {currentFilters.search && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Search className="h-3 w-3" />
+                  {currentFilters.search}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Teams Display */}

@@ -35,7 +35,6 @@ export const createDivisionSchema = z.object({
       .string()
       .min(1, "Regular installment price is required"),
     firstInstallment: z.string().min(1, "Down payment price is required"),
-    free: z.string().min(1, "Free price is required"),
   }),
   active: z.boolean(),
   register: z.boolean(),
