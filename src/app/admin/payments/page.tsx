@@ -19,8 +19,8 @@ import { PaymentDashboard } from "@/components/features/payments/PaymentDashboar
 
 interface PaymentPageProps {
   searchParams: {
+    page?: string;
     location?: string;
-    limit?: number;
     division?: string;
     team?: string;
     payment?: string;
@@ -39,19 +39,20 @@ export default async function PaymentPage({ searchParams }: PaymentPageProps) {
     redirect("/unauthorized");
   }
 
-  const [players, allPlayers, locations, divisions] = await Promise.all([
+  const page = parseInt(searchParams.page || "1");
+
+  const [result, allPlayersResult, locations, divisions] = await Promise.all([
     getPlayersWithPaymentStatus({
+      page,
       locationId: searchParams.location,
       divisionId: searchParams.division,
       teamId: searchParams.team,
       paymentStatusFilter: searchParams.payment || "all",
       search: searchParams.search,
     }),
-    getPlayersWithPaymentStatus({}), // Get all players for overall stats
+    getPlayersWithPaymentStatus({ limit: 99999 }), // Get all players for overall stats
     getAllLocations(),
     getDivisions({
-      page: 1,
-      limit: 100,
       activeFilter: "active",
     }),
   ]);
@@ -68,13 +69,13 @@ export default async function PaymentPage({ searchParams }: PaymentPageProps) {
       </div>
 
       <PaymentDashboard
-        players={JSON.parse(JSON.stringify(players))}
-        allPlayers={JSON.parse(JSON.stringify(allPlayers))}
+        players={JSON.parse(JSON.stringify(result.players))}
+        allPlayers={JSON.parse(JSON.stringify(allPlayersResult.players))}
+        pagination={result.pagination}
         locations={JSON.parse(JSON.stringify(locations))}
         divisions={JSON.parse(JSON.stringify(divisions.divisions))}
         currentFilters={{
           location: searchParams.location,
-          limit: searchParams.limit,
           division: searchParams.division,
           team: searchParams.team,
           payment: searchParams.payment || "all",

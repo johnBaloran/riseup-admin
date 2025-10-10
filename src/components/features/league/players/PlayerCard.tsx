@@ -18,8 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Trophy, Mail, User, MoreVertical, Pencil } from "lucide-react";
-import { InstallmentProgress } from "@/components/features/payments/InstallmentProgress";
+import { Trophy, Mail, User, MoreVertical, Pencil, MapPin } from "lucide-react";
 
 interface PlayerCardProps {
   player: any;
@@ -29,60 +28,26 @@ interface PlayerCardProps {
 export function PlayerCard({ player }: PlayerCardProps) {
   const router = useRouter();
 
-  const getPaymentBadge = () => {
-    if (player.paymentStatus === "paid") {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-green-100 text-green-800 border-green-200"
-        >
-          Paid
-        </Badge>
-      );
-    }
-
-    if (player.paymentStatus === "in_progress") {
-      return (
-        <div className="flex flex-col gap-2">
-          <Badge
-            variant="outline"
-            className="bg-blue-100 text-blue-800 border-blue-200"
-          >
-            Installments
-          </Badge>
-          {player.installmentProgress && (
-            <InstallmentProgress
-              payments={player.installmentProgress}
-              size="sm"
-            />
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <Badge
-        variant="outline"
-        className="bg-red-100 text-red-800 border-red-200"
-      >
-        Unpaid
-      </Badge>
-    );
-  };
-
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              {getPaymentBadge()}
               {!player.team && (
                 <Badge
                   variant="outline"
                   className="bg-yellow-100 text-yellow-800 border-yellow-200"
                 >
                   Free Agent
+                </Badge>
+              )}
+              {!player.user && (
+                <Badge
+                  variant="outline"
+                  className="bg-gray-100 text-gray-800 border-gray-200"
+                >
+                  No Account
                 </Badge>
               )}
             </div>
@@ -118,9 +83,17 @@ export function PlayerCard({ player }: PlayerCardProps) {
       <CardContent className="space-y-3 text-sm">
         <div className="flex items-center gap-2 text-gray-600">
           <Trophy className="h-4 w-4 flex-shrink-0" />
-          <span>
-            {player.team?.teamName || "Free Agent"} -{" "}
-            {player.division?.divisionName || "N/A"}
+          <span className="truncate">
+            {player.team?.teamName || "Free Agent"}
+            {player.division?.divisionName && ` - ${player.division.divisionName}`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-gray-600">
+          <MapPin className="h-4 w-4 flex-shrink-0" />
+          <span className="truncate">
+            {player.division?.location?.name || "N/A"}
+            {player.division?.city?.cityName && `, ${player.division.city.cityName}`}
           </span>
         </div>
 
@@ -128,13 +101,6 @@ export function PlayerCard({ player }: PlayerCardProps) {
           <div className="flex items-center gap-2 text-gray-600">
             <Mail className="h-4 w-4 flex-shrink-0" />
             <span className="truncate">{player.user.email}</span>
-          </div>
-        )}
-
-        {!player.user && (
-          <div className="flex items-center gap-2 text-gray-500">
-            <User className="h-4 w-4 flex-shrink-0" />
-            <span className="text-xs">No user account linked</span>
           </div>
         )}
 

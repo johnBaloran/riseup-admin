@@ -51,37 +51,6 @@ export function TeamCard({ team }: TeamCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  const getPaymentBadge = () => {
-    if (team.paymentStatus === "paid") {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-green-100 text-green-800 border-green-200"
-        >
-          Paid
-        </Badge>
-      );
-    }
-    if (team.paymentStatus === "unpaid") {
-      return (
-        <Badge
-          variant="outline"
-          className="bg-red-100 text-red-800 border-red-200"
-        >
-          Unpaid
-        </Badge>
-      );
-    }
-    return (
-      <Badge
-        variant="outline"
-        className="bg-gray-100 text-gray-800 border-gray-200"
-      >
-        No Players
-      </Badge>
-    );
-  };
-
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
@@ -113,18 +82,15 @@ export function TeamCard({ team }: TeamCardProps) {
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                {getPaymentBadge()}
-                {noCaptainWarning && (
-                  <Badge
-                    variant="outline"
-                    className="bg-yellow-100 text-yellow-800 border-yellow-200"
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    No Captain
-                  </Badge>
-                )}
-              </div>
+              {noCaptainWarning && (
+                <Badge
+                  variant="outline"
+                  className="bg-yellow-100 text-yellow-800 border-yellow-200"
+                >
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  No Captain
+                </Badge>
+              )}
               <Link href={`/admin/league/teams/${team._id}`}>
                 <h3 className="font-semibold text-lg leading-tight hover:underline">
                   {team.teamName}

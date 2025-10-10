@@ -26,12 +26,17 @@ import { Pagination } from "@/components/common/Pagination";
 interface PaymentDashboardProps {
   players: any[];
   allPlayers: any[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
   locations: any[];
   divisions: any[];
   currentFilters: {
     location?: string;
     division?: string;
-    limit?: number;
     team?: string;
     payment?: string;
     search?: string;
@@ -41,6 +46,7 @@ interface PaymentDashboardProps {
 export function PaymentDashboard({
   players,
   allPlayers,
+  pagination,
   locations,
   divisions,
   currentFilters,
@@ -49,8 +55,6 @@ export function PaymentDashboard({
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
   const [isExporting, setIsExporting] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const playersPerPage = 12;
 
   // Calculate overall stats (unfiltered)
   const stats = useMemo(() => {
@@ -72,11 +76,6 @@ export function PaymentDashboard({
     return { total, unpaid, onTrack, hasIssues, critical, paid };
   }, [allPlayers]);
 
-  // Pagination
-  const totalPages = Math.ceil(players.length / playersPerPage);
-  const startIndex = (currentPage - 1) * playersPerPage;
-  const endIndex = startIndex + playersPerPage;
-  const paginatedPlayers = players.slice(startIndex, endIndex);
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -89,14 +88,15 @@ export function PaymentDashboard({
       }
     });
 
+    // Reset to page 1 when filters change
+    params.set("page", "1");
+
     router.push(`/admin/payments?${params.toString()}`);
-    setCurrentPage(1); // Reset to page 1 when filters change
   };
 
   const clearAllFilters = () => {
     router.push(`/admin/payments`);
     setSearchValue("");
-    setCurrentPage(1);
   };
 
   const handleSearch = (value: string) => {
@@ -330,17 +330,23 @@ export function PaymentDashboard({
       </div>
 
       {/* Players List */}
-      <PaymentsList players={paginatedPlayers} />
+      <PaymentsList players={players} />
 
       {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        total={players.length} // or your total items variable
-        limit={currentFilters.limit} // number of items per page
-        onPageChange={setCurrentPage}
-        label="players" // optional, "divisions", "teams", etc.
-      />
+      {pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={(page) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("page", page.toString());
+            router.push(`/admin/payments?${params.toString()}`);
+          }}
+          label="players"
+        />
+      )}
     </div>
   );
 }

@@ -21,7 +21,7 @@ interface PlayersPageProps {
   params: { cityId: string };
   searchParams: {
     page?: string;
-    payment?: string;
+    tab?: string;
     division?: string;
     location?: string;
     team?: string;
@@ -46,26 +46,25 @@ export default async function PlayersPage({
   }
 
   const page = parseInt(searchParams.page || "1");
-  const paymentFilter = (searchParams.payment || "all") as any;
+  const tab = (searchParams.tab || "active") as "active" | "inactive" | "all";
   const freeAgentsOnly = searchParams.freeAgents === "true";
   const hasUserAccount = searchParams.hasUser
     ? searchParams.hasUser === "true"
     : undefined;
 
-  const [result, divisions, locations] = await Promise.all([
+  const [result, allPlayersResult, divisions, locations] = await Promise.all([
     getPlayers({
       page,
-      paymentFilter,
       divisionId: searchParams.division,
       teamId: searchParams.team,
       locationId: searchParams.location,
       freeAgentsOnly,
       hasUserAccount,
       search: searchParams.search,
+      activeFilter: tab,
     }),
+    getPlayers({ limit: 999999, activeFilter: "active" }), // Get all active players for stats
     getDivisions({
-      page: 1,
-      limit: 100,
       activeFilter: "active",
     }),
     getAllLocations(),
@@ -82,7 +81,7 @@ export default async function PlayersPage({
         </div>
         {hasPermission(session, "manage_players") && (
           <Button asChild>
-            <Link href={`/admin/${params.cityId}/league/players/new`}>
+            <Link href={`/admin/league/players/new`}>
               <Plus className="mr-2 h-4 w-4" />
               Create Player
             </Link>
@@ -92,12 +91,13 @@ export default async function PlayersPage({
 
       <PlayersContent
         players={result.players as any}
+        allPlayers={allPlayersResult.players as any}
         pagination={result.pagination}
         divisions={divisions.divisions as any}
         locations={locations as any}
         cityId={params.cityId}
+        currentTab={tab}
         currentFilters={{
-          payment: paymentFilter,
           division: searchParams.division,
           location: searchParams.location,
           team: searchParams.team,

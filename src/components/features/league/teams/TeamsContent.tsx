@@ -34,7 +34,7 @@ interface TeamsContentProps {
   };
   divisions: any[];
   locations: any[];
-  currentTab: string;
+  currentTab: "active" | "inactive" | "all";
   currentView: "card" | "list";
   currentFilters: {
     division?: string;
@@ -93,9 +93,9 @@ export function TeamsContent({
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={handleTabChange}>
         <TabsList>
-          <TabsTrigger value="all">All Teams</TabsTrigger>
-          <TabsTrigger value="paid">Paid</TabsTrigger>
-          <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
       </Tabs>
 

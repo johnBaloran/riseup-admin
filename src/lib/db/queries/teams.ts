@@ -16,30 +16,54 @@ import Player from "@/models/Player";
 export async function getTeams({
   page = 1,
   limit = 12,
-  paymentFilter = "all",
   divisionId,
   locationId,
   search,
   viewMode = "card",
+  activeFilter = "active",
 }: {
   page?: number;
   limit?: number;
-  paymentFilter?: "all" | "paid" | "unpaid";
   divisionId?: string;
   locationId?: string;
   search?: string;
   viewMode?: "card" | "list";
+  activeFilter?: "active" | "inactive" | "all";
 }) {
   await connectDB();
 
   const skip = (page - 1) * limit;
 
-  // Build filter
-  const filter: any = {};
+  // --- Step 1: Get valid divisions based on active filter ---
+  const divisionFilter: any = {};
 
-  // Filter by city through division
+  if (activeFilter === "active") {
+    divisionFilter.$or = [{ active: true }, { register: true }];
+  } else if (activeFilter === "inactive") {
+    divisionFilter.active = false;
+    divisionFilter.register = false;
+  }
+  // If "all", no active/register filter
 
-  if (divisionId) filter.division = divisionId;
+  if (divisionId) divisionFilter._id = divisionId;
+  if (locationId) divisionFilter.location = locationId;
+
+  const validDivisions = await Division.find(divisionFilter).select("_id");
+  const validDivisionIds = validDivisions.map((d) => d._id);
+
+  if (!validDivisionIds.length) {
+    // No divisions match, return empty result
+    return {
+      teams: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
+  }
+
+  // --- Step 2: Build team filter ---
+  const filter: any = {
+    division: { $in: validDivisionIds },
+  };
+
   if (search) {
     filter.$or = [
       { teamName: { $regex: search, $options: "i" } },
@@ -47,83 +71,35 @@ export async function getTeams({
     ];
   }
 
-  // Get teams with populated data
-  const teamsQuery = Team.find(filter)
-    .populate({
-      path: "division",
-      populate: [
-        { path: "location", select: "name" },
-        { path: "city", select: "cityName region" },
-      ],
-    })
-    .populate("teamCaptain", "playerName")
-    .populate("players", "playerName jerseyNumber")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
+  // --- Step 3: Query teams with pagination ---
   const [teams, total] = await Promise.all([
-    teamsQuery,
+    Team.find(filter)
+      .populate({
+        path: "division",
+        populate: [
+          { path: "location", select: "name" },
+          { path: "city", select: "cityName region" },
+        ],
+      })
+      .populate("teamCaptain", "playerName")
+      .populate("players", "playerName jerseyNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Team.countDocuments(filter),
   ]);
 
-  // Calculate payment status for each team
-  const teamsWithPaymentStatus = await Promise.all(
-    teams.map(async (team: any) => {
-      const paymentStatus = await calculateTeamPaymentStatus(
-        team._id.toString()
-      );
-      return { ...team, paymentStatus };
-    })
-  );
-
-  // Filter by payment status if needed
-  let filteredTeams = teamsWithPaymentStatus;
-  if (paymentFilter === "paid") {
-    filteredTeams = teamsWithPaymentStatus.filter(
-      (t) => t.paymentStatus === "paid"
-    );
-  } else if (paymentFilter === "unpaid") {
-    filteredTeams = teamsWithPaymentStatus.filter(
-      (t) => t.paymentStatus === "unpaid"
-    );
-  }
-
+  // --- Step 4: Return result with pagination ---
   return {
-    teams: filteredTeams,
+    teams,
     pagination: {
-      total: filteredTeams.length,
+      total,
       page,
       limit,
-      totalPages: Math.ceil(filteredTeams.length / limit),
+      totalPages: Math.ceil(total / limit),
     },
   };
-}
-
-/**
- * Calculate team payment status
- */
-async function calculateTeamPaymentStatus(
-  teamId: string
-): Promise<"paid" | "unpaid" | "no-players"> {
-  await connectDB();
-
-  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
-
-  const team = await Team.findById(teamId).populate("players").lean();
-
-  if (!team || team.players.length === 0) return "no-players";
-
-  // Check if all players have completed payment
-  const playerIds = team.players.map((p: any) => p._id);
-
-  const paidCount = await PaymentMethod.countDocuments({
-    player: { $in: playerIds },
-    status: "COMPLETED",
-  });
-
-  return paidCount === team.players.length ? "paid" : "unpaid";
 }
 
 /**

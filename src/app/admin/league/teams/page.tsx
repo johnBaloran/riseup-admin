@@ -43,17 +43,17 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
   }
 
   const page = parseInt(searchParams.page || "1");
-  const tab = (searchParams.tab || "all") as any;
+  const tab = (searchParams.tab || "active") as "active" | "inactive" | "all";
   const viewMode = (searchParams.view || "card") as any;
 
   const [result, divisions, locations] = await Promise.all([
     getTeams({
       page,
-      paymentFilter: tab,
       divisionId: searchParams.division,
       locationId: searchParams.location,
       search: searchParams.search,
       viewMode,
+      activeFilter: tab,
     }),
     getDivisions({
       page: 1,

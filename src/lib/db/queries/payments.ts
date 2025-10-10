@@ -49,14 +49,19 @@ export async function getPlayerPaymentStatus(playerId: string) {
 
 /**
  * Get all players with payment status for dashboard
+ * Uses aggregation pipeline for efficient DB-level filtering and pagination
  */
 export async function getPlayersWithPaymentStatus({
+  page = 1,
+  limit = 12,
   locationId,
   divisionId,
   teamId,
   paymentStatusFilter = "all",
   search,
 }: {
+  page?: number;
+  limit?: number;
   locationId?: string;
   divisionId?: string;
   teamId?: string;
@@ -66,78 +71,148 @@ export async function getPlayersWithPaymentStatus({
   await connectDB();
 
   // Build filter for active divisions only
-  const divisionFilter: any = { active: true, register: true };
+  const divisionFilter: any = { $or: [{ active: true }, { register: true }] };
   if (locationId) divisionFilter.location = locationId;
   if (divisionId) divisionFilter._id = divisionId;
 
   const divisions = await Division.find(divisionFilter).select("_id");
   const divisionIds = divisions.map((d) => d._id);
 
-  // Build player filter
-  const playerFilter: any = { division: { $in: divisionIds } };
-  if (teamId) playerFilter.team = teamId;
+  if (!divisionIds.length) {
+    return {
+      players: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
+  }
+
+  // Build base match filter
+  const matchFilter: any = { division: { $in: divisionIds } };
+  if (teamId) matchFilter.team = teamId;
 
   if (search) {
     const searchRegex = new RegExp(search, "i");
-
-    // find teams that match search
     const matchingTeams = await Team.find({
       teamName: { $regex: searchRegex },
     }).select("_id");
 
-    playerFilter.$or = [
+    matchFilter.$or = [
       { playerName: { $regex: searchRegex } },
-      { "user.email": { $regex: searchRegex } },
       { team: { $in: matchingTeams.map((t) => t._id) } },
     ];
   }
 
-  const players = await Player.find(playerFilter)
-    .populate({
+  // Build aggregation pipeline
+  const pipeline: any[] = [
+    { $match: matchFilter },
+    {
+      $lookup: {
+        from: "paymentmethods",
+        localField: "_id",
+        foreignField: "player",
+        as: "paymentMethods",
+      },
+    },
+    {
+      $addFields: {
+        paymentMethod: { $arrayElemAt: ["$paymentMethods", 0] },
+      },
+    },
+    {
+      $addFields: {
+        paymentStatus: {
+          $cond: {
+            if: { $eq: [{ $size: "$paymentMethods" }, 0] },
+            then: "unpaid",
+            else: {
+              $cond: {
+                if: { $eq: ["$paymentMethod.status", "COMPLETED"] },
+                then: "paid",
+                else: {
+                  $cond: {
+                    if: { $eq: ["$paymentMethod.paymentType", "INSTALLMENTS"] },
+                    then: {
+                      $let: {
+                        vars: {
+                          failedCount: {
+                            $size: {
+                              $filter: {
+                                input: {
+                                  $ifNull: [
+                                    "$paymentMethod.installments.subscriptionPayments",
+                                    [],
+                                  ],
+                                },
+                                cond: { $eq: ["$$this.status", "failed"] },
+                              },
+                            },
+                          },
+                        },
+                        in: {
+                          $cond: {
+                            if: { $eq: ["$$failedCount", 0] },
+                            then: "on-track",
+                            else: {
+                              $cond: {
+                                if: { $gte: ["$$failedCount", 3] },
+                                then: "critical",
+                                else: "has-issues",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                    else: "unpaid",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+
+  // Add payment status filter if needed
+  if (paymentStatusFilter !== "all") {
+    pipeline.push({ $match: { paymentStatus: paymentStatusFilter } });
+  }
+
+  // Get total count before pagination
+  const countPipeline = [...pipeline, { $count: "total" }];
+  const countResult = await Player.aggregate(countPipeline);
+  const total = countResult[0]?.total || 0;
+
+  // Add sorting and pagination
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: (page - 1) * limit },
+    { $limit: limit }
+  );
+
+  // Execute aggregation
+  const players = await Player.aggregate(pipeline);
+
+  // Populate references
+  await Player.populate(players, [
+    {
       path: "division",
       populate: [
         { path: "location", select: "name" },
         { path: "city", select: "cityName" },
       ],
-    })
-    .populate("team", "teamName")
-    .populate("user", "name email phoneNumber")
-    .populate("paymentMethods")
-    .sort({ createdAt: -1 })
-    .lean();
+    },
+    { path: "team", select: "teamName" },
+    { path: "user", select: "name email phoneNumber" },
+  ]);
 
-  // Calculate payment status for each player
-  const playersWithStatus = players.map((player: any) => {
-    let status = "unpaid";
-    let paymentMethod = null;
-
-    if (player.paymentMethods && player.paymentMethods.length > 0) {
-      paymentMethod = player.paymentMethods[0];
-
-      if (paymentMethod.status === "COMPLETED") {
-        status = "paid";
-      } else if (paymentMethod.paymentType === "INSTALLMENTS") {
-        const subscriptionPayments =
-          paymentMethod.installments?.subscriptionPayments || [];
-        const failedCount = subscriptionPayments.filter(
-          (p: any) => p.status === "failed"
-        ).length;
-
-        if (failedCount === 0) status = "on-track";
-        else if (failedCount >= 3) status = "critical";
-        else status = "has-issues";
-      }
-    }
-
-    return { ...player, paymentStatus: status, paymentMethod };
-  });
-
-  // Filter by payment status if needed
-  if (paymentStatusFilter !== "all") {
-    return playersWithStatus.filter(
-      (p) => p.paymentStatus === paymentStatusFilter
-    );
-  }
-
-  return playersWithStatus;
+  return {
+    players,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }

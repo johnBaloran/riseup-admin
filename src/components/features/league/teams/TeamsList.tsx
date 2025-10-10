@@ -58,9 +58,6 @@ export function TeamsList({ teams }: TeamsListProps) {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Captain
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Payment
-              </th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
@@ -118,30 +115,6 @@ export function TeamsList({ teams }: TeamsListProps) {
                     </Badge>
                   ) : (
                     <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {team.paymentStatus === "paid" ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-green-100 text-green-800 border-green-200"
-                    >
-                      Paid
-                    </Badge>
-                  ) : team.paymentStatus === "unpaid" ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-red-100 text-red-800 border-red-200"
-                    >
-                      Unpaid
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className="bg-gray-100 text-gray-800 border-gray-200"
-                    >
-                      No Players
-                    </Badge>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">

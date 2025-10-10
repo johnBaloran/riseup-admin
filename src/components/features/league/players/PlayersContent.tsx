@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 
 interface PlayersContentProps {
   players: any[];
+  allPlayers: any[];
   pagination: {
     total: number;
     page: number;
@@ -37,8 +38,8 @@ interface PlayersContentProps {
   locations: any[];
   divisions: any[];
   cityId: string;
+  currentTab: "active" | "inactive" | "all";
   currentFilters: {
-    payment?: string;
     division?: string;
     location?: string;
     team?: string;
@@ -50,15 +51,27 @@ interface PlayersContentProps {
 
 export function PlayersContent({
   players,
+  allPlayers,
   pagination,
   locations,
   divisions,
   cityId,
+  currentTab,
   currentFilters,
 }: PlayersContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
+
+  // Calculate overall stats (unfiltered)
+  const stats = useMemo(() => {
+    const total = allPlayers.length;
+    const withTeam = allPlayers.filter((p) => p.team).length;
+    const freeAgents = allPlayers.filter((p) => !p.team).length;
+    const withAccount = allPlayers.filter((p) => p.user).length;
+    const withoutAccount = allPlayers.filter((p) => !p.user).length;
+    return { total, withTeam, freeAgents, withAccount, withoutAccount };
+  }, [allPlayers]);
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -76,6 +89,10 @@ export function PlayersContent({
     }
 
     router.push(`/admin/league/players?${params.toString()}`);
+  };
+
+  const handleTabChange = (tab: string) => {
+    updateFilters({ tab });
   };
 
   // create a stable debounced version of updateFilters
@@ -114,23 +131,37 @@ export function PlayersContent({
     currentFilters.location ||
     currentFilters.division ||
     currentFilters.team ||
-    currentFilters.payment !== "all" ||
+    currentFilters.freeAgents ||
+    currentFilters.hasUser !== undefined ||
     currentFilters.search;
+
+  console.log("Paginated players (should be max 12):", players.length, players);
+  console.log("All players for stats:", allPlayers.length);
 
   return (
     <div className="space-y-6">
-      {/* Payment Status Tabs */}
-      {/* <Tabs
-        value={currentFilters.payment || "all"}
-        onValueChange={(value) => updateFilters({ payment: value })}
-      >
+      {/* Tabs */}
+      <Tabs value={currentTab} onValueChange={handleTabChange}>
         <TabsList>
-          <TabsTrigger value="all">All Players</TabsTrigger>
-          <TabsTrigger value="paid">Paid</TabsTrigger>
-          <TabsTrigger value="in_progress">Installments</TabsTrigger>
-          <TabsTrigger value="unpaid">Unpaid</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="inactive">Inactive</TabsTrigger>
+          <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
-      </Tabs> */}
+      </Tabs>
+
+      {/* Stats Overview */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Active Player Overview
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {stats.total} total players • {stats.withTeam} assigned to teams •{" "}
+            {stats.freeAgents} free agents • {stats.withAccount} with user
+            accounts • {stats.withoutAccount} without user accounts
+          </p>
+        </div>
+      </div>
 
       {/* Filters */}
       <div className="flex flex-col gap-4">
@@ -241,10 +272,16 @@ export function PlayersContent({
                   Division
                 </span>
               )}
-              {currentFilters.payment !== "all" && (
+              {currentFilters.freeAgents && (
                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                   <Filter className="h-3 w-3" />
-                  {currentFilters.payment}
+                  Free Agents
+                </span>
+              )}
+              {currentFilters.hasUser !== undefined && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                  <Filter className="h-3 w-3" />
+                  {currentFilters.hasUser ? "Has Account" : "No Account"}
                 </span>
               )}
               {currentFilters.search && (

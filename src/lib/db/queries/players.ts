@@ -99,25 +99,34 @@ export async function getPlayers({
   divisionId,
   teamId,
   locationId,
-  paymentFilter = "all",
   freeAgentsOnly = false,
   hasUserAccount,
   search,
+  activeFilter = "active",
 }: {
   page?: number;
   limit?: number;
   divisionId?: string;
   locationId?: string;
   teamId?: string;
-  paymentFilter?: "all" | "paid" | "installments" | "unpaid";
   freeAgentsOnly?: boolean;
   hasUserAccount?: boolean;
   search?: string;
+  activeFilter?: "active" | "inactive" | "all";
 }) {
   await connectDB();
 
-  // --- Step 1: Get valid divisions (active or register) and optional location ---
-  const divisionFilter: any = { $or: [{ active: true }, { register: true }] };
+  // --- Step 1: Get valid divisions based on active filter ---
+  const divisionFilter: any = {};
+
+  if (activeFilter === "active") {
+    divisionFilter.$or = [{ active: true }, { register: true }];
+  } else if (activeFilter === "inactive") {
+    divisionFilter.active = false;
+    divisionFilter.register = false;
+  }
+  // If "all", no active/register filter
+
   if (divisionId) divisionFilter._id = divisionId;
   if (locationId) divisionFilter.location = locationId;
 
@@ -188,10 +197,15 @@ export async function getPlayers({
   const [players, total] = await Promise.all([
     Player.find(filter)
       .populate("team", "teamName teamCode")
-      .populate("division", "divisionName location")
+      .populate({
+        path: "division",
+        select: "divisionName location city",
+        populate: [
+          { path: "location", select: "name" },
+          { path: "city", select: "cityName" },
+        ],
+      })
       .populate("user", "name email")
-      .populate("paymentMethods")
-
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -199,48 +213,9 @@ export async function getPlayers({
     Player.countDocuments(filter),
   ]);
 
-  // --- Step 4: Add payment info ---
-  const playersWithPayment = players.map((player: any) => {
-    let status: "paid" | "unpaid" | "installments" = "unpaid";
-    let paymentMethod = null;
-
-    if (player.paymentMethods && player.paymentMethods.length > 0) {
-      paymentMethod = player.paymentMethods[0]; // use first method
-
-      if (paymentMethod.paymentType === "FULL_PAYMENT") {
-        status = paymentMethod.status === "COMPLETED" ? "paid" : "unpaid";
-      } else if (paymentMethod.paymentType === "INSTALLMENTS") {
-        if (paymentMethod.status === "COMPLETED") {
-          status = "paid";
-        } else {
-          status = "installments";
-        }
-      }
-    }
-
-    return {
-      ...player,
-      paymentStatus: status,
-      paymentMethod,
-    };
-  });
-
-  // --- Step 5: Filter by payment status ---
-  let filteredPlayers = playersWithPayment;
-  if (paymentFilter === "paid")
-    filteredPlayers = filteredPlayers.filter((p) => p.paymentStatus === "paid");
-  else if (paymentFilter === "installments")
-    filteredPlayers = filteredPlayers.filter(
-      (p) => p.paymentStatus === "installments"
-    );
-  else if (paymentFilter === "unpaid")
-    filteredPlayers = filteredPlayers.filter(
-      (p) => p.paymentStatus === "unpaid"
-    );
-
-  // --- Step 6: Return result with pagination ---
+  // --- Step 4: Return result with pagination ---
   return {
-    players: filteredPlayers,
+    players,
     pagination: {
       total,
       page,
