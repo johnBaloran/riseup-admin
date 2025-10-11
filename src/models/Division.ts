@@ -31,6 +31,8 @@ export interface IDivision extends mongoose.Document {
     firstInstallment?: mongoose.Types.ObjectId;
     free?: mongoose.Types.ObjectId;
   };
+  jerseyDeadline?: Date; // NEW: Jersey selection deadline
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,6 +122,9 @@ const divisionSchema = new Schema<IDivision>(
         type: Schema.Types.ObjectId,
         ref: "Price",
       },
+    },
+    jerseyDeadline: {
+      type: Date,
     },
   },
   {

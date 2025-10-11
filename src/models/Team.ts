@@ -26,6 +26,16 @@ export interface ITeam extends mongoose.Document {
   createdManually: boolean;
   isCustomJersey: boolean;
   jerseyEdition?: string;
+  jerseyImages: Array<{
+    id: string;
+    url: string;
+    publicId: string;
+  }>;
+  genericJerseys: Array<{
+    jerseyNumber?: number;
+    jerseySize?: string;
+    jerseyName?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -95,6 +105,20 @@ const teamSchema = new Schema<ITeam>(
       default: false,
     },
     jerseyEdition: String,
+    jerseyImages: [
+      {
+        id: String,
+        url: String,
+        publicId: String,
+      },
+    ],
+    genericJerseys: [
+      {
+        jerseyNumber: Number,
+        jerseySize: String,
+        jerseyName: String,
+      },
+    ],
   },
   {
     timestamps: true,
