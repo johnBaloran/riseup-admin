@@ -9,6 +9,7 @@ import { PopulatedDivision } from "@/types/division";
 import { connectDB } from "../mongodb";
 import Division from "@/models/Division";
 import Team from "@/models/Team";
+import Player from "@/models/Player";
 
 /**
  * Get divisions with pagination and filters
@@ -58,19 +59,68 @@ export async function getDivisions({
     Division.countDocuments(filter),
   ]);
 
-  // Add team count to each division
-  const divisionsWithTeamCount = await Promise.all(
-    divisions.map(async (division) => {
-      const teamCount = await Team.countDocuments({ division: division._id });
-      return {
-        ...division,
-        teamCount,
-      };
-    })
+  // Get all division IDs for batch querying
+  const divisionIds = divisions.map((d) => d._id);
+
+  // Batch query for team counts - single query instead of N queries
+  const teamCounts = await Team.aggregate([
+    { $match: { division: { $in: divisionIds } } },
+    { $group: { _id: "$division", count: { $sum: 1 } } },
+  ]);
+
+  // Batch query for free agent counts - single query instead of 2N queries
+  const freeAgentCounts = await Player.aggregate([
+    {
+      $match: {
+        division: { $in: divisionIds },
+        freeAgent: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$division",
+        total: { $sum: 1 },
+        withTeam: {
+          $sum: {
+            $cond: [{ $ne: ["$team", null] }, 1, 0],
+          },
+        },
+        withoutTeam: {
+          $sum: {
+            $cond: [{ $eq: ["$team", null] }, 1, 0],
+          },
+        },
+      },
+    },
+  ]);
+
+  // Create lookup maps for O(1) access
+  const teamCountMap = new Map(
+    teamCounts.map((tc) => [tc._id.toString(), tc.count])
+  );
+  const freeAgentCountMap = new Map(
+    freeAgentCounts.map((fc) => [
+      fc._id.toString(),
+      { total: fc.total, withTeam: fc.withTeam, withoutTeam: fc.withoutTeam },
+    ])
   );
 
+  // Add counts to divisions (no more queries, just map lookups)
+  const divisionsWithCounts = divisions.map((division) => {
+    const divisionId = division._id.toString();
+    return {
+      ...division,
+      teamCount: teamCountMap.get(divisionId) || 0,
+      freeAgentCounts: freeAgentCountMap.get(divisionId) || {
+        total: 0,
+        withTeam: 0,
+        withoutTeam: 0,
+      },
+    };
+  });
+
   return {
-    divisions: divisionsWithTeamCount,
+    divisions: divisionsWithCounts,
     pagination: {
       total,
       page,
@@ -242,4 +292,36 @@ export async function getDivisionTeamCount(
 
   const Team = (await import("@/models/Team")).default;
   return Team.countDocuments({ division: divisionId });
+}
+
+/**
+ * Get free agent counts for a division
+ */
+export async function getDivisionFreeAgentCounts(divisionId: string): Promise<{
+  withTeam: number;
+  withoutTeam: number;
+  total: number;
+}> {
+  await connectDB();
+
+  const Player = (await import("@/models/Player")).default;
+
+  const [withTeam, withoutTeam] = await Promise.all([
+    Player.countDocuments({
+      division: divisionId,
+      freeAgent: true,
+      team: { $exists: true, $ne: null },
+    }),
+    Player.countDocuments({
+      division: divisionId,
+      freeAgent: true,
+      $or: [{ team: { $exists: false } }, { team: null }],
+    }),
+  ]);
+
+  return {
+    withTeam,
+    withoutTeam,
+    total: withTeam + withoutTeam,
+  };
 }

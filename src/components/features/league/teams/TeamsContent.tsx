@@ -191,7 +191,7 @@ export function TeamsContent({
             }
           >
             <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="All Divisions" />
+              <SelectValue placeholder="Active Divisions" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Divisions</SelectItem>

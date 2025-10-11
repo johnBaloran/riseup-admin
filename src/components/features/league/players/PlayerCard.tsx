@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Trophy, Mail, User, MoreVertical, Pencil, MapPin } from "lucide-react";
+import { Trophy, Mail, User, MoreVertical, Pencil, MapPin, Users } from "lucide-react";
 
 interface PlayerCardProps {
   player: any;
@@ -34,12 +34,29 @@ export function PlayerCard({ player }: PlayerCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              {!player.team && (
+              {player.freeAgent && player.team && (
+                <Badge
+                  variant="outline"
+                  className="bg-green-100 text-green-800 border-green-200"
+                >
+                  <Users className="h-3 w-3 mr-1" />
+                  Free Agent • {player.team.teamName}
+                </Badge>
+              )}
+              {player.freeAgent && !player.team && (
                 <Badge
                   variant="outline"
                   className="bg-yellow-100 text-yellow-800 border-yellow-200"
                 >
-                  Free Agent
+                  Free Agent • Unassigned
+                </Badge>
+              )}
+              {!player.freeAgent && !player.team && (
+                <Badge
+                  variant="outline"
+                  className="bg-amber-100 text-amber-800 border-amber-200"
+                >
+                  Unassigned
                 </Badge>
               )}
               {!player.user && (

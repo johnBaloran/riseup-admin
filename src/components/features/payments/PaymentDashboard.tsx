@@ -214,7 +214,7 @@ export function PaymentDashboard({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="All Divisions" />
+                  <SelectValue placeholder="Active Divisions" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Divisions</SelectItem>

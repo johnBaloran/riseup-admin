@@ -13,6 +13,7 @@ import {
   getDivisionById,
   getDivisionTeamCount,
 } from "@/lib/db/queries/divisions";
+import { getDivisionFreeAgents } from "@/lib/db/queries/players";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import {
 } from "lucide-react";
 import { format, subDays } from "date-fns";
 import { formatTimeRange } from "@/lib/utils/time";
+import { DivisionFreeAgents } from "@/components/features/league/DivisionFreeAgents";
 
 interface DivisionDetailPageProps {
   params: { id: string };
@@ -47,9 +49,10 @@ export default async function DivisionDetailPage({
     redirect("/unauthorized");
   }
 
-  const [division, teamCount] = await Promise.all([
+  const [division, teamCount, freeAgents] = await Promise.all([
     getDivisionById(params.id),
     getDivisionTeamCount(params.id),
+    getDivisionFreeAgents(params.id),
   ]);
 
   if (!division) {
@@ -327,6 +330,9 @@ export default async function DivisionDetailPage({
           </Button>
         </CardContent>
       </Card>
+
+      {/* Free Agents Section */}
+      <DivisionFreeAgents players={JSON.parse(JSON.stringify(freeAgents))} />
     </div>
   );
 }

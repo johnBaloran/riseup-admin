@@ -37,5 +37,5 @@ export default async function AdminPage() {
   }
 
   // Redirect to first city's dashboard
-  redirect(`/admin/${cities[0]._id}/dashboard`);
+  redirect(`/admin/dashboard`);
 }

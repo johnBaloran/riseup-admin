@@ -148,7 +148,7 @@ export async function getPlayers({
 
   if (teamId) filter.team = teamId;
 
-  if (freeAgentsOnly) filter.team = { $in: [null] }; // only players with no team
+  if (freeAgentsOnly) filter.freeAgent = true; // filter by freeAgent boolean, includes both with and without teams
 
   if (hasUserAccount !== undefined) {
     filter.user = hasUserAccount
@@ -237,6 +237,25 @@ export async function getFreeAgentsByDivision(divisionId: string) {
   })
     .select("playerName jerseyNumber user")
     .lean();
+}
+
+/**
+ * Get all free agents in a division with their current team status
+ */
+export async function getDivisionFreeAgents(divisionId: string) {
+  await connectDB();
+
+  const players = await Player.find({
+    division: divisionId,
+    freeAgent: true,
+  })
+    .select("playerName team user instagram jerseyNumber createdAt freeAgent")
+    .populate("team", "teamName teamCode")
+    .populate("user", "name email phoneNumber")
+    .sort({ playerName: 1 })
+    .lean();
+
+  return players;
 }
 
 /**

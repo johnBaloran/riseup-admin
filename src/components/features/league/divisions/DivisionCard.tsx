@@ -29,6 +29,7 @@ import {
   Pencil,
   Power,
   UserCheck,
+  UserCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -217,6 +218,20 @@ export function DivisionCard({ division }: DivisionCardProps) {
           <Users className="h-4 w-4 flex-shrink-0" />
           <span>{(division as any).teamCount || 0} teams</span>
         </div>
+
+        {(division as any).freeAgentCounts && (
+          <div className="flex items-center gap-2 text-gray-600">
+            <UserCircle className="h-4 w-4 flex-shrink-0" />
+            <span>
+              {(division as any).freeAgentCounts.total} free agents
+              {(division as any).freeAgentCounts.total > 0 && (
+                <span className="text-xs text-gray-500 ml-1">
+                  ({(division as any).freeAgentCounts.withTeam} with team, {(division as any).freeAgentCounts.withoutTeam} unassigned)
+                </span>
+              )}
+            </span>
+          </div>
+        )}
 
         {division.startDate && (
           <div className="pt-2 border-t text-gray-600">
