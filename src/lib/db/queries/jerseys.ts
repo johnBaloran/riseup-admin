@@ -40,21 +40,27 @@ export async function getJerseyOverview(locationIds: string[]) {
 
 /**
  * Get divisions grouped by location for jersey management
+ * Only returns active or register divisions
  */
 export async function getDivisionsByLocation(locationIds: string[]) {
   await connectDB();
 
-  const filter =
-    locationIds.length > 0 ? { location: { $in: locationIds } } : {};
+  const filter: any = {
+    $or: [{ active: true }, { register: true }],
+  };
+
+  if (locationIds.length > 0) {
+    filter.location = { $in: locationIds };
+  }
 
   const divisions = await Division.find(filter)
     .populate("location", "name city")
     .populate("level", "name grade")
-    .select("divisionName location day level jerseyDeadline teams")
+    .select("divisionName location day level jerseyDeadline startDate teams")
     .sort({ location: 1, day: 1 })
     .lean();
 
-  // Get team counts
+  // Get team counts - optimized at database level
   const divisionIds = divisions.map((d) => d._id);
   const teamCounts = await Team.aggregate([
     { $match: { division: { $in: divisionIds } } },
@@ -65,10 +71,21 @@ export async function getDivisionsByLocation(locationIds: string[]) {
     teamCounts.map((tc) => [tc._id.toString(), tc.count])
   );
 
-  return divisions.map((div) => ({
-    ...div,
-    teamCount: teamCountMap.get(div._id.toString()) || 0,
-  }));
+  return divisions.map((div) => {
+    // Calculate jersey deadline: 28 days before startDate
+    let jerseyDeadline = div.jerseyDeadline;
+    if (!jerseyDeadline && div.startDate) {
+      const startDate = new Date(div.startDate);
+      jerseyDeadline = new Date(startDate);
+      jerseyDeadline.setDate(jerseyDeadline.getDate() - 28);
+    }
+
+    return {
+      ...div,
+      jerseyDeadline,
+      teamCount: teamCountMap.get(div._id.toString()) || 0,
+    };
+  });
 }
 
 /**
@@ -97,10 +114,12 @@ export async function getTeamsWithJerseyDetails(divisionId: string) {
 export async function getTeamJerseyDetails(teamId: string) {
   await connectDB();
 
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+
   const team = await Team.findById(teamId)
     .populate({
       path: "division",
-      select: "divisionName day jerseyDeadline",
+      select: "divisionName day jerseyDeadline startDate",
       populate: [
         { path: "location", select: "name" },
         { path: "level", select: "name" },
@@ -109,9 +128,48 @@ export async function getTeamJerseyDetails(teamId: string) {
     .populate({
       path: "players",
       select:
-        "playerName jerseyNumber jerseySize jerseyName user paymentStatus",
+        "playerName jerseyNumber jerseySize jerseyName user paymentStatus paymentMethods",
     })
     .lean();
+
+  if (team && team.division) {
+    // Calculate jersey deadline: 28 days before startDate
+    let jerseyDeadline = (team.division as any).jerseyDeadline;
+    const startDate = (team.division as any).startDate;
+
+    if (!jerseyDeadline && startDate) {
+      const start = new Date(startDate);
+      jerseyDeadline = new Date(start);
+      jerseyDeadline.setDate(jerseyDeadline.getDate() - 28);
+      (team.division as any).jerseyDeadline = jerseyDeadline;
+    }
+  }
+
+  // Calculate actual payment status for each player
+  if (team && team.players) {
+    const playerIds = (team.players as any[]).map((p) => p._id);
+
+    // Get all payment methods for these players (any status)
+    const paymentMethods = await PaymentMethod.find({
+      player: { $in: playerIds },
+    })
+      .select("player")
+      .lean();
+
+    // Create a map of players who have payment methods
+    const paidPlayerIds = new Set(
+      paymentMethods.map((pm) => pm.player.toString())
+    );
+
+    // Update payment status for each player
+    (team.players as any[]).forEach((player) => {
+      const hasPaid = paidPlayerIds.has(player._id.toString());
+      player.paymentStatus = {
+        ...player.paymentStatus,
+        hasPaid,
+      };
+    });
+  }
 
   return team;
 }
@@ -204,6 +262,45 @@ export async function updatePlayerJerseyDetails(
 ) {
   await connectDB();
 
+  // Get the player's team
+  const player = await Player.findById(playerId).select("team").lean();
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  if (!player.team) {
+    throw new Error("Player is not assigned to a team");
+  }
+
+  // Check for duplicate jersey number in the same team
+  if (data.jerseyNumber !== null && data.jerseyNumber !== undefined) {
+    const existingPlayer = await Player.findOne({
+      team: player.team,
+      jerseyNumber: data.jerseyNumber,
+      _id: { $ne: playerId }, // Exclude current player
+    }).lean();
+
+    if (existingPlayer) {
+      throw new Error(
+        `Jersey number ${data.jerseyNumber} is already taken by another player on this team`
+      );
+    }
+
+    // Also check generic jerseys
+    const team = await Team.findById(player.team).select("genericJerseys").lean();
+    if (team?.genericJerseys) {
+      const duplicateGeneric = team.genericJerseys.find(
+        (gj: any) => gj.jerseyNumber === data.jerseyNumber
+      );
+      if (duplicateGeneric) {
+        throw new Error(
+          `Jersey number ${data.jerseyNumber} is already taken by a generic jersey on this team`
+        );
+      }
+    }
+  }
+
   return Player.findByIdAndUpdate(playerId, data, { new: true }).lean();
 }
 
@@ -219,6 +316,34 @@ export async function addGenericJersey(
   }
 ) {
   await connectDB();
+
+  // Check for duplicate jersey number if provided
+  if (jerseyData.jerseyNumber !== null && jerseyData.jerseyNumber !== undefined) {
+    // Check against existing players
+    const existingPlayer = await Player.findOne({
+      team: teamId,
+      jerseyNumber: jerseyData.jerseyNumber,
+    }).lean();
+
+    if (existingPlayer) {
+      throw new Error(
+        `Jersey number ${jerseyData.jerseyNumber} is already taken by player ${existingPlayer.playerName}`
+      );
+    }
+
+    // Check against existing generic jerseys
+    const team = await Team.findById(teamId).select("genericJerseys").lean();
+    if (team?.genericJerseys) {
+      const duplicateGeneric = team.genericJerseys.find(
+        (gj: any) => gj.jerseyNumber === jerseyData.jerseyNumber
+      );
+      if (duplicateGeneric) {
+        throw new Error(
+          `Jersey number ${jerseyData.jerseyNumber} is already taken by another generic jersey`
+        );
+      }
+    }
+  }
 
   return Team.findByIdAndUpdate(
     teamId,
@@ -242,6 +367,35 @@ export async function updateGenericJersey(
   }
 ) {
   await connectDB();
+
+  // Check for duplicate jersey number if provided
+  if (jerseyData.jerseyNumber !== null && jerseyData.jerseyNumber !== undefined) {
+    // Check against existing players
+    const existingPlayer = await Player.findOne({
+      team: teamId,
+      jerseyNumber: jerseyData.jerseyNumber,
+    }).lean();
+
+    if (existingPlayer) {
+      throw new Error(
+        `Jersey number ${jerseyData.jerseyNumber} is already taken by player ${existingPlayer.playerName}`
+      );
+    }
+
+    // Check against other generic jerseys (excluding current one)
+    const team = await Team.findById(teamId).select("genericJerseys").lean();
+    if (team?.genericJerseys) {
+      const duplicateGeneric = team.genericJerseys.find(
+        (gj: any, idx: number) =>
+          idx !== genericIndex && gj.jerseyNumber === jerseyData.jerseyNumber
+      );
+      if (duplicateGeneric) {
+        throw new Error(
+          `Jersey number ${jerseyData.jerseyNumber} is already taken by another generic jersey`
+        );
+      }
+    }
+  }
 
   const updateKey = (
     Object.keys(jerseyData) as Array<keyof typeof jerseyData>
@@ -277,12 +431,18 @@ export async function removeGenericJersey(
 
 /**
  * Get jersey statistics for dashboard
+ * Only counts teams in active or register divisions
  */
 export async function getJerseyStats(locationIds: string[]) {
   await connectDB();
 
-  const filter =
-    locationIds.length > 0 ? { location: { $in: locationIds } } : {};
+  const filter: any = {
+    $or: [{ active: true }, { register: true }],
+  };
+
+  if (locationIds.length > 0) {
+    filter.location = { $in: locationIds };
+  }
 
   const divisions = await Division.find(filter).select("_id").lean();
   const divisionIds = divisions.map((d) => d._id);

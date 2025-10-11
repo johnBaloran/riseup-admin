@@ -7,33 +7,61 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useJerseyData } from "@/hooks/useJerseyData";
 import JerseyStats from "./JerseyStats";
 import DivisionInfo from "./DivisionInfo";
 import TeamCard from "./TeamCard";
-import { TeamWithJerseyInfo } from "@/types/jersey";
 
 export default function JerseyDashboard() {
-  const [selectedLocation, setSelectedLocation] = useState<string>("all");
-  const [selectedDivision, setSelectedDivision] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const selectedLocation = searchParams.get("location") || "all";
+  const selectedDivision = searchParams.get("division") || null;
+
+  // Fetch all data without location filter
   const { divisions, stats, locations, teams, isLoading, error } =
-    useJerseyData(selectedLocation);
+    useJerseyData();
+
+  // Update URL with new filter values
+  const updateFilters = (updates: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+    });
+
+    router.push(`/admin/jerseys?${params.toString()}`);
+  };
 
   // Filter divisions by selected location
   const filteredDivisions = useMemo(() => {
     if (selectedLocation === "all") return divisions;
-    return divisions.filter((div) => div.location._id === selectedLocation);
+    return divisions.filter(
+      (div) => div.location?._id?.toString() === selectedLocation
+    );
   }, [divisions, selectedLocation]);
 
-  // Auto-select first division when divisions change
+  // Auto-select first division when divisions change and no division selected
   useEffect(() => {
     if (filteredDivisions.length > 0 && !selectedDivision) {
-      setSelectedDivision(filteredDivisions[0]._id);
+      updateFilters({ division: filteredDivisions[0]._id });
     }
-  }, [filteredDivisions, selectedDivision]);
+  }, [filteredDivisions.length]);
 
   const currentDivision = filteredDivisions.find(
     (d) => d._id === selectedDivision
@@ -56,20 +84,20 @@ export default function JerseyDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
           Jersey Management
         </h1>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mt-1">
           Manage jersey designs and player details across all teams
         </p>
       </div>
 
       {/* Summary Stats */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
@@ -85,73 +113,71 @@ export default function JerseyDashboard() {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Location Filter */}
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Location
-            </label>
-            <div className="relative">
-              <select
-                value={selectedLocation}
-                onChange={(e) => {
-                  setSelectedLocation(e.target.value);
-                  setSelectedDivision(null);
-                }}
-                className="w-full px-4 py-2 pr-8 bg-white border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                disabled={isLoading}
-              >
-                <option value="all">All Locations</option>
-                {locations.map((loc) => (
-                  <option key={loc._id} value={loc._id}>
-                    {loc.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                size={18}
-              />
-            </div>
-          </div>
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Location Filter */}
+        <div className="flex-1">
+          <Label htmlFor="location-filter">Location</Label>
+          <Select
+            value={selectedLocation}
+            onValueChange={(value) =>
+              updateFilters({
+                location: value === "all" ? undefined : value,
+                division: undefined,
+              })
+            }
+            disabled={isLoading}
+          >
+            <SelectTrigger id="location-filter" className="w-full">
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locations.map((loc) => (
+                <SelectItem key={loc._id} value={loc._id}>
+                  {loc.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          {/* Division Selector */}
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Division
-            </label>
-            <div className="relative">
-              <select
-                value={selectedDivision || ""}
-                onChange={(e) => setSelectedDivision(e.target.value)}
-                className="w-full px-4 py-2 pr-8 bg-white border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-                disabled={isLoading || filteredDivisions.length === 0}
-              >
-                {filteredDivisions.map((div) => (
-                  <option key={div._id} value={div._id}>
-                    {div.divisionName} - {div.day} ({div.teamCount} teams)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                size={18}
+        {/* Division Selector */}
+        <div className="flex-1">
+          <Label htmlFor="division-filter">Division</Label>
+          <Select
+            value={selectedDivision || ""}
+            onValueChange={(value) => updateFilters({ division: value })}
+            disabled={isLoading || filteredDivisions.length === 0}
+          >
+            <SelectTrigger id="division-filter" className="w-full">
+              <SelectValue
+                placeholder={
+                  filteredDivisions.length === 0
+                    ? "No divisions available"
+                    : "Select division"
+                }
               />
-            </div>
-          </div>
+            </SelectTrigger>
+            <SelectContent>
+              {filteredDivisions.map((div) => (
+                <SelectItem key={div._id} value={div._id}>
+                  {div.divisionName} - {div.day} ({div.teamCount} teams)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Current Division Info */}
       {isLoading ? (
-        <div className="bg-white rounded-lg shadow mb-6 p-5 h-24 animate-pulse">
+        <div className="bg-white rounded-lg shadow p-5 h-24 animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2"></div>
         </div>
       ) : currentDivision ? (
         <>
-          <DivisionInfo division={currentDivision} />
+          <DivisionInfo division={currentDivision} teams={divisionTeams} />
 
           {/* Teams Grid */}
           {teamsLoading ? (

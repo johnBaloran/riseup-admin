@@ -103,20 +103,21 @@ export default function GenericJerseySection({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">
+    <div className="bg-white rounded-lg shadow mb-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">
           Generic/Extra Jerseys
-          <span className="ml-2 text-sm font-normal text-gray-600">
+          <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
             ({genericJerseys.length} jerseys)
           </span>
         </h2>
         <button
           onClick={() => setShowAddForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 inline-flex items-center gap-2"
+          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 inline-flex items-center gap-2 justify-center"
         >
           <Plus size={16} />
-          Add Generic Jersey
+          <span className="hidden sm:inline">Add Generic Jersey</span>
+          <span className="sm:hidden">Add Jersey</span>
         </button>
       </div>
 
@@ -153,11 +154,11 @@ export default function GenericJerseySection({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select</option>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
+                <option value="SM">SM</option>
+                <option value="MD">MD</option>
+                <option value="LG">LG</option>
                 <option value="XL">XL</option>
-                <option value="2XL">2XL</option>
+                <option value="XXL">XXL</option>
               </select>
             </div>
             <div>
@@ -203,155 +204,159 @@ export default function GenericJerseySection({
       {/* Generic Jerseys Table */}
       {genericJerseys.length > 0 ? (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
-                    Jersey Number
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
-                    Size
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
-                    Jersey Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {genericJerseys.map((generic, index) => {
-                  const isEditing = editingIndex === index;
-
-                  return (
-                    <tr key={index} className="hover:bg-gray-50">
-                      {isEditing ? (
-                        <>
-                          <td className="px-6 py-4">
-                            <input
-                              type="number"
-                              value={editValues.jerseyNumber}
-                              onChange={(e) =>
-                                setEditValues({
-                                  ...editValues,
-                                  jerseyNumber: e.target.value,
-                                })
-                              }
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="99"
-                            />
-                          </td>
-                          <td className="px-6 py-4">
-                            <select
-                              value={editValues.jerseySize}
-                              onChange={(e) =>
-                                setEditValues({
-                                  ...editValues,
-                                  jerseySize: e.target.value,
-                                })
-                              }
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="">-</option>
-                              <option value="S">S</option>
-                              <option value="M">M</option>
-                              <option value="L">L</option>
-                              <option value="XL">XL</option>
-                              <option value="2XL">2XL</option>
-                            </select>
-                          </td>
-                          <td className="px-6 py-4">
-                            <input
-                              type="text"
-                              value={editValues.jerseyName}
-                              onChange={(e) =>
-                                setEditValues({
-                                  ...editValues,
-                                  jerseyName: e.target.value,
-                                })
-                              }
-                              className="w-32 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="EXTRA"
-                              maxLength={15}
-                            />
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4 text-sm">
-                            {generic.jerseyNumber != null ? (
-                              <span className="text-gray-900">
-                                #{generic.jerseyNumber}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded">
-                                <AlertCircle size={12} />
-                                Missing
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm">
-                            {generic.jerseySize ? (
-                              <span className="text-gray-900">
-                                {generic.jerseySize}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded">
-                                <AlertCircle size={12} />
-                                Missing
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            {generic.jerseyName || "-"}
-                          </td>
-                        </>
-                      )}
-
-                      <td className="px-6 py-4 text-sm">
-                        {isEditing ? (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSaveEdit(index)}
-                              className="text-green-600 hover:text-green-700 p-1 hover:bg-green-50 rounded"
-                              title="Save"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button
-                              onClick={handleCancelEdit}
-                              className="text-gray-600 hover:text-gray-700 p-1 hover:bg-gray-100 rounded"
-                              title="Cancel"
-                            >
-                              <X size={18} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleStartEdit(index, generic)}
-                              className="text-blue-600 hover:text-blue-700 p-1 hover:bg-blue-50 rounded"
-                              title="Edit"
-                            >
-                              <Edit2 size={18} />
-                            </button>
-                            <button
-                              onClick={() => handleRemove(index)}
-                              className="text-red-600 hover:text-red-700 p-1 hover:bg-red-50 rounded"
-                              title="Delete"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Number
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Size
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Jersey Name
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Actions
+                      </th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {genericJerseys.map((generic, index) => {
+                      const isEditing = editingIndex === index;
+
+                      return (
+                        <tr key={index} className="hover:bg-gray-50">
+                          {isEditing ? (
+                            <>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                <input
+                                  type="number"
+                                  value={editValues.jerseyNumber}
+                                  onChange={(e) =>
+                                    setEditValues({
+                                      ...editValues,
+                                      jerseyNumber: e.target.value,
+                                    })
+                                  }
+                                  className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="99"
+                                />
+                              </td>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                <select
+                                  value={editValues.jerseySize}
+                                  onChange={(e) =>
+                                    setEditValues({
+                                      ...editValues,
+                                      jerseySize: e.target.value,
+                                    })
+                                  }
+                                  className="w-20 sm:w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">-</option>
+                                  <option value="SM">SM</option>
+                                  <option value="MD">MD</option>
+                                  <option value="LG">LG</option>
+                                  <option value="XL">XL</option>
+                                  <option value="XXL">XXL</option>
+                                </select>
+                              </td>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                                <input
+                                  type="text"
+                                  value={editValues.jerseyName}
+                                  onChange={(e) =>
+                                    setEditValues({
+                                      ...editValues,
+                                      jerseyName: e.target.value,
+                                    })
+                                  }
+                                  className="w-24 sm:w-32 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="EXTRA"
+                                  maxLength={15}
+                                />
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap">
+                                {generic.jerseyNumber != null ? (
+                                  <span className="text-gray-900">
+                                    #{generic.jerseyNumber}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded whitespace-nowrap">
+                                    <AlertCircle size={12} />
+                                    <span className="hidden sm:inline">Missing</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap">
+                                {generic.jerseySize ? (
+                                  <span className="text-gray-900">
+                                    {generic.jerseySize}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded whitespace-nowrap">
+                                    <AlertCircle size={12} />
+                                    <span className="hidden sm:inline">Missing</span>
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900">
+                                {generic.jerseyName || "-"}
+                              </td>
+                            </>
+                          )}
+
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm">
+                            {isEditing ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleSaveEdit(index)}
+                                  className="text-green-600 hover:text-green-700 p-1 hover:bg-green-50 rounded"
+                                  title="Save"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={handleCancelEdit}
+                                  className="text-gray-600 hover:text-gray-700 p-1 hover:bg-gray-100 rounded"
+                                  title="Cancel"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleStartEdit(index, generic)}
+                                  className="text-blue-600 hover:text-blue-700 p-1 hover:bg-blue-50 rounded"
+                                  title="Edit"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleRemove(index)}
+                                  className="text-red-600 hover:text-red-700 p-1 hover:bg-red-50 rounded"
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       ) : (

@@ -16,6 +16,8 @@ import {
   AlertCircle,
   Clock,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { TeamWithJerseyInfo } from "@/types/jersey";
 
 interface TeamCardProps {
@@ -65,72 +67,71 @@ export default function TeamCard({ team }: TeamCardProps) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 hover:shadow-md transition-all">
-      {/* Team Header */}
-      <div className="mb-3">
-        {team.jerseyEdition ? (
-          <div className="flex items-center gap-2">
-            <div
-              className="w-6 h-6 rounded-full border-2 border-white shadow"
-              style={{ backgroundColor: team.primaryColor || "#999" }}
-            />
-            <div
-              className="w-6 h-6 rounded-full border-2 border-white shadow -ml-3"
-              style={{ backgroundColor: team.secondaryColor || "#666" }}
-            />
-            <h3 className="font-semibold text-gray-900 ml-1 truncate">
-              {team.teamName}
-            </h3>
+    <Card className="hover:border-gray-300 hover:shadow-md transition-all">
+      <CardContent className="p-4">
+        {/* Team Header */}
+        <div className="mb-3">
+          {team.jerseyEdition ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="w-6 h-6 rounded-full border-2 border-white shadow"
+                style={{ backgroundColor: team.primaryColor || "#999" }}
+              />
+              <div
+                className="w-6 h-6 rounded-full border-2 border-white shadow -ml-3"
+                style={{ backgroundColor: team.secondaryColor || "#666" }}
+              />
+              <h3 className="font-semibold text-gray-900 ml-1 truncate">
+                {team.teamName}
+              </h3>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {team.isCustomJersey ? (
+                <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                  <Image size={16} className="text-gray-500" />
+                </div>
+              ) : (
+                <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
+                  <AlertCircle size={16} className="text-red-500" />
+                </div>
+              )}
+              <h3 className="font-semibold text-gray-900 truncate">
+                {team.teamName}
+              </h3>
+            </div>
+          )}
+        </div>
+
+        {/* Jersey Type Badge */}
+        <div className="mb-3">{getJerseyTypeBadge()}</div>
+
+        {/* Player Count */}
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+          <Users size={16} />
+          <span>
+            {readyCount}/{totalPlayers} players ready
+          </span>
+        </div>
+
+        {/* Status */}
+        {hasJerseyDesign && readyCount === totalPlayers && totalPlayers > 0 ? (
+          <div className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded mb-3 flex items-center gap-2">
+            <CheckCircle size={16} />
+            Team Ready
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            {team.isCustomJersey ? (
-              <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
-                <Image size={16} className="text-gray-500" />
-              </div>
-            ) : (
-              <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
-                <AlertCircle size={16} className="text-red-500" />
-              </div>
-            )}
-            <h3 className="font-semibold text-gray-900 truncate">
-              {team.teamName}
-            </h3>
+          <div className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded mb-3 flex items-center gap-2">
+            <Clock size={16} />
+            Incomplete
           </div>
         )}
-      </div>
 
-      {/* Jersey Type Badge */}
-      <div className="mb-3">{getJerseyTypeBadge()}</div>
-
-      {/* Player Count */}
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
-        <Users size={16} />
-        <span>
-          {readyCount}/{totalPlayers} players ready
-        </span>
-      </div>
-
-      {/* Status */}
-      {hasJerseyDesign && readyCount === totalPlayers && totalPlayers > 0 ? (
-        <div className="text-sm text-green-700 bg-green-50 px-3 py-2 rounded mb-3 flex items-center gap-2">
-          <CheckCircle size={16} />
-          Team Ready
-        </div>
-      ) : (
-        <div className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded mb-3 flex items-center gap-2">
-          <Clock size={16} />
-          Incomplete
-        </div>
-      )}
-
-      {/* Actions */}
-      <button
-        onClick={handleViewTeam}
-        className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
-      >
-        View Details
-      </button>
-    </div>
+        {/* Actions */}
+        <Button onClick={handleViewTeam} className="w-full">
+          View Details
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

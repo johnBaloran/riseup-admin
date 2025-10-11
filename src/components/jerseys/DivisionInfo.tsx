@@ -7,14 +7,17 @@
 
 "use client";
 
-import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Shirt, Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { DivisionWithTeams } from "@/types/jersey";
+import { TeamWithJerseyInfo } from "@/types/jersey";
 
 interface DivisionInfoProps {
   division: DivisionWithTeams;
+  teams: TeamWithJerseyInfo[];
 }
 
-export default function DivisionInfo({ division }: DivisionInfoProps) {
+export default function DivisionInfo({ division, teams }: DivisionInfoProps) {
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString("en-US", {
       month: "short",
@@ -29,6 +32,25 @@ export default function DivisionInfo({ division }: DivisionInfoProps) {
     const diffTime = deadlineDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Calculate division-specific stats
+  const divisionStats = {
+    totalTeams: teams.length,
+    teamsWithDesign: teams.filter((t) => t.isCustomJersey || t.jerseyEdition)
+      .length,
+    teamsWithoutDesign: teams.filter(
+      (t) => !t.isCustomJersey && !t.jerseyEdition
+    ).length,
+    completeTeams: teams.filter((t) => {
+      const hasDesign = t.isCustomJersey || t.jerseyEdition;
+      const allPlayersReady =
+        t.players.length > 0 &&
+        t.players.every(
+          (p: any) => p.jerseyNumber != null && p.jerseySize != null
+        );
+      return hasDesign && allPlayersReady;
+    }).length,
   };
 
   const getDeadlineBadge = () => {
@@ -67,36 +89,77 @@ export default function DivisionInfo({ division }: DivisionInfoProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6 p-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
-            {division.divisionName}
-          </h2>
-          <div className="flex gap-4 mt-1 text-sm text-gray-600">
-            <span>{division.location.name}</span>
-            <span>•</span>
-            <span>{division.day}</span>
-            <span>•</span>
-            <span>{division.level.name}</span>
-            {division.jerseyDeadline && (
-              <>
-                <span>•</span>
-                <span>Deadline: {formatDate(division.jerseyDeadline)}</span>
-              </>
-            )}
+    <div className="space-y-4">
+      <Card>
+        <CardContent className="p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {division.divisionName}
+              </h2>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm text-gray-600">
+                <span>{division.location.name}</span>
+                <span className="hidden sm:inline">•</span>
+                <span>{division.day}</span>
+                <span className="hidden sm:inline">•</span>
+                <span>{division.level.name}</span>
+                {division.jerseyDeadline && (
+                  <>
+                    <span className="hidden sm:inline">•</span>
+                    <span>Deadline: {formatDate(division.jerseyDeadline)}</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {getDeadlineBadge()}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {getDeadlineBadge()}
-          <div className="text-right">
-            <p className="text-sm text-gray-600">Teams</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {division.teamCount}
-            </p>
+
+          {/* Division-specific stats */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 mt-4 pt-4 border-t text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="text-gray-400" size={16} />
+              <span className="text-gray-600">
+                <span className="font-semibold text-gray-900">
+                  {divisionStats.totalTeams}
+                </span>{" "}
+                teams in division
+              </span>
+            </div>
+            <span className="hidden sm:inline text-gray-300">•</span>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="text-green-600" size={16} />
+              <span className="text-gray-600">
+                <span className="font-semibold text-green-600">
+                  {divisionStats.teamsWithDesign}
+                </span>{" "}
+                selected design
+              </span>
+            </div>
+            <span className="hidden sm:inline text-gray-300">•</span>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="text-red-600" size={16} />
+              <span className="text-gray-600">
+                <span className="font-semibold text-red-600">
+                  {divisionStats.teamsWithoutDesign}
+                </span>{" "}
+                pending design
+              </span>
+            </div>
+            <span className="hidden sm:inline text-gray-300">•</span>
+            <div className="flex items-center gap-2">
+              <Shirt className="text-purple-600" size={16} />
+              <span className="text-gray-600">
+                <span className="font-semibold text-purple-600">
+                  {divisionStats.completeTeams}
+                </span>{" "}
+                ready to order
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

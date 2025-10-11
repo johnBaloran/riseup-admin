@@ -55,18 +55,6 @@ export async function GET(request: NextRequest) {
       allLocations.map((loc) => loc._id.toString())
     );
 
-    // Filter by specific location if requested
-    let filterLocationIds = accessibleLocationIds;
-    if (locationId && locationId !== "all") {
-      if (!accessibleLocationIds.includes(locationId)) {
-        return NextResponse.json(
-          { error: "Access denied to this location" },
-          { status: 403 }
-        );
-      }
-      filterLocationIds = [locationId];
-    }
-
     // If requesting teams for a specific division
     if (divisionId) {
       const teams = await getTeamsWithJerseyDetails(divisionId);
@@ -74,20 +62,19 @@ export async function GET(request: NextRequest) {
     }
 
     // Get overview data
-    const [divisions, stats, locations] = await Promise.all([
-      getDivisionsByLocation(filterLocationIds),
-      getJerseyStats(filterLocationIds),
-      Promise.resolve(
-        allLocations.filter((loc) =>
-          filterLocationIds.includes(loc._id.toString())
-        )
-      ),
+    // Always fetch all divisions and stats for accessible locations
+    // Frontend will handle location filtering for divisions
+    const [divisions, stats] = await Promise.all([
+      getDivisionsByLocation(accessibleLocationIds),
+      getJerseyStats(accessibleLocationIds),
     ]);
 
     return NextResponse.json({
       divisions,
       stats,
-      locations,
+      locations: allLocations.filter((loc) =>
+        accessibleLocationIds.includes(loc._id.toString())
+      ),
     });
   } catch (error: any) {
     console.error("GET /api/v1/jerseys error:", error);

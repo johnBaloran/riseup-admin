@@ -37,14 +37,14 @@ export const removeJerseyDesignSchema = z.object({
 export const updatePlayerJerseySchema = z.object({
   playerId: z.string().min(1, "Player ID is required"),
   jerseyNumber: z.number().min(0).max(99).nullable().optional(),
-  jerseySize: z.enum(["S", "M", "L", "XL", "2XL"]).nullable().optional(),
+  jerseySize: z.enum(["SM", "MD", "LG", "XL", "XXL"]).nullable().optional(),
   jerseyName: z.string().max(15).nullable().optional(),
 });
 
 export const addGenericJerseySchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
   jerseyNumber: z.number().min(0).max(99).optional(),
-  jerseySize: z.enum(["S", "M", "L", "XL", "2XL"]).optional(),
+  jerseySize: z.enum(["SM", "MD", "LG", "XL", "XXL"]).optional(),
   jerseyName: z.string().max(15).optional(),
 });
 
@@ -52,7 +52,7 @@ export const updateGenericJerseySchema = z.object({
   teamId: z.string().min(1, "Team ID is required"),
   genericIndex: z.number().min(0, "Index must be non-negative"),
   jerseyNumber: z.number().min(0).max(99).optional(),
-  jerseySize: z.enum(["S", "M", "L", "XL", "2XL"]).optional(),
+  jerseySize: z.enum(["SM", "MD", "LG", "XL", "XXL"]).optional(),
   jerseyName: z.string().max(15).optional(),
 });
 

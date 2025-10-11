@@ -84,36 +84,38 @@ export default function PlayerJerseyTable({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow mb-6 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">
+    <div className="bg-white rounded-lg shadow mb-6 p-4 sm:p-6">
+      <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
         Team Players
-        <span className="ml-2 text-sm font-normal text-gray-600">
+        <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
           ({playersWithDetails.length}/{players.length} complete)
         </span>
       </h2>
 
       {players.length > 0 ? (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
                     Player Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
-                    Jersey Number
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                    Number
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
                     Size
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
                     Jersey Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
                     Payment
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -124,12 +126,14 @@ export default function PlayerJerseyTable({
 
                   return (
                     <tr key={player._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 font-medium">
                         <div className="flex items-center gap-2">
-                          {player.playerName}
+                          <span className="truncate max-w-[120px] sm:max-w-none">
+                            {player.playerName}
+                          </span>
                           {!player.user && (
                             <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded flex-shrink-0"
                               title="No user account"
                             >
                               <UserX size={12} />
@@ -140,7 +144,7 @@ export default function PlayerJerseyTable({
 
                       {isEditing ? (
                         <>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4">
                             <input
                               type="number"
                               value={editValues.jerseyNumber}
@@ -150,11 +154,11 @@ export default function PlayerJerseyTable({
                                   jerseyNumber: e.target.value,
                                 })
                               }
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="23"
                             />
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4">
                             <select
                               value={editValues.jerseySize}
                               onChange={(e) =>
@@ -163,17 +167,17 @@ export default function PlayerJerseyTable({
                                   jerseySize: e.target.value,
                                 })
                               }
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-20 sm:w-24 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                               <option value="">-</option>
-                              <option value="S">S</option>
-                              <option value="M">M</option>
-                              <option value="L">L</option>
+                              <option value="SM">SM</option>
+                              <option value="MD">MD</option>
+                              <option value="LG">LG</option>
                               <option value="XL">XL</option>
-                              <option value="2XL">2XL</option>
+                              <option value="XXL">XXL</option>
                             </select>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4">
                             <input
                               type="text"
                               value={editValues.jerseyName}
@@ -183,7 +187,7 @@ export default function PlayerJerseyTable({
                                   jerseyName: e.target.value,
                                 })
                               }
-                              className="w-32 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-24 sm:w-32 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="DOE"
                               maxLength={15}
                             />
@@ -191,51 +195,51 @@ export default function PlayerJerseyTable({
                         </>
                       ) : (
                         <>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap">
                             {player.jerseyNumber != null ? (
                               <span className="text-gray-900">
                                 #{player.jerseyNumber}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded whitespace-nowrap">
                                 <AlertCircle size={12} />
-                                Missing
+                                <span className="hidden sm:inline">Missing</span>
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm whitespace-nowrap">
                             {player.jerseySize ? (
                               <span className="text-gray-900">
                                 {player.jerseySize}
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded whitespace-nowrap">
                                 <AlertCircle size={12} />
-                                Missing
+                                <span className="hidden sm:inline">Missing</span>
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900">
                             {player.jerseyName || "-"}
                           </td>
                         </>
                       )}
 
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm">
                         {player.paymentStatus?.hasPaid ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full whitespace-nowrap">
                             <DollarSign size={14} />
-                            Paid
+                            <span className="hidden sm:inline">Paid</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                          <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full whitespace-nowrap">
                             <AlertCircle size={14} />
-                            Not Paid
+                            <span className="hidden sm:inline">Not Paid</span>
                           </span>
                         )}
                       </td>
 
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm">
                         {isEditing ? (
                           <div className="flex gap-2">
                             <button
@@ -243,14 +247,14 @@ export default function PlayerJerseyTable({
                               className="text-green-600 hover:text-green-700 p-1 hover:bg-green-50 rounded"
                               title="Save"
                             >
-                              <Check size={18} />
+                              <Check size={16} />
                             </button>
                             <button
                               onClick={handleCancelEdit}
                               className="text-gray-600 hover:text-gray-700 p-1 hover:bg-gray-100 rounded"
                               title="Cancel"
                             >
-                              <X size={18} />
+                              <X size={16} />
                             </button>
                           </div>
                         ) : (
@@ -259,7 +263,7 @@ export default function PlayerJerseyTable({
                             className="text-blue-600 hover:text-blue-700 p-1 hover:bg-blue-50 rounded"
                             title="Edit"
                           >
-                            <Edit2 size={18} />
+                            <Edit2 size={16} />
                           </button>
                         )}
                       </td>
@@ -268,6 +272,8 @@ export default function PlayerJerseyTable({
                 })}
               </tbody>
             </table>
+          </div>
+            </div>
           </div>
         </div>
       ) : (
