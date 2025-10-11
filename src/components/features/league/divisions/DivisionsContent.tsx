@@ -56,7 +56,7 @@ export function DivisionsContent({
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
 
-  const updateFilters = (updates: Record<string, string | undefined>) => {
+  const updateFilters = (updates: Record<string, string | undefined>, resetPage = true) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -67,8 +67,10 @@ export function DivisionsContent({
       }
     });
 
-    // Reset to page 1 when filters change
-    params.set("page", "1");
+    // Reset to page 1 when filters change (but not when changing page itself)
+    if (resetPage && !updates.page) {
+      params.set("page", "1");
+    }
 
     router.push(`/admin/league/divisions?${params.toString()}`);
   };
@@ -176,7 +178,7 @@ export function DivisionsContent({
           totalPages={pagination.totalPages}
           total={pagination.total}
           limit={pagination.limit}
-          onPageChange={(page) => updateFilters({ page: page.toString() })}
+          onPageChange={(page) => updateFilters({ page: page.toString() }, false)}
         />
       )}
     </div>
