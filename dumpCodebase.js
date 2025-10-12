@@ -45,7 +45,7 @@ if (files.length === 0) {
 }
 
 // Split into 3 roughly equal parts
-const chunkSize = Math.ceil(files.length / 3);
+const chunkSize = Math.ceil(files.length / 6);
 const chunks = [
   files.slice(0, chunkSize),
   files.slice(chunkSize, chunkSize * 2),

@@ -204,7 +204,7 @@ export default function GenericJerseySection({
       {/* Generic Jerseys Table */}
       {genericJerseys.length > 0 ? (
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="overflow-x-auto">
             <div className="inline-block min-w-full align-middle">
               <div className="overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">

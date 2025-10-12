@@ -74,7 +74,7 @@ const playerSchema = new Schema<IPlayer>(
       email: String,
       phoneNumber: String,
     },
-  
+
     paymentMethods: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -120,6 +120,31 @@ const playerSchema = new Schema<IPlayer>(
       twosMade: { type: Number, default: 0 },
       freeThrowsMade: { type: Number, default: 0 },
     },
+    allStats: [
+      {
+        type: {
+          points: Number,
+          rebounds: Number,
+          assists: Number,
+          blocks: Number,
+          steals: Number,
+          threesMade: Number,
+          twosMade: Number,
+          freeThrowsMade: Number,
+          threesMiss: Number,
+          twosMiss: Number,
+          freeThrowsMiss: Number,
+          fouls: Number,
+          turnovers: Number,
+          shotChartLists: Array,
+          game: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Game",
+          },
+          teamId: String,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

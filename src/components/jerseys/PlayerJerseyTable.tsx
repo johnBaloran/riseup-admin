@@ -16,6 +16,9 @@ import {
   DollarSign,
   UserX,
   Users,
+  Copy,
+  Table2,
+  Edit,
 } from "lucide-react";
 
 interface Player {
@@ -30,8 +33,15 @@ interface Player {
   };
 }
 
+interface GenericJersey {
+  jerseyNumber?: number;
+  jerseySize?: string;
+  jerseyName?: string;
+}
+
 interface PlayerJerseyTableProps {
   players: Player[];
+  genericJerseys?: GenericJersey[];
   onUpdatePlayer: (
     playerId: string,
     data: {
@@ -44,8 +54,11 @@ interface PlayerJerseyTableProps {
 
 export default function PlayerJerseyTable({
   players,
+  genericJerseys = [],
   onUpdatePlayer,
 }: PlayerJerseyTableProps) {
+  const [viewMode, setViewMode] = useState<"edit" | "summary">("edit");
+  const [copied, setCopied] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{
     jerseyNumber: string;
@@ -56,6 +69,42 @@ export default function PlayerJerseyTable({
   const playersWithDetails = players.filter(
     (p) => p.jerseyNumber != null && p.jerseySize != null
   );
+
+  const handleCopyToClipboard = () => {
+    // Create tab-separated values for easy paste into Google Sheets
+    const headers = ["Jersey Name", "Jersey Number", "Size"];
+    const rows: string[][] = [];
+
+    // Add players
+    players.forEach((player) => {
+      rows.push([
+        player.jerseyName || "",
+        player.jerseyNumber?.toString() || "",
+        player.jerseySize || "",
+      ]);
+    });
+
+    // Add generic jerseys
+    genericJerseys.forEach((generic) => {
+      rows.push([
+        generic.jerseyName || "",
+        generic.jerseyNumber?.toString() || "",
+        generic.jerseySize || "",
+      ]);
+    });
+
+    // Create tab-separated string
+    const tsvContent = [
+      headers.join("\t"),
+      ...rows.map((row) => row.join("\t")),
+    ].join("\n");
+
+    // Copy to clipboard
+    navigator.clipboard.writeText(tsvContent).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const handleStartEdit = (player: Player) => {
     setEditingPlayer(player._id);
@@ -83,18 +132,129 @@ export default function PlayerJerseyTable({
     setEditValues({ jerseyNumber: "", jerseySize: "", jerseyName: "" });
   };
 
+  const totalJerseys = players.length + genericJerseys.length;
+
   return (
     <div className="bg-white rounded-lg shadow mb-6 p-4 sm:p-6">
-      <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">
-        Team Players
-        <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
-          ({playersWithDetails.length}/{players.length} complete)
-        </span>
-      </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+          {viewMode === "edit" ? (
+            <>
+              Team Players & Jerseys
+              <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
+                ({playersWithDetails.length}/{players.length} players complete)
+              </span>
+            </>
+          ) : (
+            <>
+              Jersey Summary
+              <span className="ml-2 text-xs sm:text-sm font-normal text-gray-600">
+                ({totalJerseys} total jerseys)
+              </span>
+            </>
+          )}
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setViewMode(viewMode === "edit" ? "summary" : "edit")}
+            className="px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-50 inline-flex items-center gap-2 justify-center"
+          >
+            {viewMode === "edit" ? (
+              <>
+                <Table2 size={16} />
+                <span className="hidden sm:inline">Summary View</span>
+                <span className="sm:hidden">Summary</span>
+              </>
+            ) : (
+              <>
+                <Edit size={16} />
+                <span className="hidden sm:inline">Edit View</span>
+                <span className="sm:hidden">Edit</span>
+              </>
+            )}
+          </button>
+          {viewMode === "summary" && (
+            <button
+              onClick={handleCopyToClipboard}
+              className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 inline-flex items-center gap-2 justify-center"
+            >
+              {copied ? (
+                <>
+                  <Check size={16} />
+                  <span className="hidden sm:inline">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={16} />
+                  <span className="hidden sm:inline">Copy for Sheets</span>
+                  <span className="sm:hidden">Copy</span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
 
-      {players.length > 0 ? (
+      {viewMode === "summary" ? (
+        // Summary View - Combined Players and Generic Jerseys
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="overflow-x-auto">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Jersey Name
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Number
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase whitespace-nowrap">
+                        Size
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {players.map((player) => (
+                      <tr key={player._id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 font-medium">
+                          {player.jerseyName || "-"}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {player.jerseyNumber != null
+                            ? `${player.jerseyNumber}`
+                            : "-"}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {player.jerseySize || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                    {genericJerseys.map((generic, idx) => (
+                      <tr key={`generic-${idx}`} className="hover:bg-gray-50 bg-purple-50">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 font-medium">
+                          {generic.jerseyName || "-"}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {generic.jerseyNumber != null
+                            ? `${generic.jerseyNumber}`
+                            : "-"}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {generic.jerseySize || "-"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : players.length > 0 ? (
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
             <div className="inline-block min-w-full align-middle">
               <div className="overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">

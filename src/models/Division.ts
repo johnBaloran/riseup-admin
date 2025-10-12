@@ -3,13 +3,28 @@
 /**
  * SOLID - Single Responsibility Principle (SRP)
  * Division model - division data structure ONLY
+ *
+ * ENHANCED WITH:
+ * - Flexible season configuration
+ * - Backward compatible with existing divisions
  */
 
 import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
+export interface ISeasonConfig {
+  regularSeasonWeeks: number; // Number of regular season weeks (default: 7)
+  hasPlayoffs: boolean; // Whether division has playoffs (default: true)
+  playoffStructure: {
+    hasQuarterfinals: boolean; // Week after regular season (default: true)
+    hasSemifinals: boolean; // Week after quarterfinals (default: true)
+    hasFinals: boolean; // Week after semifinals (default: true)
+  };
+}
+
 export interface IDivision extends mongoose.Document {
+  // ===== EXISTING FIELDS (unchanged) =====
   divisionName: string;
   city: mongoose.Types.ObjectId;
   location: mongoose.Types.ObjectId;
@@ -28,17 +43,53 @@ export interface IDivision extends mongoose.Document {
     earlyBird?: mongoose.Types.ObjectId;
     regular?: mongoose.Types.ObjectId;
     installment?: mongoose.Types.ObjectId;
+    regularInstallment?: mongoose.Types.ObjectId;
     firstInstallment?: mongoose.Types.ObjectId;
     free?: mongoose.Types.ObjectId;
   };
+
   jerseyDeadline?: Date; // NEW: Jersey selection deadline
+
+  // ===== NEW SEASON CONFIGURATION (optional for backward compatibility) =====
+  seasonConfig?: ISeasonConfig;
 
   createdAt: Date;
   updatedAt: Date;
 }
 
+const seasonConfigSchema = new Schema<ISeasonConfig>(
+  {
+    regularSeasonWeeks: {
+      type: Number,
+      default: 7,
+      min: [1, "Must have at least 1 week"],
+      max: [20, "Cannot exceed 20 weeks"],
+    },
+    hasPlayoffs: {
+      type: Boolean,
+      default: true,
+    },
+    playoffStructure: {
+      hasQuarterfinals: {
+        type: Boolean,
+        default: true,
+      },
+      hasSemifinals: {
+        type: Boolean,
+        default: true,
+      },
+      hasFinals: {
+        type: Boolean,
+        default: true,
+      },
+    },
+  },
+  { _id: false } // Don't create _id for subdocument
+);
+
 const divisionSchema = new Schema<IDivision>(
   {
+    // ===== EXISTING FIELDS =====
     divisionName: {
       type: String,
       required: [true, "Division name is required"],
@@ -96,7 +147,6 @@ const divisionSchema = new Schema<IDivision>(
         ref: "Game",
       },
     ],
-
     prices: {
       earlyBird: {
         type: Schema.Types.ObjectId,
@@ -126,13 +176,27 @@ const divisionSchema = new Schema<IDivision>(
     jerseyDeadline: {
       type: Date,
     },
+
+    // ===== NEW SEASON CONFIGURATION =====
+    seasonConfig: {
+      type: seasonConfigSchema,
+      default: () => ({
+        regularSeasonWeeks: 7,
+        hasPlayoffs: true,
+        playoffStructure: {
+          hasQuarterfinals: true,
+          hasSemifinals: true,
+          hasFinals: true,
+        },
+      }),
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Indexes
+// ===== INDEXES =====
 divisionSchema.index({ city: 1, location: 1 });
 divisionSchema.index({ active: 1 });
 divisionSchema.index({ register: 1 });

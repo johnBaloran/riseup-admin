@@ -261,9 +261,10 @@ export default function TeamJerseyDetail({ teamId }: TeamJerseyDetailProps) {
           onRemoveDesign={handleRemoveDesign}
         />
 
-        {/* Team Players Section */}
+        {/* Team Players Section with Summary View Toggle */}
         <PlayerJerseyTable
           players={team.players}
+          genericJerseys={team.genericJerseys || []}
           onUpdatePlayer={handleUpdatePlayer}
         />
 
