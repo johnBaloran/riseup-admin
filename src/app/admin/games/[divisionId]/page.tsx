@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -82,6 +82,7 @@ interface DivisionSchedule {
 interface TeamScheduleCount {
   teamId: string;
   teamCode: string;
+  teamName: string;
   gameCount: number;
 }
 
@@ -95,6 +96,7 @@ export default function DivisionSchedulePage() {
   const [teamCounts, setTeamCounts] = useState<TeamScheduleCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const scheduleViewRef = useRef<HTMLDivElement>(null);
 
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -178,14 +180,33 @@ export default function DivisionSchedulePage() {
       if (!selectedWeekData) throw new Error("Week not found");
 
       // Prepare games data
-      const gamesData = games.map((game) => ({
-        gameName: game.gameName,
-        date: selectedWeekData.date.toISOString(),
-        time: game.time,
-        homeTeam: game.homeTeam,
-        awayTeam: game.awayTeam,
-        published: true, // Publish by default
-      }));
+      const gamesData = games.map((game) => {
+        // Create date in local timezone by combining week date + game time
+        const weekDate = new Date(selectedWeekData.date);
+        const [hours, minutes] = game.time.split(':').map(Number);
+
+        // Create a new date with the correct local date and time
+        const localDate = new Date(
+          weekDate.getFullYear(),
+          weekDate.getMonth(),
+          weekDate.getDate(),
+          hours,
+          minutes,
+          0,
+          0
+        );
+
+        return {
+          gameName: game.gameName,
+          date: localDate.toISOString(),
+          time: game.time,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          published: true, // Publish by default
+          week: selectedWeek,
+          weekType: selectedWeekData.weekType,
+        };
+      });
 
       // Create games
       const response = await fetch("/api/v1/games/create", {
@@ -247,6 +268,31 @@ export default function DivisionSchedulePage() {
     fetchDivisionSchedule();
   };
 
+  // Handle mobile week selection with smooth scroll
+  const handleMobileWeekSelect = () => {
+    if (scheduleViewRef.current) {
+      scheduleViewRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  // Handle delete game request from WeekScheduleView
+  const handleDeleteGameRequest = (
+    gameId: string,
+    gameName: string,
+    isPublished: boolean
+  ) => {
+    setDeleteDialog({
+      open: true,
+      gameId,
+      gameName,
+      isPublished,
+      isCompleted: false,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -279,32 +325,33 @@ export default function DivisionSchedulePage() {
   return (
     <div className="h-screen flex flex-col">
       {/* Top Header */}
-      <div className="border-b bg-white px-6 py-4">
+      <div className="border-b bg-white px-4 sm:px-6 py-4">
         <Link
           href="/admin/games"
-          className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 mb-3"
+          className="inline-flex items-center text-xs sm:text-sm text-blue-600 hover:text-blue-700 mb-3"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back to Schedule Overview
+          <span className="hidden sm:inline">Back to Schedule Overview</span>
+          <span className="sm:hidden">Back</span>
         </Link>
 
         <div>
-          <h1 className="text-2xl font-bold">{schedule.division.name}</h1>
-          <div className="flex items-center gap-6 text-sm text-gray-600 mt-2">
+          <h1 className="text-xl sm:text-2xl font-bold">{schedule.division.name}</h1>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600 mt-2">
             <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4" />
-              {schedule.division.location.name}
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="truncate">{schedule.division.location.name}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
               {schedule.division.day}s
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
-              {schedule.division.timeRange}
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{schedule.division.timeRange}</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4" />
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
               {schedule.division.teamCount} teams
             </div>
           </div>
@@ -312,37 +359,43 @@ export default function DivisionSchedulePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Week Sidebar */}
-        <WeekSidebar
-          weeks={schedule.weeks}
-          selectedWeek={selectedWeek}
-          onWeekSelect={setSelectedWeek}
-          regularSeasonWeeks={regularSeasonWeeks}
-        />
+        <div className="md:w-64 border-b md:border-b-0 md:border-r">
+          <WeekSidebar
+            weeks={schedule.weeks}
+            selectedWeek={selectedWeek}
+            onWeekSelect={setSelectedWeek}
+            regularSeasonWeeks={regularSeasonWeeks}
+            onMobileWeekSelect={handleMobileWeekSelect}
+          />
+        </div>
 
         {/* Week Schedule View */}
-        {currentWeekData && (
-          <WeekScheduleView
-            weekNumber={currentWeekData.weekNumber}
-            weekType={currentWeekData.weekType}
-            weekLabel={currentWeekData.label}
-            weekDate={currentWeekData.date}
-            locationName={schedule.division.location.name}
-            games={currentWeekData.games.map((g) => ({
-              id: g.id,
-              gameName: g.gameName,
-              time: g.time,
-              homeTeam: g.homeTeam.id,
-              awayTeam: g.awayTeam.id,
-              published: g.published,
-            }))}
-            teams={schedule.teams}
-            teamCounts={teamCounts}
-            onSave={handleSaveGames}
-            onCancel={handleCancel}
-          />
-        )}
+        <div ref={scheduleViewRef} className="flex-1 flex flex-col overflow-hidden">
+          {currentWeekData && (
+            <WeekScheduleView
+              weekNumber={currentWeekData.weekNumber}
+              weekType={currentWeekData.weekType}
+              weekLabel={currentWeekData.label}
+              weekDate={currentWeekData.date}
+              locationName={schedule.division.location.name}
+              games={currentWeekData.games.map((g) => ({
+                id: g.id,
+                gameName: g.gameName,
+                time: g.time,
+                homeTeam: g.homeTeam.id,
+                awayTeam: g.awayTeam.id,
+                published: g.published,
+              }))}
+              teams={schedule.teams}
+              teamCounts={teamCounts}
+              onSave={handleSaveGames}
+              onCancel={handleCancel}
+              onDeleteGame={handleDeleteGameRequest}
+            />
+          )}
+        </div>
       </div>
 
       {/* Delete Game Dialog */}

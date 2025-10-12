@@ -174,6 +174,8 @@ export interface WeekSchedule {
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
   label: string;
   date: Date;
+  isRegular: boolean;
+  isPlayoff: boolean;
   games: Array<{
     id: string;
     gameName: string;
@@ -239,6 +241,8 @@ export async function getDivisionSchedule(divisionId: string) {
       weekType: week.weekType,
       label: week.label,
       date: week.date,
+      isRegular: week.weekType === "REGULAR",
+      isPlayoff: week.weekType !== "REGULAR",
       games: weekGames.map((game) => ({
         id: game._id.toString(),
         gameName: game.gameName,
@@ -288,6 +292,7 @@ export async function getDivisionSchedule(divisionId: string) {
 export interface TeamScheduleCount {
   teamId: string;
   teamCode: string;
+  teamName: string;
   gameCount: number;
 }
 
@@ -302,7 +307,7 @@ export async function getTeamScheduleCounts(
 
   const division = await Division.findById(divisionId).populate(
     "teams",
-    "teamCode"
+    "teamCode teamName"
   );
 
   if (!division) {
@@ -323,6 +328,7 @@ export async function getTeamScheduleCounts(
     counts.push({
       teamId: team._id.toString(),
       teamCode: team.teamCode,
+      teamName: team.teamName,
       gameCount,
     });
   }

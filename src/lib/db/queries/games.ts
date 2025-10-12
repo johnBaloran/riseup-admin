@@ -406,17 +406,18 @@ export async function deleteGame(gameId: string) {
     throw new Error("Game not found");
   }
 
-  // Step 1: Remove game stats from all players' allStats array
+  // Step 1: Find players affected by this game BEFORE removing stats
+  const affectedPlayers = await Player.find({
+    "allStats.game": gameId,
+  }).select("_id");
+
+  // Step 2: Remove game stats from players' allStats array
   await Player.updateMany(
     { "allStats.game": gameId },
     { $pull: { allStats: { game: gameId } } }
   );
 
-  // Step 2: Recalculate averageStats for affected players
-  const affectedPlayers = await Player.find({
-    "allStats.game": { $exists: true },
-  });
-
+  // Step 3: Recalculate averageStats for affected players only
   for (const player of affectedPlayers) {
     await recalculatePlayerAverageStats(player._id.toString());
   }

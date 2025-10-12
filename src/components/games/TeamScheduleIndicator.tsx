@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 
 interface TeamScheduleCount {
   teamId: string;
-  teamCode: string;
+  teamName: string;
   gameCount: number;
 }
 
@@ -50,7 +50,7 @@ export function TeamScheduleIndicator({
                 : "bg-gray-100 text-gray-600 border-gray-200"
             )}
           >
-            {team.teamCode}
+            {team.teamName}
             {team.gameCount > 0 && (
               <span className="ml-1.5 text-xs">({team.gameCount})</span>
             )}

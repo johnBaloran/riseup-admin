@@ -31,9 +31,9 @@ export const gameWeekTypeEnum = z.enum([
 const baseGameSchema = z.object({
   gameName: z
     .string()
-    .min(2, "Game name must be at least 2 characters")
     .max(100, "Game name must not exceed 100 characters")
-    .trim(),
+    .trim()
+    .optional(),
 
   date: z.string().refine(
     (dateString) => {

@@ -61,17 +61,39 @@ export function GameFormCard({
 }: GameFormCardProps) {
   const isPlayoff = weekType !== "REGULAR";
 
+  // Get team names for display
+  const homeTeamData = teams.find((t) => t.id === data.homeTeam);
+  const awayTeamData = teams.find((t) => t.id === data.awayTeam);
+
+  // Auto-generate game name when both teams are selected
+  const autoGameName =
+    homeTeamData && awayTeamData
+      ? `${homeTeamData.name} vs. ${awayTeamData.name}`
+      : "";
+
+  const displayGameName = autoGameName || data.gameName;
+
+  // Filter teams for dropdowns - exclude opposite team UNLESS it's the current selection
+  const availableHomeTeams = teams.filter(
+    (team) =>
+      team.id === data.homeTeam || !data.awayTeam || team.id !== data.awayTeam
+  );
+  const availableAwayTeams = teams.filter(
+    (team) =>
+      team.id === data.awayTeam || !data.homeTeam || team.id !== data.homeTeam
+  );
+
   return (
     <div
       className={cn(
-        "border rounded-lg p-4 space-y-4",
+        "border rounded-lg p-4",
         published && !isDraft && "border-green-300 bg-green-50",
         isDraft && "border-blue-300 bg-blue-50",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {isPlayoff && <WeekTypeBadge weekType={weekType} />}
           {published && !isDraft && (
@@ -82,6 +104,11 @@ export function GameFormCard({
           {isDraft && (
             <span className="px-2 py-1 bg-blue-600 text-white text-xs font-semibold rounded">
               DRAFT
+            </span>
+          )}
+          {displayGameName && (
+            <span className="text-sm font-semibold text-gray-900">
+              {displayGameName}
             </span>
           )}
         </div>
@@ -97,45 +124,23 @@ export function GameFormCard({
       </div>
 
       {/* Form Fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Game Name */}
-        <div className="space-y-2">
-          <Label htmlFor={`game-name-${index}`}>Game Name</Label>
-          <Input
-            id={`game-name-${index}`}
-            value={data.gameName}
-            onChange={(e) => onChange(index, "gameName", e.target.value)}
-            placeholder={
-              isPlayoff
-                ? `${weekType.slice(0, 2)} ${index + 1}`
-                : `Game ${index + 1}`
-            }
-          />
-        </div>
-
-        {/* Time */}
-        <div className="space-y-2">
-          <Label htmlFor={`time-${index}`}>Time</Label>
-          <Input
-            id={`time-${index}`}
-            type="time"
-            value={data.time}
-            onChange={(e) => onChange(index, "time", e.target.value)}
-          />
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Home Team */}
-        <div className="space-y-2">
-          <Label htmlFor={`home-team-${index}`}>Home Team</Label>
+        <div className="space-y-1.5">
+          <Label htmlFor={`home-team-${index}`} className="text-xs">
+            Home Team
+          </Label>
           <Select
             value={data.homeTeam}
-            onValueChange={(value) => onChange(index, "homeTeam", value)}
+            onValueChange={(value) => {
+              onChange(index, "homeTeam", value);
+            }}
           >
-            <SelectTrigger id={`home-team-${index}`}>
+            <SelectTrigger id={`home-team-${index}`} className="text-sm">
               <SelectValue placeholder="Select home team" />
             </SelectTrigger>
             <SelectContent>
-              {teams.map((team) => (
+              {availableHomeTeams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>
                   {team.name}
                 </SelectItem>
@@ -145,41 +150,55 @@ export function GameFormCard({
         </div>
 
         {/* Away Team */}
-        <div className="space-y-2 relative">
-          <Label htmlFor={`away-team-${index}`}>Away Team</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-500">VS</span>
-            <Select
-              value={data.awayTeam}
-              onValueChange={(value) => onChange(index, "awayTeam", value)}
-            >
-              <SelectTrigger id={`away-team-${index}`}>
-                <SelectValue placeholder="Select away team" />
-              </SelectTrigger>
-              <SelectContent>
-                {teams.map((team) => (
-                  <SelectItem key={team.id} value={team.id}>
-                    {team.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor={`away-team-${index}`} className="text-xs">
+            Away Team
+          </Label>
+          <Select
+            value={data.awayTeam}
+            onValueChange={(value) => {
+              onChange(index, "awayTeam", value);
+            }}
+          >
+            <SelectTrigger id={`away-team-${index}`} className="text-sm">
+              <SelectValue placeholder="Select away team" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableAwayTeams.map((team) => (
+                <SelectItem key={team.id} value={team.id}>
+                  {team.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Time */}
+        <div className="space-y-1.5">
+          <Label htmlFor={`time-${index}`} className="text-xs">
+            Time
+          </Label>
+          <Input
+            id={`time-${index}`}
+            type="time"
+            value={data.time}
+            onChange={(e) => onChange(index, "time", e.target.value)}
+            className="text-sm w-[130px]"
+          />
         </div>
       </div>
 
       {/* Validation Messages */}
       {data.homeTeam && data.awayTeam && data.homeTeam === data.awayTeam && (
-        <p className="text-sm text-red-600">
+        <p className="text-xs text-red-600 mt-2">
           Home team and away team cannot be the same
         </p>
       )}
-      {(!data.gameName || !data.time || !data.homeTeam || !data.awayTeam) &&
-        !isDraft && (
-          <p className="text-sm text-orange-600">
-            Incomplete matchup - fill all fields to publish
-          </p>
-        )}
+      {(!data.time || !data.homeTeam || !data.awayTeam) && !isDraft && (
+        <p className="text-xs text-orange-600 mt-2">
+          Incomplete matchup - fill all fields to publish
+        </p>
+      )}
     </div>
   );
 }

@@ -31,6 +31,7 @@ interface WeekSidebarProps {
   selectedWeek: number;
   onWeekSelect: (weekNumber: number) => void;
   regularSeasonWeeks: number;
+  onMobileWeekSelect?: () => void;
 }
 
 export function WeekSidebar({
@@ -38,6 +39,7 @@ export function WeekSidebar({
   selectedWeek,
   onWeekSelect,
   regularSeasonWeeks,
+  onMobileWeekSelect,
 }: WeekSidebarProps) {
   const [regularSeasonOpen, setRegularSeasonOpen] = useState(true);
   const [playoffsOpen, setPlayoffsOpen] = useState(true);
@@ -45,8 +47,18 @@ export function WeekSidebar({
   const regularWeeks = weeks.filter((w) => w.isRegular);
   const playoffWeeks = weeks.filter((w) => w.isPlayoff);
 
+  const handleWeekClick = (weekNumber: number) => {
+    onWeekSelect(weekNumber);
+    // On mobile, close accordions and trigger scroll
+    if (onMobileWeekSelect && window.innerWidth < 768) {
+      setRegularSeasonOpen(false);
+      setPlayoffsOpen(false);
+      onMobileWeekSelect();
+    }
+  };
+
   return (
-    <div className="w-64 border-r bg-gray-50 h-full overflow-y-auto">
+    <div className="w-full md:w-64 bg-gray-50 h-full overflow-y-auto">
       {/* Regular Season */}
       <div className="border-b">
         <button
@@ -69,7 +81,7 @@ export function WeekSidebar({
                 key={week.weekNumber}
                 week={week}
                 isSelected={selectedWeek === week.weekNumber}
-                onClick={() => onWeekSelect(week.weekNumber)}
+                onClick={() => handleWeekClick(week.weekNumber)}
               />
             ))}
           </div>
@@ -102,7 +114,7 @@ export function WeekSidebar({
                   key={week.weekNumber}
                   week={week}
                   isSelected={selectedWeek === week.weekNumber}
-                  onClick={() => onWeekSelect(week.weekNumber)}
+                  onClick={() => handleWeekClick(week.weekNumber)}
                 />
               ))}
             </div>
