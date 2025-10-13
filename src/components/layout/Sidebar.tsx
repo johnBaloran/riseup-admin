@@ -54,7 +54,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-800">
-          <h1 className="text-xl font-bold">Admin Portal</h1>
+          <h1 className="text-xl font-bold">Rise Up League</h1>
           <Button
             variant="ghost"
             size="icon"
@@ -68,27 +68,38 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="overflow-y-auto py-4 px-3 h-[calc(100vh-4rem)]">
           <ul className="space-y-1">
-            {filteredNavigation.map((item) =>
-              item.children ? (
-                <NavItemWithChildren
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  cityId={cityId}
-                  onNavigate={onClose}
-                />
-              ) : (
+            {filteredNavigation.map((item) => {
+              if (item.children) {
+                return (
+                  <NavItemWithChildren
+                    key={item.href || item.label}
+                    item={item}
+                    pathname={pathname}
+                    cityId={cityId}
+                    onNavigate={onClose}
+                  />
+                );
+              }
+
+              // For top-level items without children
+              const href = item.href?.startsWith('/') ? item.href : `/${item.href}`;
+              const fullPath = `/admin${href}`;
+              // Check if current page is this route or a sub-page of it
+              const isActive =
+                pathname === fullPath || pathname.startsWith(`${fullPath}/`);
+
+              return (
                 <li key={item.href}>
                   <NavItem
                     label={item.label}
-                    href={`/admin/${item.href}`}
+                    href={fullPath}
                     icon={item.icon}
-                    isActive={pathname === `/admin/${item.href}`}
+                    isActive={isActive}
                     onClick={onClose}
                   />
                 </li>
-              )
-            )}
+              );
+            })}
           </ul>
         </nav>
       </aside>

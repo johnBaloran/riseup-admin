@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { formatTime } from "@/lib/utils/time";
 import { PopulatedDivision } from "@/types/division";
 import Link from "next/link";
 
@@ -209,7 +210,7 @@ export function DivisionCard({ division }: DivisionCardProps) {
           <div className="flex items-center gap-2 text-gray-600">
             <Clock className="h-4 w-4 flex-shrink-0" />
             <span>
-              {division.startTime} - {division.endTime}
+              {formatTime(division.startTime)} - {formatTime(division.endTime)}
             </span>
           </div>
         )}

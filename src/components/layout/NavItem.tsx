@@ -37,7 +37,7 @@ export function NavItem({
       className={cn(
         "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
         isActive
-          ? "bg-gray-800 text-white"
+          ? "bg-blue-600 text-white font-semibold"
           : "text-gray-400 hover:bg-gray-800 hover:text-white"
       )}
     >

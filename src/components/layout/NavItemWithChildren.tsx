@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,12 +28,40 @@ export function NavItemWithChildren({
   cityId,
   onNavigate,
 }: NavItemWithChildrenProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  // Check if any child route is active (exact match or starts with the route)
+  const isActiveParent = item.children?.some((child) => {
+    // Handle both /admin/league/teams and /admin//league/teams patterns
+    const href = child.href?.startsWith('/') ? child.href : `/${child.href}`;
+    const childPath = `/admin${href}`;
+    const isActive = pathname === childPath || pathname.startsWith(`${childPath}/`);
+    console.log("NavItemWithChildren check:", {
+      itemLabel: item.label,
+      childLabel: child.label,
+      childHref: child.href,
+      childPath,
+      pathname,
+      isActive,
+    });
+    return isActive;
+  });
+
+  // Auto-expand if a child is active
+  const [isOpen, setIsOpen] = useState(isActiveParent || false);
   const Icon = (LucideIcons as any)[item.icon];
 
-  const isActiveParent = item.children?.some(
-    (child) => pathname === `/admin/${child.href}`
-  );
+  console.log("NavItemWithChildren state:", {
+    itemLabel: item.label,
+    pathname,
+    isActiveParent,
+    isOpen,
+  });
+
+  // Update isOpen when pathname changes and a child becomes active
+  useEffect(() => {
+    if (isActiveParent) {
+      setIsOpen(true);
+    }
+  }, [isActiveParent]);
 
   return (
     <li>
@@ -62,17 +90,22 @@ export function NavItemWithChildren({
         <ul className="mt-1 ml-4 space-y-1 border-l border-gray-700 pl-4">
           {item.children.map((child) => {
             const ChildIcon = (LucideIcons as any)[child.icon];
-            const isActive = pathname === `/admin/${child.href}`;
+            // Handle both /admin/league/teams and /admin//league/teams patterns
+            const href = child.href?.startsWith('/') ? child.href : `/${child.href}`;
+            const childPath = `/admin${href}`;
+            // Check if current page is this child or a sub-page of it
+            const isActive =
+              pathname === childPath || pathname.startsWith(`${childPath}/`);
 
             return (
               <li key={child.href}>
                 <Link
-                  href={`/admin/${child.href}`}
+                  href={childPath}
                   onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm",
                     isActive
-                      ? "bg-gray-800 text-white"
+                      ? "bg-blue-600 text-white font-semibold"
                       : "text-gray-400 hover:bg-gray-800 hover:text-white"
                   )}
                 >

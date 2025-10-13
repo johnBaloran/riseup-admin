@@ -34,6 +34,11 @@ export default async function CreateDivisionPage() {
     getAllPrices(),
   ]);
 
+  // Serialize data for Client Component
+  const serializedCities = JSON.parse(JSON.stringify(cities));
+  const serializedLevels = JSON.parse(JSON.stringify(levels));
+  const serializedPrices = JSON.parse(JSON.stringify(prices));
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -55,9 +60,9 @@ export default async function CreateDivisionPage() {
 
       <div className="max-w-4xl">
         <CreateDivisionForm
-          cities={cities}
-          levels={levels}
-          prices={prices}
+          cities={serializedCities}
+          levels={serializedLevels}
+          prices={serializedPrices}
         />
       </div>
     </div>

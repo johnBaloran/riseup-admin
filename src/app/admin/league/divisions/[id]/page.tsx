@@ -17,9 +17,9 @@ import { getDivisionFreeAgents } from "@/lib/db/queries/players";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Pencil,
   MapPin,
   TrendingUp,
@@ -29,7 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { format, subDays } from "date-fns";
-import { formatTimeRange } from "@/lib/utils/time";
+import { formatTimeRange, formatTime } from "@/lib/utils/time";
 import { DivisionFreeAgents } from "@/components/features/league/DivisionFreeAgents";
 
 interface DivisionDetailPageProps {
@@ -112,33 +112,26 @@ export default async function DivisionDetailPage({
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/admin/league/divisions">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-        </div>
-        <Button asChild>
-          <Link href={`/admin/league/divisions/${params.id}/edit`}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit Division
-          </Link>
-        </Button>
-      </div>
-
-      {/* Title & Status */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {division.divisionName}
-          </h1>
-          {getStatusBadge()}
-        </div>
-        <p className="text-gray-600">{division.description}</p>
-      </div>
+      <PageHeader
+        title={division.divisionName}
+        description={division.description}
+        showBackButton
+        backButtonFallback={{
+          href: "/admin/league/divisions",
+          label: "Back to Divisions",
+        }}
+        actions={
+          <>
+            {getStatusBadge()}
+            <Button asChild>
+              <Link href={`/admin/league/divisions/${params.id}/edit`}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Division
+              </Link>
+            </Button>
+          </>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Basic Information */}
@@ -184,7 +177,7 @@ export default async function DivisionDetailPage({
                 <div>
                   <p className="text-sm text-gray-500">Time</p>
                   <p className="font-medium">
-                    {division.startTime} - {division.endTime}
+                    {formatTime(division.startTime)} - {formatTime(division.endTime)}
                   </p>
                 </div>
               </div>

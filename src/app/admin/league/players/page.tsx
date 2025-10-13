@@ -13,6 +13,7 @@ import { getPlayers } from "@/lib/db/queries/players";
 import { getDivisions } from "@/lib/db/queries/divisions";
 import { PlayersContent } from "@/components/features/league/players/PlayersContent";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/PageHeader";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getAllLocations } from "@/lib/db/queries/locations";
@@ -72,22 +73,25 @@ export default async function PlayersPage({
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Players</h1>
-          <p className="text-gray-600 mt-1">
-            Manage player profiles and registrations
-          </p>
-        </div>
-        {hasPermission(session, "manage_players") && (
-          <Button asChild>
-            <Link href={`/admin/league/players/new`}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Player
-            </Link>
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Players"
+        description="Manage player profiles and registrations"
+        showBackButton
+        backButtonFallback={{
+          href: "/admin/league/divisions",
+          label: "Back to Divisions",
+        }}
+        actions={
+          hasPermission(session, "manage_players") && (
+            <Button asChild>
+              <Link href={`/admin/league/players/new`}>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Player
+              </Link>
+            </Button>
+          )
+        }
+      />
 
       <PlayersContent
         players={result.players as any}

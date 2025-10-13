@@ -40,6 +40,8 @@ interface DivisionStatus {
   city: { id: string; name: string };
   day: string;
   timeRange: string;
+  startTime?: string;
+  endTime?: string;
   teamCount: number;
   totalWeeks: number;
   scheduledWeeks: number;
@@ -271,69 +273,81 @@ function DivisionCard({ division }: { division: DivisionStatus }) {
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          {/* Left Side */}
-          <div className="space-y-3 flex-1">
-            {/* Division Name & Status */}
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-semibold">{division.divisionName}</h3>
-              {division.status === "in-progress" && (
-                <StatusBadge status="needs-attention" />
-              )}
-            </div>
+      <CardContent className="p-4 sm:p-6 sm:relative">
+        {/* Desktop Button - Absolute positioned top right (hidden on mobile) */}
+        <Link
+          href={`/admin/games/${division.divisionId}`}
+          className="hidden sm:block absolute top-6 right-6"
+        >
+          <Button variant="default">
+            Manage Schedule
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
+        </Link>
 
-            {/* Info Row */}
-            <div className="flex items-center gap-6 text-sm text-gray-600">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                {division.day}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4" />
-                {division.timeRange}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Users className="w-4 h-4" />
-                {division.teamCount} teams
-              </div>
-            </div>
+        {/* Content */}
+        <div className="space-y-3">
+          {/* Division Name & Status */}
+          <div className="flex items-center gap-3">
+            <h3 className="text-base sm:text-lg font-semibold">
+              {division.divisionName}
+            </h3>
+            {division.status === "in-progress" && (
+              <StatusBadge status="needs-attention" />
+            )}
+          </div>
 
-            {/* Progress Bar */}
-            <div>
-              <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
-                <span>Schedule Progress</span>
-                <span className="font-medium">
-                  {division.scheduledWeeks}/{division.totalWeeks} weeks
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full ${
-                    statusColors[division.status]
-                  }`}
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
+          {/* Info Row */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+              {division.day}
             </div>
-
-            {/* Current Week Info */}
-            <div className="bg-blue-50 rounded px-3 py-2 text-sm">
-              <span className="text-blue-900 font-medium">
-                Current Week: {division.currentWeek}
-              </span>
-              {division.nextGame && (
-                <span className="text-blue-700 ml-2">
-                  • Next: {division.nextGame.homeTeam} vs{" "}
-                  {division.nextGame.awayTeam}
-                </span>
-              )}
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+              {division.timeRange}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+              {division.teamCount} teams
             </div>
           </div>
 
-          {/* Right Side - Manage Button */}
-          <Link href={`/admin/games/${division.divisionId}`}>
-            <Button variant="default" className="ml-6">
+          {/* Progress Bar */}
+          <div>
+            <div className="flex items-center justify-between text-xs text-gray-600 mb-1.5">
+              <span>Schedule Progress</span>
+              <span className="font-medium">
+                {division.scheduledWeeks}/{division.totalWeeks} weeks
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className={`h-2 rounded-full ${statusColors[division.status]}`}
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Current Week Info */}
+          <div className="bg-blue-50 rounded px-3 py-2 text-xs sm:text-sm">
+            <span className="text-blue-900 font-medium">
+              Current Week: {division.currentWeek}
+            </span>
+            {division.nextGame && (
+              <span className="text-blue-700 ml-2 block sm:inline mt-1 sm:mt-0">
+                • Next: {division.nextGame.homeTeam} vs{" "}
+                {division.nextGame.awayTeam}
+              </span>
+            )}
+          </div>
+
+          {/* Mobile Button - Bottom (hidden on desktop) */}
+          <Link
+            href={`/admin/games/${division.divisionId}`}
+            className="block sm:hidden"
+          >
+            <Button variant="default" className="w-full">
               Manage Schedule
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>

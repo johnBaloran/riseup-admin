@@ -17,6 +17,7 @@ import {
 } from "@/lib/db/queries/locations";
 import { TeamsContent } from "@/components/features/league/teams/TeamsContent";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/PageHeader";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -67,20 +68,23 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
-          <p className="text-gray-600 mt-1">
-            Manage teams, rosters, and assignments
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={`/admin/league/teams/new`}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Team
-          </Link>
-        </Button>
-      </div>
+      <PageHeader
+        title="Teams"
+        description="Manage teams, rosters, and assignments"
+        showBackButton
+        backButtonFallback={{
+          href: "/admin/league/divisions",
+          label: "Back to Divisions",
+        }}
+        actions={
+          <Button asChild>
+            <Link href={`/admin/league/teams/new`}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Team
+            </Link>
+          </Button>
+        }
+      />
 
       <TeamsContent
         teams={result.teams as any}

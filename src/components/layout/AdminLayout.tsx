@@ -17,6 +17,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
+import { NavigationProvider } from "@/contexts/NavigationContext";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -27,18 +28,20 @@ export function AdminLayout({ children, cityId }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+    <NavigationProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Sidebar */}
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Header */}
-        <Header onMenuClick={() => setIsSidebarOpen(true)} cityId={cityId} />
+        {/* Main content */}
+        <div className="lg:pl-64">
+          {/* Header */}
+          <Header onMenuClick={() => setIsSidebarOpen(true)} cityId={cityId} />
 
-        {/* Page content */}
-        <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          {/* Page content */}
+          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+        </div>
       </div>
-    </div>
+    </NavigationProvider>
   );
 }

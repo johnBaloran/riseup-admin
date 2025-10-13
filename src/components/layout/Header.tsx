@@ -32,9 +32,9 @@ export function Header({ onMenuClick, cityId }: HeaderProps) {
         </Button>
 
         {/* City selector */}
-        <div className="flex-1 flex justify-center lg:justify-start lg:ml-4">
+        {/* <div className="flex-1 flex justify-center lg:justify-start lg:ml-4">
           <CitySelector currentCityId={cityId} />
-        </div>
+        </div> */}
 
         {/* User menu */}
         <UserMenu />

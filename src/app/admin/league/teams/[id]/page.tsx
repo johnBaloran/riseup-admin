@@ -13,9 +13,9 @@ import { getTeamById, getTeamStats } from "@/lib/db/queries/teams";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Pencil,
   MapPin,
   Trophy,
@@ -70,42 +70,36 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/admin/league/teams`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-        </div>
-        {hasPermission(session, "manage_teams") && (
-          <Button asChild>
-            <Link href={`/admin/league/teams/${params.id}/edit`}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit Team
-            </Link>
-          </Button>
-        )}
-      </div>
-
-      {/* Title & Basic Info */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">{team.teamName}</h1>
-          {noCaptainWarning && (
-            <Badge
-              variant="outline"
-              className="bg-yellow-100 text-yellow-800 border-yellow-200"
-            >
-              <AlertCircle className="h-4 w-4 mr-1" />
-              No Captain
-            </Badge>
-          )}
-        </div>
-        <p className="text-gray-600">{team.teamNameShort}</p>
-        <p className="text-sm text-gray-500 font-mono mt-1">{team.teamCode}</p>
-      </div>
+      <PageHeader
+        title={team.teamName}
+        description={`${team.teamNameShort} (${team.teamCode})`}
+        showBackButton
+        backButtonFallback={{
+          href: "/admin/league/teams",
+          label: "Back to Teams",
+        }}
+        actions={
+          <>
+            {noCaptainWarning && (
+              <Badge
+                variant="outline"
+                className="bg-yellow-100 text-yellow-800 border-yellow-200"
+              >
+                <AlertCircle className="h-4 w-4 mr-1" />
+                No Captain
+              </Badge>
+            )}
+            {hasPermission(session, "manage_teams") && (
+              <Button asChild>
+                <Link href={`/admin/league/teams/${params.id}/edit`}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Team
+                </Link>
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Team Details */}

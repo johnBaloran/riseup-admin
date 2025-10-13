@@ -44,6 +44,11 @@ export default async function EditDivisionPage({
     redirect("/admin/league/divisions");
   }
 
+  // Serialize data for Client Component
+  const serializedDivision = JSON.parse(JSON.stringify(division));
+  const serializedCities = JSON.parse(JSON.stringify(cities));
+  const serializedLevels = JSON.parse(JSON.stringify(levels));
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -64,9 +69,9 @@ export default async function EditDivisionPage({
 
       <div className="max-w-4xl">
         <EditDivisionForm
-          division={division}
-          cities={cities}
-          levels={levels}
+          division={serializedDivision}
+          cities={serializedCities}
+          levels={serializedLevels}
         />
       </div>
     </div>
