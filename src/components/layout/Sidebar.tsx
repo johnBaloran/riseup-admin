@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { usePathname, useParams } from "next/navigation";
 import { X } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useNavigation } from "@/contexts/NavigationContext";
 import {
   navigationItems,
   filterNavigationByPermissions,
@@ -29,11 +30,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const params = useParams();
   const cityId = params.cityId as string;
   const { permissions } = usePermissions();
+  const { clearHistory } = useNavigation();
 
   const filteredNavigation = useMemo(
     () => filterNavigationByPermissions(navigationItems, permissions),
     [permissions]
   );
+
+  // Clear history when sidebar navigation is clicked
+  const handleNavigate = () => {
+    clearHistory();
+    onClose();
+  };
 
   return (
     <>
@@ -76,7 +84,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     item={item}
                     pathname={pathname}
                     cityId={cityId}
-                    onNavigate={onClose}
+                    onNavigate={handleNavigate}
                   />
                 );
               }
@@ -95,7 +103,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     href={fullPath}
                     icon={item.icon}
                     isActive={isActive}
-                    onClick={onClose}
+                    onClick={handleNavigate}
                   />
                 </li>
               );

@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,12 +28,15 @@ import { createTeamSchema, CreateTeamInput } from "@/lib/validations/team";
 
 interface CreateTeamFormProps {
   cities: any[];
+  prefilledDivision?: any;
 }
 
-export function CreateTeamForm({ cities }: CreateTeamFormProps) {
+export function CreateTeamForm({ cities, prefilledDivision }: CreateTeamFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCity, setSelectedCity] = useState(
+    prefilledDivision?.city?._id || cities[0]?._id || ""
+  );
   const [loadingDivisions, setLoadingDivisions] = useState(false);
   const [divisions, setDivisions] = useState<any[]>([]);
 
@@ -46,7 +49,9 @@ export function CreateTeamForm({ cities }: CreateTeamFormProps) {
   } = useForm<CreateTeamInput>({
     resolver: zodResolver(createTeamSchema),
     defaultValues: {
-      city: cities[0]?._id || "",
+      city: prefilledDivision?.city?._id || cities[0]?._id || "",
+      location: prefilledDivision?.location?._id || "",
+      division: prefilledDivision?._id || "",
     },
   });
 
@@ -88,6 +93,16 @@ export function CreateTeamForm({ cities }: CreateTeamFormProps) {
       setLoadingDivisions(false);
     }
   };
+
+  // Initialize with prefilled division on mount
+  useEffect(() => {
+    if (prefilledDivision) {
+      // Fetch divisions for the prefilled location
+      if (prefilledDivision.location?._id) {
+        fetchDivisions(prefilledDivision.location._id);
+      }
+    }
+  }, []); // Only run on mount
 
   // Fetch divisions when location changes
   useMemo(() => {

@@ -77,7 +77,8 @@ export function TeamsContent({
       params.set("page", "1");
     }
 
-    router.push(`/admin/league/teams?${params.toString()}`);
+    // Use replace instead of push to avoid adding filter changes to browser history
+    router.replace(`/admin/league/teams?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -127,7 +128,8 @@ export function TeamsContent({
   }, [divisions, currentFilters.location]);
 
   const clearAllFilters = () => {
-    router.push(`/admin/league/teams?tab=${currentTab}&view=${currentView}`);
+    // Use replace to avoid adding to browser history
+    router.replace(`/admin/league/teams?tab=${currentTab}&view=${currentView}`);
     setSearchValue("");
   };
 

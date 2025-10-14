@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getTeamById, getTeamStats } from "@/lib/db/queries/teams";
+import { getGamesByTeam } from "@/lib/db/queries/games";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
   UserCheck,
 } from "lucide-react";
 import { format, subDays, isBefore } from "date-fns";
+import { TeamGameHistory } from "@/components/features/league/teams/TeamGameHistory";
 
 interface TeamDetailPageProps {
   params: { cityId: string; id: string };
@@ -44,9 +46,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     redirect("/unauthorized");
   }
 
-  const [team, stats] = await Promise.all([
+  const [team, stats, games] = await Promise.all([
     getTeamById(params.id),
     getTeamStats(params.id),
+    getGamesByTeam(params.id),
   ]);
 
   if (!team) {
@@ -321,35 +324,10 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
       </Card>
 
       {/* Game History */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>
-              Game History ({team.games?.length || 0} Games)
-            </CardTitle>
-            <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin/games?team=${params.id}`}>
-                View All Games
-              </Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!team.games || team.games.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">No games played yet</p>
-            </div>
-          ) : (
-            <div className="text-sm text-gray-600">
-              <p>Game history will be displayed here</p>
-              <p className="text-xs text-gray-500 mt-1">
-                (Full game history component to be implemented)
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <TeamGameHistory
+        games={JSON.parse(JSON.stringify(games))}
+        teamId={params.id}
+      />
 
       {/* Jersey Information */}
       {(team.primaryColor ||

@@ -38,38 +38,20 @@ export function BackButton({
     fallbackLabel,
   });
 
-  // If we have history, use it
-  if (canGoBack) {
-    return (
-      <Button
-        variant={variant}
-        size={size}
-        onClick={goBack}
-        className={`${className} ${!showOnMobile ? "hidden sm:flex" : ""}`}
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" />
-        <span className="hidden sm:inline">Back to {previousLabel}</span>
-        <span className="sm:hidden">Back</span>
-      </Button>
-    );
-  }
+  // Always show back button and use browser back (which preserves search params)
+  // Just show a smart label if we have history
+  const label = canGoBack && previousLabel ? `Back to ${previousLabel}` : fallbackLabel;
 
-  // Fallback to provided href if no history
-  if (fallbackHref) {
-    return (
-      <Button
-        variant={variant}
-        size={size}
-        onClick={() => window.location.href = fallbackHref}
-        className={`${className} ${!showOnMobile ? "hidden sm:flex" : ""}`}
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" />
-        <span className="hidden sm:inline">{fallbackLabel}</span>
-        <span className="sm:hidden">Back</span>
-      </Button>
-    );
-  }
-
-  // Don't render if no history and no fallback
-  return null;
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      onClick={goBack}
+      className={`${className} ${!showOnMobile ? "hidden sm:flex" : ""}`}
+    >
+      <ChevronLeft className="w-4 h-4 mr-1" />
+      <span className="hidden sm:inline">{label}</span>
+      <span className="sm:hidden">Back</span>
+    </Button>
+  );
 }

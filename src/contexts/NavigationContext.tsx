@@ -8,10 +8,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface HistoryEntry {
-  path: string;
+  path: string; // pathname only (for label matching)
+  fullUrl: string; // pathname + search params (for navigation)
   label: string;
   timestamp: number;
 }
@@ -91,6 +92,7 @@ export function NavigationProvider({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
@@ -120,11 +122,48 @@ export function NavigationProvider({
   useEffect(() => {
     if (!pathname) return;
 
+    // Build full URL with search params
+    const search = searchParams.toString();
+    const fullUrl = search ? `${pathname}?${search}` : pathname;
+
     setHistory((prev) => {
-      // Don't add if it's the same as the last entry
-      if (prev.length > 0 && prev[prev.length - 1].path === pathname) {
-        console.log("NavigationContext: Skipping duplicate path", pathname);
-        return prev;
+      // Check if the last entry is the same pathname (but maybe different search params)
+      const lastEntry = prev.length > 0 ? prev[prev.length - 1] : null;
+
+      // If same pathname but different search params, UPDATE the last entry instead of adding new
+      if (lastEntry && lastEntry.path === pathname) {
+        if (lastEntry.fullUrl === fullUrl) {
+          console.log("NavigationContext: Skipping duplicate path", fullUrl);
+          return prev;
+        }
+
+        // Don't update if we're losing search params (could be a temporary state during navigation)
+        const hadSearchParams = lastEntry.fullUrl.includes('?');
+        const hasSearchParams = fullUrl.includes('?');
+
+        if (hadSearchParams && !hasSearchParams) {
+          console.log("NavigationContext: Skipping update - would lose search params", {
+            oldUrl: lastEntry.fullUrl,
+            newUrl: fullUrl,
+          });
+          return prev;
+        }
+
+        // Update the last entry with new search params
+        const updatedHistory = [...prev];
+        updatedHistory[updatedHistory.length - 1] = {
+          ...lastEntry,
+          fullUrl,
+          timestamp: Date.now(),
+        };
+
+        console.log("NavigationContext: Updating last entry with new params", {
+          pathname,
+          oldUrl: lastEntry.fullUrl,
+          newUrl: fullUrl,
+        });
+
+        return updatedHistory;
       }
 
       // Don't add utility pages to history (edit, new, roster, etc.)
@@ -136,13 +175,14 @@ export function NavigationProvider({
         pathname.endsWith("/new");
 
       if (isUtilityPage) {
-        console.log("NavigationContext: Skipping utility page", pathname);
+        console.log("NavigationContext: Skipping utility page", fullUrl);
         return prev;
       }
 
       const label = getLabelForPath(pathname);
       const newEntry: HistoryEntry = {
         path: pathname,
+        fullUrl,
         label,
         timestamp: Date.now(),
       };
@@ -152,6 +192,7 @@ export function NavigationProvider({
 
       console.log("NavigationContext: Adding to history", {
         pathname,
+        fullUrl,
         label,
         historyLength: newHistory.length,
         fullHistory: newHistory,
@@ -159,23 +200,11 @@ export function NavigationProvider({
 
       return newHistory;
     });
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   const goBack = useCallback(() => {
-    setHistory((prev) => {
-      if (prev.length < 2) return prev;
-
-      // Remove current page (last entry)
-      const newHistory = prev.slice(0, -1);
-
-      // Navigate to previous page
-      const previousPage = newHistory[newHistory.length - 1];
-      if (previousPage) {
-        router.push(previousPage.path);
-      }
-
-      return newHistory;
-    });
+    // Use browser's native back navigation which preserves search params
+    router.back();
   }, [router]);
 
   const clearHistory = useCallback(() => {

@@ -66,6 +66,11 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
     getAllLocations(),
   ]);
 
+  // Build create team URL with division filter if present
+  const createTeamUrl = searchParams.division
+    ? `/admin/league/teams/new?division=${searchParams.division}`
+    : `/admin/league/teams/new`;
+
   return (
     <div className="p-6 space-y-6">
       <PageHeader
@@ -78,7 +83,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
         }}
         actions={
           <Button asChild>
-            <Link href={`/admin/league/teams/new`}>
+            <Link href={createTeamUrl}>
               <Plus className="mr-2 h-4 w-4" />
               Create Team
             </Link>

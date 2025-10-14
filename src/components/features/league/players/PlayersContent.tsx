@@ -88,7 +88,8 @@ export function PlayersContent({
       params.set("page", "1");
     }
 
-    router.push(`/admin/league/players?${params.toString()}`);
+    // Use replace instead of push to avoid adding filter changes to browser history
+    router.replace(`/admin/league/players?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -134,7 +135,8 @@ export function PlayersContent({
   }, [divisions, currentFilters.location]);
 
   const clearAllFilters = () => {
-    router.push(`/admin/league/players`);
+    // Use replace to avoid adding to browser history
+    router.replace(`/admin/league/players`);
     setSearchValue("");
   };
 

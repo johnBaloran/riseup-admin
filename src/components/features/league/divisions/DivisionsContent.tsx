@@ -72,7 +72,8 @@ export function DivisionsContent({
       params.set("page", "1");
     }
 
-    router.push(`/admin/league/divisions?${params.toString()}`);
+    // Use replace instead of push to avoid adding filter changes to browser history
+    router.replace(`/admin/league/divisions?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
