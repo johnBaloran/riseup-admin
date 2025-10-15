@@ -1,0 +1,1320 @@
+# Migrate Basketball Game Scoring Component - UI/UX Update Only
+
+I need to recreate this game scoring feature with updated UI/UX while keeping ALL functionality and API calls identical.
+This will be in our Scorekeeper flow.
+
+## Requirements:
+- Keep ALL existing functionality exactly as-is
+- Keep ALL API endpoints and calls unchanged
+- Update ONLY the UI/UX design and layout
+- Maintain all features: scoring, timeouts, stats tracking, team switching, game summary
+- Keep the same data structures and state management logic
+
+## Current V1 Code:
+
+import { Toaster } from "@/components/ui/toaster";
+import AddPlayers from "@/components/score/AddPlayers";
+import { useToast } from "@/components/ui/use-toast";
+import { useState, useEffect, Fragment } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+import { ArrowLeftRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const index = ({ currentGame, allPlayers }) => {
+  const [startScore, setStartScore] = useState(currentGame.status);
+  const { toast } = useToast();
+  const [isTeamsSwitched, setIsTeamsSwitched] = useState(false);
+
+  const homeTeamHasStats = currentGame.homeTeam.seasonStatistics.some(
+    (stats) =>
+      stats.gameId === currentGame._id || stats.game === currentGame._id
+  );
+
+  const awayTeamHasStats = currentGame.awayTeam.seasonStatistics.some(
+    (stats) =>
+      stats.gameId === currentGame._id || stats.game === currentGame._id
+  );
+
+  // Check if both homeTeam and awayTeam have stats for the currentGame
+  const bothTeamsHaveStats = homeTeamHasStats && awayTeamHasStats;
+
+  // Now, bothTeamsHaveStats will be true if both teams have stats for the current game.
+
+  const [isSummary, setIsSummary] = useState(bothTeamsHaveStats);
+
+  const [players, setPlayers] = useState([...allPlayers]);
+  const [chosenPlayerId, setChosenPlayerId] = useState(
+    currentGame.homeTeam.players[0]?._id
+  );
+  const [currentPlayerBgColor, setCurrentPlayerBgColor] = useState("#1E40AF");
+
+  const playersPlayed = players.filter((player) => {
+    return player?.allStats.find((stat) => {
+      return stat.game === currentGame._id && stat.pointsString !== undefined;
+    });
+  });
+
+  const [checkedPlayers, setCheckedPlayers] = useState(playersPlayed);
+
+  const player = checkedPlayers.find((player) => player._id === chosenPlayerId);
+
+  const statistics = player?.allStats.find((stat) => {
+    return stat.game === currentGame._id && stat.pointsString !== undefined;
+  });
+
+  const [totalScores, setTotalScores] = useState({
+    home: {
+      id: currentGame.homeTeam._id,
+      score: currentGame.homeTeamScore,
+    },
+    away: {
+      id: currentGame.awayTeam._id,
+      score: currentGame.awayTeamScore,
+    },
+  });
+
+  const [gameWinner, setGameWinner] = useState(
+    currentGame.homeTeamScore > currentGame.awayTeamScore
+      ? currentGame.homeTeam.teamName
+      : currentGame.awayTeam.teamName
+  );
+
+  const [playerOfTheGame, setPlayerOfTheGame] = useState(
+    players.find((player) => player._id === currentGame.playerOfTheGame?._id)
+  );
+
+  const handleStopGameScoring = () => {
+    setStartScore(false);
+  };
+
+  // Function to increment a specific stat
+  const incrementStat = async (statName) => {
+    try {
+      const updatedPlayers = [...checkedPlayers];
+      const playerIndex = updatedPlayers.findIndex(
+        (player) => player._id === chosenPlayerId
+      );
+
+      if (playerIndex !== -1) {
+        const statistics = updatedPlayers[playerIndex].allStats.find((stat) => {
+          return (
+            stat.game === currentGame._id && stat.pointsString !== undefined
+          );
+        });
+        statistics[statName]++;
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=stats`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chosenPlayer: updatedPlayers[playerIndex]._id,
+              statistics: statistics,
+              points: false,
+            }),
+          }
+        );
+
+        const { player } = await response.json();
+        console.log(player);
+        // After the update is done, set the updated players in the state
+        updatedPlayers[playerIndex] = player;
+
+        toast({
+          variant: "confirmStats",
+          description: `#${player.jerseyNumber} ${player.playerName} with the ${statName}`,
+        });
+
+        setCheckedPlayers(updatedPlayers);
+        handleTeamGameStats(updatedPlayers);
+      }
+    } catch (error) {
+      // Handle any errors that might occur during the updatePlayerGameStats operation
+      console.error("Error updating player game stats:", error);
+    }
+  };
+
+  // Function to decrement a specific stat
+  const decrementStat = async (statName) => {
+    try {
+      const updatedPlayers = [...checkedPlayers];
+      const playerIndex = updatedPlayers.findIndex(
+        (player) => player._id === chosenPlayerId
+      );
+
+      if (playerIndex !== -1) {
+        // Decrement the statistic
+        const statistics = updatedPlayers[playerIndex].allStats.find((stat) => {
+          return (
+            stat.game === currentGame._id && stat.pointsString !== undefined
+          );
+        });
+
+        if (statistics[statName] > 0) {
+          statistics[statName]--;
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=stats`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                chosenPlayer: updatedPlayers[playerIndex]._id,
+                statistics: statistics,
+                points: false,
+              }),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to decrement stat");
+          }
+
+          const { player } = await response.json();
+
+          // After the update is done, set the updated players in the state
+          updatedPlayers[playerIndex] = player;
+          setCheckedPlayers(updatedPlayers);
+          handleTeamGameStats(updatedPlayers);
+        }
+      }
+    } catch (error) {
+      // Handle any errors that might occur during the decrement operation
+      console.error("Error decrementing stat:", error);
+    }
+  };
+
+  const incrementPoint = async (point) => {
+    const updatedPlayers = [...checkedPlayers];
+    const playerIndex = updatedPlayers.findIndex(
+      (player) => player._id === chosenPlayerId
+    );
+
+    if (playerIndex !== -1) {
+      // Append the new point to the existing pointsString
+      const statistics = updatedPlayers[playerIndex].allStats.find((stat) => {
+        return stat.game === currentGame._id && stat.pointsString !== undefined;
+      });
+      statistics.pointsString += ` ${point}`;
+      // Calculate the total points from the updated pointsString
+      const pointsArray = statistics.pointsString.split(" ").map(Number);
+      // Initialize counters for each type of point
+      let ones = 0;
+      let twos = 0;
+      let threes = 0;
+
+      // Loop through the pointsArray and categorize the points
+      pointsArray.forEach((point) => {
+        if (point === 1) {
+          ones += 1;
+        } else if (point === 2) {
+          twos += 2;
+        } else if (point === 3) {
+          threes += 3;
+        }
+      });
+
+      // Calculate the total points for each type
+      const totalOnes = ones;
+      const totalTwos = twos;
+      const totalThrees = threes;
+
+      // Update the player's statistics
+      statistics.points = totalOnes + totalTwos + totalThrees;
+      statistics.threesMade = totalThrees / 3;
+      statistics.twosMade = totalTwos / 2;
+      statistics.freeThrowsMade = totalOnes;
+
+      // Update the player in updatedPlayers
+      updatedPlayers[playerIndex].allStats = updatedPlayers[
+        playerIndex
+      ].allStats.map((stat) => {
+        if (stat.game === currentGame._id) {
+          return statistics; // Replace the stats for the current game
+        }
+        return stat; // Keep other stats unchanged
+      });
+
+      // Divide players into home and away
+      const homeTeamPlayers = checkedPlayers.filter(
+        (player) =>
+          player.teamId === currentGame.homeTeam._id ||
+          player.team === currentGame.homeTeam._id
+      );
+      const awayTeamPlayers = checkedPlayers.filter(
+        (player) =>
+          player.teamId === currentGame.awayTeam._id ||
+          player.team === currentGame.awayTeam._id
+      );
+
+      // Map and filter players' allStats that match the current game
+      const homeTeamStats = homeTeamPlayers.map((player) => {
+        const stats = player.allStats.find(
+          (stat) => stat.game === currentGame._id
+        );
+        return stats ? stats.points : 0;
+      });
+
+      const awayTeamStats = awayTeamPlayers.map((player) => {
+        const stats = player.allStats.find(
+          (stat) => stat.game === currentGame._id
+        );
+        return stats ? stats.points : 0;
+      });
+
+      // Calculate total points for home and away teams
+      const homeTeamTotalPoints = homeTeamStats.reduce(
+        (total, points) => total + points,
+        0
+      );
+      const awayTeamTotalPoints = awayTeamStats.reduce(
+        (total, points) => total + points,
+        0
+      );
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=stats`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chosenPlayer: updatedPlayers[playerIndex]._id,
+            statistics: statistics,
+            points: true,
+            updatedTotalScores: {
+              home: homeTeamTotalPoints,
+              away: awayTeamTotalPoints,
+            },
+          }),
+        }
+      );
+
+      const { player, scores } = await response.json();
+      // After the update is done, set the updated players in the state
+      updatedPlayers[playerIndex] = player;
+
+      toast({
+        variant: "confirmStats",
+        description: `#${player.jerseyNumber} ${
+          player.playerName
+        } with ${point} ${point === 1 ? "point" : "points"}`,
+      });
+
+      setCheckedPlayers(updatedPlayers);
+      handleTeamGameStats(updatedPlayers);
+      if (scores) {
+        setTotalScores({
+          home: {
+            id: currentGame.homeTeam._id,
+            score: scores.home,
+          },
+          away: {
+            id: currentGame.awayTeam._id,
+            score: scores.away,
+          },
+        });
+      }
+    }
+  };
+
+  const decrementPoint = async () => {
+    const updatedPlayers = [...checkedPlayers];
+    const playerIndex = updatedPlayers.findIndex(
+      (player) => player._id === chosenPlayerId
+    );
+
+    if (playerIndex !== -1) {
+      const statistics = updatedPlayers[playerIndex].allStats.find((stat) => {
+        return stat.game === currentGame._id && stat.pointsString !== undefined;
+      });
+
+      // Remove the last character from the pointsString
+      const newPointsString = statistics.pointsString
+        .replace(/\s/g, "")
+        .slice(0, -1)
+        .split("")
+        .join(" ");
+
+      // Calculate the total points from the updated pointsString
+      const pointsArray = newPointsString.split(" ").map(Number);
+      // Initialize counters for each type of point
+      let ones = 0;
+      let twos = 0;
+      let threes = 0;
+
+      // Loop through the pointsArray and categorize the points
+      pointsArray.forEach((point) => {
+        if (point === 1) {
+          ones += 1;
+        } else if (point === 2) {
+          twos += 2;
+        } else if (point === 3) {
+          threes += 3;
+        }
+      });
+
+      // Calculate the total points for each type
+      const totalOnes = ones;
+      const totalTwos = twos;
+      const totalThrees = threes;
+
+      // Update the player's statistics
+      statistics.points = totalOnes + totalTwos + totalThrees;
+      statistics.threesMade = totalThrees / 3;
+      statistics.twosMade = totalTwos / 2;
+      statistics.freeThrowsMade = totalOnes;
+
+      // Update the pointsString and points, and set the player's data
+      statistics.pointsString = newPointsString;
+      // Update the player in updatedPlayers
+      updatedPlayers[playerIndex].allStats = updatedPlayers[
+        playerIndex
+      ].allStats.map((stat) => {
+        if (stat.game === currentGame._id) {
+          return statistics; // Replace the stats for the current game
+        }
+        return stat; // Keep other stats unchanged
+      });
+
+      setCheckedPlayers(updatedPlayers);
+
+      // Check if the pointsString is not empty
+      if (statistics.points >= 0) {
+        // Divide players into home and away
+        const homeTeamPlayers = checkedPlayers.filter(
+          (player) =>
+            player.teamId === currentGame.homeTeam._id ||
+            player.team === currentGame.homeTeam._id
+        );
+        const awayTeamPlayers = checkedPlayers.filter(
+          (player) =>
+            player.teamId === currentGame.awayTeam._id ||
+            player.team === currentGame.awayTeam._id
+        );
+
+        // Map and filter players' allStats that match the current game
+        const homeTeamStats = homeTeamPlayers.map((player) => {
+          const stats = player.allStats.find(
+            (stat) => stat.game === currentGame._id
+          );
+          return stats ? stats.points : 0;
+        });
+
+        const awayTeamStats = awayTeamPlayers.map((player) => {
+          const stats = player.allStats.find(
+            (stat) => stat.game === currentGame._id
+          );
+          return stats ? stats.points : 0;
+        });
+
+        // Calculate total points for home and away teams
+        const homeTeamTotalPoints = homeTeamStats.reduce(
+          (total, points) => total + points,
+          0
+        );
+        const awayTeamTotalPoints = awayTeamStats.reduce(
+          (total, points) => total + points,
+          0
+        );
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=stats`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chosenPlayer: updatedPlayers[playerIndex]._id,
+              statistics: statistics,
+              points: true,
+              updatedTotalScores: {
+                home: homeTeamTotalPoints,
+                away: awayTeamTotalPoints,
+              },
+            }),
+          }
+        );
+
+        const { player, scores } = await response.json();
+        // After the update is done, set the updated players in the state
+        updatedPlayers[playerIndex] = player;
+
+        setCheckedPlayers(updatedPlayers);
+        handleTeamGameStats(updatedPlayers);
+
+        if (scores) {
+          setTotalScores({
+            home: {
+              id: currentGame.homeTeam._id,
+              score: scores.home,
+            },
+            away: {
+              id: currentGame.awayTeam._id,
+              score: scores.away,
+            },
+          });
+        }
+      }
+    }
+  };
+
+  // Function to update the chosen player
+  const handlePlayerChange = (id, color) => {
+    setChosenPlayerId(id);
+    setCurrentPlayerBgColor(color);
+  };
+
+  const handleAddNewPlayer = async (
+    playerName,
+    jerseyNumber,
+    selectedTeam,
+    selectedDivision,
+    instagram // Add the instagram parameter
+  ) => {
+    try {
+      const res = await fetch("/api/players", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          playerName,
+          jerseyNumber,
+          team: selectedTeam,
+          division: selectedDivision,
+          instagram, // Include instagram in the request body
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to add player");
+      }
+      const newPlayer = await res.json();
+      console.log(newPlayer);
+      setPlayers([...players, newPlayer.player]);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  const [chooseTeam, setChooseTeam] = useState(false);
+
+  const handleTeamGameStats = async (players) => {
+    try {
+      // Divide players into home and away teams
+      const homeTeamPlayers = players.filter(
+        (player) =>
+          player.teamId === currentGame.homeTeam._id ||
+          player.team === currentGame.homeTeam._id
+      );
+      const awayTeamPlayers = players.filter(
+        (player) =>
+          player.teamId === currentGame.awayTeam._id ||
+          player.team === currentGame.awayTeam._id
+      );
+
+      // Initialize variables to store total statistics for home and away teams
+      let homeTeamStats = {
+        points: 0,
+        rebounds: 0,
+        assists: 0,
+        blocks: 0,
+        steals: 0,
+        threesMade: 0,
+        twosMade: 0,
+        freeThrowsMade: 0,
+      };
+
+      let awayTeamStats = {
+        points: 0,
+        rebounds: 0,
+        assists: 0,
+        blocks: 0,
+        steals: 0,
+        threesMade: 0,
+        twosMade: 0,
+        freeThrowsMade: 0,
+      };
+
+      // Collect the stats that match this game for home team players
+      homeTeamPlayers.forEach((player) => {
+        const stats = player.allStats.find(
+          (stat) => stat.game.toString() === currentGame._id.toString()
+        );
+        if (stats) {
+          homeTeamStats.points += stats.points || 0;
+          homeTeamStats.rebounds += stats.rebounds || 0;
+          homeTeamStats.assists += stats.assists || 0;
+          homeTeamStats.blocks += stats.blocks || 0;
+          homeTeamStats.steals += stats.steals || 0;
+          homeTeamStats.threesMade += stats.threesMade || 0;
+          homeTeamStats.twosMade += stats.twosMade || 0;
+          homeTeamStats.freeThrowsMade += stats.freeThrowsMade || 0;
+        }
+      });
+
+      // Collect the stats that match this game for away team players
+      awayTeamPlayers.forEach((player) => {
+        const stats = player.allStats.find(
+          (stat) => stat.game.toString() === currentGame._id.toString()
+        );
+        if (stats) {
+          awayTeamStats.points += stats.points || 0;
+          awayTeamStats.rebounds += stats.rebounds || 0;
+          awayTeamStats.assists += stats.assists || 0;
+          awayTeamStats.blocks += stats.blocks || 0;
+          awayTeamStats.steals += stats.steals || 0;
+          awayTeamStats.threesMade += stats.threesMade || 0;
+          awayTeamStats.twosMade += stats.twosMade || 0;
+          awayTeamStats.freeThrowsMade += stats.freeThrowsMade || 0;
+        }
+      });
+
+      // Create an object to send to the backend for updating team statistics
+      const teamStatistics = {
+        homeTeam: {
+          ...homeTeamStats,
+          teamId: currentGame.homeTeam._id,
+          gameId: currentGame._id,
+          game: currentGame._id,
+        },
+        awayTeam: {
+          ...awayTeamStats,
+          teamId: currentGame.awayTeam._id,
+          gameId: currentGame._id,
+          game: currentGame._id,
+        },
+      };
+
+      // Make a fetch patch request to send teamStatistics to the backend
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=team`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ statistics: teamStatistics }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update team statistics");
+      }
+    } catch (error) {
+      // Handle any errors that might occur during the process
+      console.error("Error updating team statistics:", error);
+    }
+  };
+
+  const handleFinishGameScoring = async () => {
+    try {
+      // Make a fetch patch request to send teamStatistics to the backend
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=finish`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            homeTeamId: currentGame.homeTeam._id,
+            awayTeamId: currentGame.awayTeam._id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update team statistics");
+      }
+
+      const { homeTeam, awayTeam, gameWinner, playerOfTheGame } =
+        await response.json();
+
+      setGameWinner(gameWinner.teamName);
+      setPlayerOfTheGame(playerOfTheGame);
+
+      setIsSummary(true);
+    } catch (error) {
+      // Handle any errors that might occur during the process
+      console.error("Error calculating team statistics:", error);
+    }
+  };
+
+  const [selectedPlayerOfTheGame, setSelectedPlayerOfTheGame] = useState("");
+
+  const handlePlayerOfTheGameChange = async (event) => {
+    const selectedPlayerId = event.target.value;
+    console.log(selectedPlayerId);
+    setPlayerOfTheGame(
+      players.find((player) => player._id === selectedPlayerId)
+    );
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${currentGame._id}?potg=true`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            gameId: currentGame._id,
+            playerId: selectedPlayerId,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update player of the game");
+      }
+
+      console.log("Player of the game updated successfully");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const [homeTimeouts, setHomeTimeouts] = useState({
+    firstHalf: 2,
+    secondHalf: 2,
+  });
+  const [awayTimeouts, setAwayTimeouts] = useState({
+    firstHalf: 2,
+    secondHalf: 2,
+  });
+
+  const handleHomeClick = (half) => {
+    setHomeTimeouts((prev) => ({
+      ...prev,
+      [half]: prev[half] - 1,
+    }));
+  };
+
+  const handleAwayClick = (half) => {
+    setAwayTimeouts((prev) => ({
+      ...prev,
+      [half]: prev[half] - 1,
+    }));
+  };
+
+  const isDisabled = (team, half) => team[half] === 0;
+
+  return (
+    <div>
+      {/* SCOREBOARD - Add flex-row-reverse when switched */}
+      <div
+        className={`grid-cols-11 grid text-center py-6 text-white bg-[#282d35] border-0 justify-between items-center ${
+          isTeamsSwitched ? "flex flex-row-reverse" : ""
+        }`}
+      >
+        <div className="flex justify-between items-center col-span-5">
+          <span className="text-xl uppercase pl-4">
+            {currentGame.homeTeam.teamNameShort}
+          </span>
+          <span className="text-4xl">{totalScores.home.score}</span>
+        </div>
+        <span className="col-span-1">-</span>
+
+        <div className="flex justify-between items-center col-span-5">
+          <span className="text-4xl">{totalScores.away.score}</span>{" "}
+          <span className="text-xl uppercase pr-4">
+            {currentGame.awayTeam.teamNameShort}
+          </span>
+        </div>
+      </div>
+      {!isSummary && (
+        <div className="bg-[#04080f] mb-10">
+          <Button
+            onClick={() => setIsTeamsSwitched(!isTeamsSwitched)}
+            className=" text-white w-full mx-auto hover:bg-gray-600 rounded p-1"
+          >
+            <ArrowLeftRight className="w-6 h-6 mx-auto" />
+          </Button>
+          {startScore && (
+            <div className="text-white">
+              <div
+                className={`bg-[${currentPlayerBgColor}] pt-[12px] pb-[9px] m-4 mb-1`}
+              >
+                <h3 className="font-semibold text-center flex flex-col">
+                  <span className="text-5xl">{player?.jerseyNumber}</span>{" "}
+                  <span className="">{player?.playerName}</span>
+                </h3>
+              </div>
+              {/* TIMEOUT SECTIONS - Add flex-row-reverse when switched */}
+              <div
+                className={`flex justify-between p-4 ${
+                  isTeamsSwitched ? "flex-row-reverse" : ""
+                }`}
+              >
+                {/* Home Team Timeouts */}
+                <div>
+                  <h2 className="text-base font-bold mb-4 text-start uppercase">
+                    {currentGame.homeTeam.teamNameShort} Timeouts
+                  </h2>
+                  <div className="flex gap-6 flex-col">
+                    <button
+                      onClick={() => handleHomeClick("firstHalf")}
+                      disabled={isDisabled(homeTimeouts, "firstHalf")}
+                      className={`px-4 py-2 rounded ${
+                        isDisabled(homeTimeouts, "firstHalf")
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      } text-white`}
+                    >
+                      First Half: {homeTimeouts.firstHalf}
+                    </button>
+                    <button
+                      onClick={() => handleHomeClick("secondHalf")}
+                      disabled={isDisabled(homeTimeouts, "secondHalf")}
+                      className={`px-4 py-2 rounded ${
+                        isDisabled(homeTimeouts, "secondHalf")
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 hover:bg-blue-600"
+                      } text-white`}
+                    >
+                      Second Half: {homeTimeouts.secondHalf}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Away Team Timeouts */}
+                <div>
+                  <h2 className="text-base font-bold mb-4 text-end uppercase">
+                    {currentGame.awayTeam.teamNameShort} Timeouts
+                  </h2>
+                  <div className="flex gap-6 flex-col">
+                    <button
+                      onClick={() => handleAwayClick("firstHalf")}
+                      disabled={isDisabled(awayTimeouts, "firstHalf")}
+                      className={`px-4 py-2 rounded ${
+                        isDisabled(awayTimeouts, "firstHalf")
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#EA580C] hover:bg-[#EA580C]"
+                      } text-white`}
+                    >
+                      First Half: {awayTimeouts.firstHalf}
+                    </button>
+                    <button
+                      onClick={() => handleAwayClick("secondHalf")}
+                      disabled={isDisabled(awayTimeouts, "secondHalf")}
+                      className={`px-4 py-2 rounded ${
+                        isDisabled(awayTimeouts, "secondHalf")
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#EA580C] hover:bg-[#EA580C]"
+                      } text-white`}
+                    >
+                      Second Half: {awayTimeouts.secondHalf}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {/* PLAYER COLUMNS - Add flex-row-reverse when switched */}
+              <div
+                className={`flex ${isTeamsSwitched ? "flex-row-reverse" : ""}`}
+              >
+                <div className="w-1/4 p-4 flex flex-col items-center">
+                  {checkedPlayers
+                    .filter(
+                      (player) =>
+                        player.teamId === currentGame.homeTeam._id ||
+                        player.team === currentGame.homeTeam._id
+                    )
+                    .sort((a, b) => a.jerseyNumber - b.jerseyNumber) // Sort by jerseyNumber
+                    .map((player, index) => (
+                      <button
+                        onClick={() =>
+                          handlePlayerChange(player?._id, "#1E40AF")
+                        }
+                        key={index}
+                        className={`mb-1 flex p-1  rounded items-center gap-1 flex-col  bg-[#172554] hover:bg-[#1E40AF] min-h-0 w-full sm:w-[100px] ${
+                          player._id === chosenPlayerId
+                            ? "bg-[#1E40AF] text-white"
+                            : ""
+                        }  `}
+                      >
+                        <span className="text-3xl">{player.jerseyNumber}</span>
+                        <span className="text-[10px]">{player.playerName}</span>
+                      </button>
+                    ))}
+                </div>
+                <div className="w-1/2  px-1 py-4">
+                  <div>
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Points: {statistics?.points}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {statistics?.pointsString.split("").join(" ")}
+                      </div>
+
+                      <div className="flex justify-center items-center flex-col mt-2">
+                        <button
+                          className="w-full py-2 my-1 uppercase border-b-4 rounded bg-[#404040] border-b-[#22C55E]"
+                          onClick={() => incrementPoint(2)}
+                        >
+                          +2 points
+                        </button>
+                        <button
+                          className="w-full py-2 my-1 uppercase border-b-4 rounded bg-[#404040] border-b-[#FACC15]"
+                          onClick={() => incrementPoint(3)}
+                        >
+                          +3 points
+                        </button>
+                        <button
+                          className="w-full py-2 my-1 uppercase border-b-4 rounded bg-[#404040] border-b-[#2563EB]"
+                          onClick={() => incrementPoint(1)}
+                        >
+                          free throw
+                        </button>
+                        <button
+                          className="w-full py-2 my-1 uppercase  rounded bg-[#DC2626] "
+                          onClick={decrementPoint}
+                        >
+                          undo
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Rebounds: {statistics?.rebounds}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {"1".repeat(statistics?.rebounds).split("").join(" ")}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#DC2626]"
+                          onClick={() => decrementStat("rebounds")}
+                        >
+                          -
+                        </button>
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#166534]"
+                          onClick={() => incrementStat("rebounds")}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Assists: {statistics?.assists}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {"1".repeat(statistics?.assists).split("").join(" ")}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#DC2626]"
+                          onClick={() => decrementStat("assists")}
+                        >
+                          -
+                        </button>
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#166534]"
+                          onClick={() => incrementStat("assists")}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Blocks: {statistics?.blocks}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {"1".repeat(statistics?.blocks).split("").join(" ")}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#DC2626]"
+                          onClick={() => decrementStat("blocks")}
+                        >
+                          -
+                        </button>
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#166534]"
+                          onClick={() => incrementStat("blocks")}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Steals: {statistics?.steals}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {"1".repeat(statistics?.steals).split("").join(" ")}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#DC2626]"
+                          onClick={() => decrementStat("steals")}
+                        >
+                          -
+                        </button>
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#166534]"
+                          onClick={() => incrementStat("steals")}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <span className="block uppercase mb-1">
+                        Fouls: {statistics?.fouls}
+                      </span>
+                      <div className="bg-[#11161D] p-2 border border-[#282D35] rounded text-xs">
+                        {"1".repeat(statistics?.fouls).split("").join(" ")}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#DC2626]"
+                          onClick={() => decrementStat("fouls")}
+                        >
+                          -
+                        </button>
+                        <button
+                          className="rounded py-[6px] w-full  bg-[#166534]"
+                          onClick={() => incrementStat("fouls")}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="w-1/4  p-4 flex flex-col items-center">
+                  {checkedPlayers
+                    .filter(
+                      (player) =>
+                        player.teamId === currentGame.awayTeam._id ||
+                        player.team === currentGame.awayTeam._id
+                    )
+                    .sort((a, b) => a.jerseyNumber - b.jerseyNumber) // Sort by jerseyNumber
+                    .map((player, index) => (
+                      <button
+                        onClick={() =>
+                          handlePlayerChange(player._id, "#EA580C")
+                        }
+                        key={index}
+                        className={`mb-1 flex p-1  rounded items-center gap-1 flex-col  bg-[#431407] hover:bg-[#EA580C] min-h-0 w-full sm:w-[100px] ${
+                          player._id === chosenPlayerId
+                            ? "bg-[#EA580C] text-white"
+                            : ""
+                        }  `}
+                      >
+                        <span className="text-3xl">{player.jerseyNumber}</span>
+                        <span className="text-[10px]">{player.playerName}</span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              <div className="p-4 flex flex-col gap-4 mb-10">
+                <button
+                  onClick={handleFinishGameScoring}
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                >
+                  Finish Game
+                </button>
+                <button
+                  onClick={handleStopGameScoring}
+                  className="border border-gray-500  hover:border-white text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+                >
+                  Back
+                </button>
+              </div>
+            </div>
+          )}
+          {!startScore && (
+            <AddPlayers
+              players={players}
+              checkedPlayers={checkedPlayers}
+              onAddNewPlayer={handleAddNewPlayer}
+              currentGame={currentGame}
+              setPlayers={setPlayers}
+              setCheckedPlayers={setCheckedPlayers}
+              setStartScore={setStartScore}
+              setIsSummary={setIsSummary}
+            />
+          )}
+        </div>
+      )}
+
+      {isSummary && (
+        <div className="bg-[#04080f] mb-10 p-6 rounded-lg shadow-lg text-white">
+          <h3 className="uppercase text-center  py-5 text-2xl">Summary</h3>
+          {gameWinner !== "" && (
+            <p className="text-white text-lg mb-4">
+              Winner:{" "}
+              <span className="font-bold">
+                {gameWinner !== "" && gameWinner}
+              </span>
+            </p>
+          )}
+          {/* SUMMARY TEAM TOGGLE - Add flex-row-reverse when switched */}
+          <div
+            className={`flex rounded-lg border mx-auto w-3/4 justify-between mt-10 mb-5 bg-[#11161D] ${
+              isTeamsSwitched ? "flex-row-reverse" : ""
+            }`}
+          >
+            <button
+              onClick={() => setChooseTeam(false)}
+              className={`rounded w-1/2 text-center py-1 uppercase   ${
+                chooseTeam === false ? "bg-[#82878D]" : ""
+              }`}
+            >
+              {currentGame.homeTeam.teamNameShort}
+            </button>
+            <button
+              onClick={() => setChooseTeam(true)}
+              className={`rounded w-1/2 text-center py-1 uppercase   ${
+                chooseTeam === true ? "bg-[#82878D]" : ""
+              }`}
+            >
+              {currentGame.awayTeam.teamNameShort}
+            </button>
+          </div>
+
+          {!chooseTeam && (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-gray-200 uppercase">
+                  <TableHead className="w-1/2 bg-transparent text-left sm:w-1/12">
+                    Player
+                  </TableHead>
+                  <TableHead className="bg-transparent">PTS</TableHead>
+                  <TableHead className="bg-transparent">REB</TableHead>
+                  <TableHead className="bg-transparent">AST</TableHead>
+                  <TableHead className="bg-transparent">BLK</TableHead>
+                  <TableHead className="bg-transparent">STL</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {checkedPlayers
+                  .filter(
+                    (player) =>
+                      player.teamId === currentGame.homeTeam._id ||
+                      player.team === currentGame.homeTeam._id
+                  )
+                  .map((player, index) => {
+                    return (
+                      <TableRow
+                        key={index}
+                        className={`sm:h-6 ${!(index % 2) && "bg-[#282828]"}`}
+                      >
+                        <TableCell className="w-1/2 text-left sm:w-1/12 sm:py-4">
+                          {player.playerName}
+                        </TableCell>
+                        {player.allStats?.map((stat, index) => {
+                          if (
+                            stat.game === currentGame._id &&
+                            stat.pointsString !== undefined
+                          ) {
+                            return (
+                              <Fragment key={index}>
+                                <TableCell className="sm:py-4">
+                                  {stat.points}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.rebounds}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.assists}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.blocks}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.steals}
+                                </TableCell>
+                              </Fragment>
+                            );
+                          }
+                        })}
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          )}
+          {chooseTeam && (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-gray-200 uppercase">
+                  <TableHead className="w-1/2 bg-transparent text-left sm:w-1/12">
+                    Player
+                  </TableHead>
+                  <TableHead className="bg-transparent">PTS</TableHead>
+                  <TableHead className="bg-transparent">REB</TableHead>
+                  <TableHead className="bg-transparent">AST</TableHead>
+                  <TableHead className="bg-transparent">BLK</TableHead>
+                  <TableHead className="bg-transparent">STL</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {checkedPlayers
+                  .filter(
+                    (player) =>
+                      player.teamId === currentGame.awayTeam._id ||
+                      player.team === currentGame.awayTeam._id
+                  )
+                  .map((player, index) => {
+                    return (
+                      <TableRow
+                        key={index}
+                        className={`sm:h-6 ${!(index % 2) && "bg-[#282828]"}`}
+                      >
+                        <TableCell className="w-1/2 text-left sm:w-1/12 sm:py-4">
+                          {player.playerName}
+                        </TableCell>
+                        {player.allStats?.map((stat, index) => {
+                          if (
+                            stat.game === currentGame._id &&
+                            stat.pointsString !== undefined
+                          ) {
+                            return (
+                              <Fragment key={index}>
+                                <TableCell className="sm:py-4">
+                                  {stat.points}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.rebounds}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.assists}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.blocks}
+                                </TableCell>
+                                <TableCell className="sm:py-4">
+                                  {stat.steals}
+                                </TableCell>
+                              </Fragment>
+                            );
+                          }
+                        })}
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="my-5">
+            <div className="flex items-center gap-4">
+              {playerOfTheGame?.playerName ? (
+                <p className="text-white text-lg ">
+                  Player of the Game:{" "}
+                  <span className="font-bold">
+                    {playerOfTheGame?.playerName}
+                  </span>
+                </p>
+              ) : (
+                <p className="text-white text-lg font-bold">
+                  No player of the game found.
+                </p>
+              )}
+              <select
+                value={selectedPlayerOfTheGame}
+                onChange={handlePlayerOfTheGameChange}
+                className=" bg-[#04080f]  text-white  p-2"
+              >
+                <option value="">Select Player</option>
+                {players.map((player) => (
+                  <option value={player._id}>{player.playerName}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="p-4 mt-6">
+            <button
+              onClick={() => setIsSummary(false)}
+              className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Toaster />
+    </div>
+  );
+};
+
+export default index;
+
+export const getServerSideProps = async (context) => {
+  const { id } = context.params;
+  try {
+    const resGames = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}api/game/${id}`
+    );
+    const dataGame = await resGames.json();
+    const currentGame = dataGame.game;
+
+    console.log("currentGame:", currentGame);
+
+    const homeTeamPlayers = currentGame.homeTeam.players.map((player) => ({
+      ...player,
+      teamId: currentGame.homeTeam._id,
+    }));
+
+    const awayTeamPlayers = currentGame.awayTeam.players.map((player) => ({
+      ...player,
+      teamId: currentGame.awayTeam._id,
+    }));
+
+    const allPlayers = [...homeTeamPlayers, ...awayTeamPlayers];
+    return {
+      props: {
+        currentGame,
+        allPlayers,
+      },
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      props: {
+        currentGame: null,
+        allPlayers: [],
+      },
+    };
+  }
+};
+
+
+## Instructions:
+1. Analyze the current component and its functionality
+2. Propose a modern, improved UI/UX design
+3. integrate it into our current system design. 
+4. Update styling and layout for better user experience
+5. Maintain responsive design
+6. Keep all existing features working
+
+Focus on improving:
+- Visual hierarchy
+- Button layouts and sizing
+- Color scheme and contrast
+- Spacing and typography
+- Mobile responsiveness
+- Overall user flow

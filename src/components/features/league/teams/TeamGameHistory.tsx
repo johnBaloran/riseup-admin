@@ -47,14 +47,17 @@ export function TeamGameHistory({ games, teamId }: TeamGameHistoryProps) {
       const result = getGameResult(game);
       if (!result) return null;
 
-      const colorClasses = {
+      const colorClasses: Record<"green" | "red" | "gray", string> = {
         green: "bg-green-50 text-green-700 border-green-200",
         red: "bg-red-50 text-red-700 border-red-200",
         gray: "bg-gray-50 text-gray-700 border-gray-200",
       };
 
       return (
-        <Badge variant="outline" className={colorClasses[result.color]}>
+        <Badge
+          variant="outline"
+          className={colorClasses[result.color as "green" | "red" | "gray"]}
+        >
           {result.result}
         </Badge>
       );
