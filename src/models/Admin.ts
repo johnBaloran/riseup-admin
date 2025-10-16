@@ -31,8 +31,6 @@ export interface IAdmin extends Document {
   password: string;
   phoneNumber?: string;
   role: AdminRole;
-  assignedLocations: mongoose.Types.ObjectId[];
-  allLocations: boolean;
   isActive: boolean;
   lastLogin?: Date;
   createdAt: Date;
@@ -68,16 +66,6 @@ const adminSchema = new Schema<IAdmin>(
       type: String,
       enum: ["EXECUTIVE", "COMMISSIONER", "SCOREKEEPER", "PHOTOGRAPHER"],
       required: [true, "Role is required"],
-    },
-    assignedLocations: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Location",
-      },
-    ],
-    allLocations: {
-      type: Boolean,
-      default: false,
     },
     isActive: {
       type: Boolean,
@@ -117,14 +105,6 @@ adminSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return bcrypt.compare(candidatePassword, this.password);
 };
-
-// Middleware to set allLocations based on role
-adminSchema.pre("save", function (next) {
-  if (this.role === "EXECUTIVE" || this.role === "COMMISSIONER") {
-    this.allLocations = true;
-  }
-  next();
-});
 
 // Export model
 export default (mongoose.models.Admin as Model<IAdmin>) ||

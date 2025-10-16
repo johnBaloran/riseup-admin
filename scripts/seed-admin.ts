@@ -99,7 +99,7 @@ async function seedAdmin() {
     }
 
     // Connect to MongoDB
-    console.log("=á Connecting to MongoDB...");
+    console.log("=ï¿½ Connecting to MongoDB...");
     await mongoose.connect(process.env.MONGODB_URI);
     console.log(" Connected to MongoDB\n");
 
@@ -119,7 +119,7 @@ async function seedAdmin() {
     const existingAdmin = await Admin.findOne({ email: adminInput.email });
 
     if (existingAdmin) {
-      console.log(`\n   Admin with email ${adminInput.email} already exists`);
+      console.log(`\nï¿½  Admin with email ${adminInput.email} already exists`);
       const overwrite = await question("Do you want to update this admin? (yes/no): ");
 
       if (overwrite.toLowerCase() !== "yes" && overwrite.toLowerCase() !== "y") {
@@ -134,7 +134,6 @@ async function seedAdmin() {
         existingAdmin.phoneNumber = adminInput.phoneNumber;
       }
       existingAdmin.role = "EXECUTIVE";
-      existingAdmin.allLocations = true;
       existingAdmin.isActive = true;
 
       await existingAdmin.save();
@@ -147,31 +146,28 @@ async function seedAdmin() {
         password: adminInput.password,
         phoneNumber: adminInput.phoneNumber,
         role: "EXECUTIVE",
-        allLocations: true,
-        assignedLocations: [],
         isActive: true,
       });
 
       console.log("\n Super admin created successfully!");
     }
 
-    console.log("\n=Ë Admin Details:");
+    console.log("\n=ï¿½ Admin Details:");
     console.log(`   Name: ${adminInput.name}`);
     console.log(`   Email: ${adminInput.email}`);
     console.log(`   Role: EXECUTIVE (Super Admin)`);
-    console.log(`   All Locations: Yes`);
     if (adminInput.phoneNumber) {
       console.log(`   Phone: ${adminInput.phoneNumber}`);
     }
 
-    console.log("\n<‰ Seed completed successfully!");
+    console.log("\n<ï¿½ Seed completed successfully!");
   } catch (error: any) {
     console.error("\nL Error seeding admin:", error.message);
     process.exit(1);
   } finally {
     rl.close();
     await mongoose.connection.close();
-    console.log("\n=á MongoDB connection closed");
+    console.log("\n=ï¿½ MongoDB connection closed");
     process.exit(0);
   }
 }

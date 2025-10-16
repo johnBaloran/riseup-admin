@@ -12,8 +12,6 @@ export interface AuthUser {
   email: string;
   name: string;
   role: AdminRole;
-  allLocations: boolean;
-  assignedLocations: string[];
   isActive: boolean;
 }
 

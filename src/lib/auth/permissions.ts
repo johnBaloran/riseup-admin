@@ -56,6 +56,7 @@ export function hasAllPermissions(
 
 /**
  * Check if admin has access to specific location
+ * All admins now have access to all locations
  */
 export function hasLocationAccess(
   session: Session | null,
@@ -63,15 +64,13 @@ export function hasLocationAccess(
 ): boolean {
   if (!session?.user) return false;
 
-  // EXECUTIVE and COMMISSIONER have access to all locations
-  if (session.user.allLocations) return true;
-
-  // Check if location is in assigned locations
-  return session.user.assignedLocations.includes(locationId);
+  // All authenticated admins have access to all locations
+  return true;
 }
 
 /**
  * Get accessible location IDs for filtering queries
+ * All admins now have access to all locations
  */
 export function getAccessibleLocationIds(
   session: Session | null,
@@ -79,11 +78,6 @@ export function getAccessibleLocationIds(
 ): string[] {
   if (!session?.user) return [];
 
-  // EXECUTIVE and COMMISSIONER see all locations
-  if (session.user.allLocations) return allLocationsInCity;
-
-  // Return intersection of assigned locations and locations in the city
-  return session.user.assignedLocations.filter((loc) =>
-    allLocationsInCity.includes(loc)
-  );
+  // All authenticated admins see all locations
+  return allLocationsInCity;
 }

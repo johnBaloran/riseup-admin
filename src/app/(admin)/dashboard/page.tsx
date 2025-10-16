@@ -22,10 +22,8 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Get accessible location IDs
-  const locationIds = session.user.allLocations
-    ? []
-    : session.user.assignedLocations;
+  // All admins have access to all locations now
+  const locationIds: string[] = [];
 
   // Fetch data in parallel
   const [stats, upcomingGames] = await Promise.all([

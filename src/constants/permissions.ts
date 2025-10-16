@@ -55,11 +55,7 @@ export type Permission =
 
   // Communications
   | "manage_communications"
-  | "view_communications"
-
-  // Jersey Management
-  | "manage_jerseys"
-  | "view_jerseys";
+  | "view_communications";
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   EXECUTIVE: [

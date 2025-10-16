@@ -1,4 +1,4 @@
-// src/app/[cityId]/settings/admins/page.tsx
+// src/app/(admin)/settings/admins/page.tsx
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -15,11 +15,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-interface AdminsPageProps {
-  params: { cityId: string };
-}
-
-export default async function AdminsPage({ params }: AdminsPageProps) {
+export default async function AdminsPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -52,7 +48,7 @@ export default async function AdminsPage({ params }: AdminsPageProps) {
         </Button>
       </div>
 
-      <AdminsTable admins={admins} cityId={params.cityId} />
+      <AdminsTable admins={admins} />
     </div>
   );
 }

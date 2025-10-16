@@ -26,8 +26,6 @@ declare module "next-auth" {
       email: string;
       name: string;
       role: AdminRole;
-      allLocations: boolean;
-      assignedLocations: string[];
       isActive: boolean;
     };
   }
@@ -37,8 +35,6 @@ declare module "next-auth" {
     email: string;
     name: string;
     role: AdminRole;
-    allLocations: boolean;
-    assignedLocations: string[];
     isActive: boolean;
   }
 }
@@ -49,8 +45,6 @@ declare module "next-auth/jwt" {
     email: string;
     name: string;
     role: AdminRole;
-    allLocations: boolean;
-    assignedLocations: string[];
     isActive: boolean;
   }
 }
@@ -107,10 +101,6 @@ export const authOptions: NextAuthOptions = {
             email: admin.email,
             name: admin.name,
             role: admin.role,
-            allLocations: admin.allLocations,
-            assignedLocations: admin.assignedLocations.map((loc: any) =>
-              loc.toString()
-            ),
             isActive: admin.isActive,
           };
         } catch (error: any) {
@@ -128,8 +118,6 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
-        token.allLocations = user.allLocations;
-        token.assignedLocations = user.assignedLocations;
         token.isActive = user.isActive;
       }
 
@@ -143,8 +131,6 @@ export const authOptions: NextAuthOptions = {
           email: token.email,
           name: token.name,
           role: token.role,
-          allLocations: token.allLocations,
-          assignedLocations: token.assignedLocations,
           isActive: token.isActive,
         };
       }

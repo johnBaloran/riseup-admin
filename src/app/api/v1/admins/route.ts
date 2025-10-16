@@ -28,7 +28,6 @@ const createAdminSchema = z.object({
     .regex(/[0-9]/, "Must contain number"),
   phoneNumber: z.string().optional(),
   role: z.enum(["EXECUTIVE", "COMMISSIONER", "SCOREKEEPER", "PHOTOGRAPHER"]),
-  assignedLocations: z.array(z.string()).optional(),
 });
 
 /**

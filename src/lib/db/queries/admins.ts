@@ -13,11 +13,7 @@
 
 import { connectDB } from "../mongodb";
 import Admin, { IAdmin } from "@/models/Admin";
-import Location from "@/models/Location";
 import bcrypt from "bcryptjs";
-
-// Type for lean query results (plain objects without Mongoose methods)
-type LeanAdmin = Omit<IAdmin, keyof Document>;
 
 /**
  * Get all admins (without passwords)
@@ -26,9 +22,8 @@ export async function getAdmins(): Promise<IAdmin[]> {
   await connectDB();
   return Admin.find()
     .select("-password")
-    .populate("assignedLocations", "name address")
     .sort({ createdAt: -1 })
-    .lean();
+    .lean() as Promise<IAdmin[]>;
 }
 
 /**
@@ -38,8 +33,7 @@ export async function getAdminById(id: string): Promise<IAdmin | null> {
   await connectDB();
   return Admin.findById(id)
     .select("-password")
-    .populate("assignedLocations", "name address")
-    .lean();
+    .lean() as Promise<IAdmin | null>;
 }
 
 /**
@@ -52,7 +46,7 @@ export async function getAdminByEmail(email: string) {
 
 /**
  * Create new admin
- * Hashes password before storing
+ * Password is hashed automatically by the model's pre-save hook
  */
 export async function createAdmin(data: {
   name: string;
@@ -60,17 +54,16 @@ export async function createAdmin(data: {
   password: string;
   role: IAdmin["role"];
   phoneNumber?: string;
-  assignedLocations?: string[];
 }): Promise<IAdmin> {
   await connectDB();
 
-  // Hash password before storing
-  const hashedPassword = await bcrypt.hash(data.password, 12);
-
+  // Create admin - password will be hashed by pre-save hook
   const admin = await Admin.create({
-    ...data,
-    password: hashedPassword,
+    name: data.name,
     email: data.email.toLowerCase(),
+    password: data.password,
+    role: data.role,
+    phoneNumber: data.phoneNumber,
     isActive: true,
   });
 
@@ -107,7 +100,6 @@ export async function updateAdmin(
     email?: string;
     phoneNumber?: string;
     role?: IAdmin["role"];
-    assignedLocations?: string[];
     password?: string;
   }
 ): Promise<IAdmin | null> {
@@ -118,21 +110,18 @@ export async function updateAdmin(
   if (data.email) updateData.email = data.email.toLowerCase();
   if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
   if (data.role) updateData.role = data.role;
-  if (data.assignedLocations) updateData.assignedLocations = data.assignedLocations;
 
   // Hash password if provided
   if (data.password) {
     updateData.password = await bcrypt.hash(data.password, 12);
   }
 
-  const admin = await Admin.findByIdAndUpdate(id, updateData, {
+  return Admin.findByIdAndUpdate(id, updateData, {
     new: true,
     runValidators: true,
   })
     .select("-password")
-    .populate("assignedLocations", "name address");
-
-  return admin;
+    .lean() as Promise<IAdmin | null>;
 }
 
 /**
@@ -146,7 +135,7 @@ export async function deactivateAdmin(id: string): Promise<IAdmin | null> {
     { new: true }
   )
     .select("-password")
-    .populate("assignedLocations", "name address");
+    .lean() as Promise<IAdmin | null>;
 }
 
 /**
@@ -160,7 +149,7 @@ export async function reactivateAdmin(id: string): Promise<IAdmin | null> {
     { new: true }
   )
     .select("-password")
-    .populate("assignedLocations", "name address");
+    .lean() as Promise<IAdmin | null>;
 }
 
 /**

@@ -38,8 +38,8 @@ export function usePermissions() {
   const hasLocationAccess = useMemo(
     () => (locationId: string) => {
       if (!session?.user) return false;
-      if (session.user.allLocations) return true;
-      return session.user.assignedLocations.includes(locationId);
+      // All authenticated admins have access to all locations
+      return true;
     },
     [session?.user]
   );

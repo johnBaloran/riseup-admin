@@ -24,10 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { ILocation } from "@/models/Location";
 
 const createAdminSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -43,16 +41,10 @@ const createAdminSchema = z.object({
 
 type CreateAdminFormData = z.infer<typeof createAdminSchema>;
 
-interface CreateAdminFormProps {
-  locations: ILocation[];
-  cityId: string;
-}
-
-export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
+export function CreateAdminForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
   const {
     register,
@@ -62,17 +54,9 @@ export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
     resolver: zodResolver(createAdminSchema),
   });
 
-  const needsLocationAssignment =
-    selectedRole === "SCOREKEEPER" || selectedRole === "PHOTOGRAPHER";
-
   const onSubmit = async (data: CreateAdminFormData) => {
     if (!selectedRole) {
       toast.error("Please select a role");
-      return;
-    }
-
-    if (needsLocationAssignment && selectedLocations.length === 0) {
-      toast.error("Please select at least one location");
       return;
     }
 
@@ -85,9 +69,6 @@ export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
         body: JSON.stringify({
           ...data,
           role: selectedRole,
-          assignedLocations: needsLocationAssignment
-            ? selectedLocations
-            : undefined,
         }),
       });
 
@@ -106,14 +87,6 @@ export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const toggleLocation = (locationId: string) => {
-    setSelectedLocations((prev) =>
-      prev.includes(locationId)
-        ? prev.filter((id) => id !== locationId)
-        : [...prev, locationId]
-    );
   };
 
   return (
@@ -188,48 +161,7 @@ export function CreateAdminForm({ locations, cityId }: CreateAdminFormProps) {
         {!selectedRole && (
           <p className="text-sm text-gray-600 mt-1">Please select a role</p>
         )}
-        {selectedRole && (
-          <p className="text-sm text-gray-600 mt-1">
-            {selectedRole === "EXECUTIVE" || selectedRole === "COMMISSIONER"
-              ? "Full access to all locations"
-              : "Must assign specific locations"}
-          </p>
-        )}
       </div>
-
-      {needsLocationAssignment && (
-        <div>
-          <Label>Assigned Locations *</Label>
-          <div className="mt-2 space-y-2 border rounded-lg p-4 max-h-48 overflow-y-auto">
-            {locations.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                No locations available in this city
-              </p>
-            ) : (
-              locations.map((location) => (
-                <div key={location._id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={location._id}
-                    checked={selectedLocations.includes(location._id)}
-                    onCheckedChange={() => toggleLocation(location._id)}
-                  />
-                  <label
-                    htmlFor={location._id}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {location.name}
-                  </label>
-                </div>
-              ))
-            )}
-          </div>
-          {selectedLocations.length === 0 && (
-            <p className="text-sm text-red-600 mt-1">
-              Please select at least one location
-            </p>
-          )}
-        </div>
-      )}
 
       <div className="flex gap-4">
         <Button type="submit" disabled={isLoading || !selectedRole}>

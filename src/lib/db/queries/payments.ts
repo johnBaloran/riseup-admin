@@ -125,14 +125,6 @@ export async function getPlayersWithPaymentStatus({
       },
     },
     {
-      $lookup: {
-        from: "admins", // collection name for Admin model
-        localField: "paymentMethod.cashPayment.receivedBy",
-        foreignField: "_id",
-        as: "paymentMethod.cashPayment.receivedBy",
-      },
-    },
-    {
       $addFields: {
         paymentStatus: {
           $cond: {

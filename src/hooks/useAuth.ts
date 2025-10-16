@@ -24,6 +24,5 @@ export function useAuth() {
     isAuthenticated: status === "authenticated",
     isExecutive: session?.user?.role === "EXECUTIVE",
     isCommissioner: session?.user?.role === "COMMISSIONER",
-    hasFullAccess: session?.user?.allLocations === true,
   };
 }
