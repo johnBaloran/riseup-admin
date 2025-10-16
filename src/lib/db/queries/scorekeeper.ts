@@ -15,6 +15,7 @@ import { connectDB } from "../mongodb";
 import Game from "@/models/Game";
 import Team from "@/models/Team";
 import Player from "@/models/Player";
+import mongoose from "mongoose";
 
 // ===== HELPER FUNCTIONS =====
 
@@ -133,10 +134,12 @@ export async function updatePlayerGameStats({
       { new: true }
     );
 
-    updatedScores = {
-      home: game.homeTeamScore,
-      away: game.awayTeamScore,
-    };
+    if (game) {
+      updatedScores = {
+        home: game.homeTeamScore,
+        away: game.awayTeamScore,
+      };
+    }
   }
 
   return {
@@ -212,13 +215,13 @@ export async function updateTeamGameStats({
   const homeStatsToSave = {
     ...homeTeamStats,
     gameId,
-    game: gameId,
+    game: new mongoose.Types.ObjectId(gameId),
   };
 
   const awayStatsToSave = {
     ...awayTeamStats,
     gameId,
-    game: gameId,
+    game: new mongoose.Types.ObjectId(gameId),
   };
 
   // Check if stats already exist for this game

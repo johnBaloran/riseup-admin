@@ -36,6 +36,29 @@ export interface ITeam extends mongoose.Document {
     jerseySize?: string;
     jerseyName?: string;
   }>;
+  seasonStatistics: Array<{
+    points: number;
+    rebounds: number;
+    assists: number;
+    blocks: number;
+    steals: number;
+    threesMade: number;
+    twosMade: number;
+    freeThrowsMade: number;
+    gameId: string;
+    teamId: string;
+    game: mongoose.Types.ObjectId;
+  }>;
+  averageStats: {
+    points: number;
+    rebounds: number;
+    assists: number;
+    blocks: number;
+    steals: number;
+    threesMade: number;
+    twosMade: number;
+    freeThrowsMade: number;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -119,6 +142,38 @@ const teamSchema = new Schema<ITeam>(
         jerseyName: String,
       },
     ],
+    seasonStatistics: [
+      {
+        type: {
+          points: Number,
+          rebounds: Number,
+          assists: Number,
+          blocks: Number,
+          steals: Number,
+          threesMade: Number,
+          twosMade: Number,
+          freeThrowsMade: Number,
+          gameId: String,
+          teamId: String,
+          game: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Game",
+          },
+        },
+      },
+    ],
+    averageStats: {
+      type: {
+        points: Number,
+        rebounds: Number,
+        assists: Number,
+        blocks: Number,
+        steals: Number,
+        threesMade: Number,
+        twosMade: Number,
+        freeThrowsMade: Number,
+      },
+    },
   },
   {
     timestamps: true,
