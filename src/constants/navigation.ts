@@ -125,6 +125,12 @@ export const navigationItems: NavItem[] = [
         permission: "manage_admins",
       },
       {
+        label: "Connect Terminal",
+        href: "/settings/terminal",
+        icon: "CreditCard",
+        permission: "view_terminal",
+      },
+      {
         label: "Profile",
         href: "/settings/profile",
         icon: "User",

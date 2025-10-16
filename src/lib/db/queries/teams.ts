@@ -163,6 +163,16 @@ export async function createTeam(data: {
     pointDifference: 0,
     players: [],
     games: [],
+    averageStats: {
+      points: 0,
+      rebounds: 0,
+      assists: 0,
+      blocks: 0,
+      steals: 0,
+      threesMade: 0,
+      twosMade: 0,
+      freeThrowsMade: 0,
+    },
   });
 
   // Add team to division's teams array

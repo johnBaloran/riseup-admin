@@ -12,7 +12,7 @@ const Schema = mongoose.Schema;
 export interface IPaymentMethod extends mongoose.Document {
   player: mongoose.Types.ObjectId;
   division: mongoose.Types.ObjectId;
-  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "CASH";
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "CASH" | "TERMINAL";
   pricingTier: "EARLY_BIRD" | "REGULAR";
   originalPrice: number;
   amountPaid: number;
@@ -38,6 +38,20 @@ export interface IPaymentMethod extends mongoose.Document {
     notes?: string;
     receivedBy?: mongoose.Types.ObjectId; // Reference to Admin who received payment
   };
+  terminalPayment?: {
+    paymentIntentId: string; // pi_xxxxx
+    chargeId?: string; // ch_xxxxx
+    cardBrand?: string; // visa, mastercard, amex
+    cardLast4?: string; // 4242
+    amount: number; // Amount in cents
+    readerId: string; // tmr_xxxxx
+    readerLabel?: string; // "Front Desk Terminal"
+    authorizationCode?: string;
+    paidDate: Date;
+    processedBy: mongoose.Types.ObjectId; // Admin who processed
+    receiptUrl?: string;
+    status: "processing" | "succeeded" | "failed";
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,7 +70,7 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
     },
     paymentType: {
       type: String,
-      enum: ["FULL_PAYMENT", "INSTALLMENTS", "CASH"],
+      enum: ["FULL_PAYMENT", "INSTALLMENTS", "CASH", "TERMINAL"],
       required: [true, "Payment type is required"],
     },
     pricingTier: {
@@ -104,6 +118,26 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
       receivedBy: {
         type: Schema.Types.ObjectId,
         ref: "Admin",
+      },
+    },
+    terminalPayment: {
+      paymentIntentId: String,
+      chargeId: String,
+      cardBrand: String,
+      cardLast4: String,
+      amount: Number,
+      readerId: String,
+      readerLabel: String,
+      authorizationCode: String,
+      paidDate: Date,
+      processedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "Admin",
+      },
+      receiptUrl: String,
+      status: {
+        type: String,
+        enum: ["processing", "succeeded", "failed"],
       },
     },
   },

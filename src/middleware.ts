@@ -83,6 +83,11 @@ export default withAuth(
       return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
 
+    // Settings/Terminal - EXECUTIVE + COMMISSIONER
+    if (path.includes("/settings/terminal") && !permissions.includes("view_terminal")) {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
+
     return NextResponse.next();
   },
   {

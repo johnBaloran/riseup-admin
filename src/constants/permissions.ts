@@ -55,7 +55,11 @@ export type Permission =
 
   // Communications
   | "manage_communications"
-  | "view_communications";
+  | "view_communications"
+
+  // Terminal Management
+  | "manage_terminal"
+  | "view_terminal";
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   EXECUTIVE: [
@@ -82,6 +86,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "manage_scores",
     "manage_communications",
     "view_communications",
+    "manage_terminal",
+    "view_terminal",
   ],
 
   COMMISSIONER: [
@@ -104,6 +110,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "manage_scores",
     "manage_communications",
     "view_communications",
+    "manage_terminal",
+    "view_terminal",
   ],
 
   SCOREKEEPER: ["view_dashboard", "manage_scores", "view_games"],

@@ -26,6 +26,7 @@ import {
 import { SendReminderModal } from "./SendReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
 import { MarkCashPaymentModal } from "./MarkCashPaymentModal";
+import { MarkTerminalPaymentModal } from "./MarkTerminalPaymentModal";
 import { formatDistanceToNow } from "date-fns";
 
 interface UnpaidPlayerViewProps {
@@ -38,6 +39,7 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showCaptainModal, setShowCaptainModal] = useState(false);
   const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
+  const [showTerminalPaymentModal, setShowTerminalPaymentModal] = useState(false);
 
   const daysSinceRegistration = player.createdAt
     ? Math.floor(
@@ -172,6 +174,13 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowTerminalPaymentModal(true)}
+              >
+                Process Terminal Payment
+              </Button>
+
+              <Button
                 className="w-full bg-green-600 hover:bg-green-700"
                 onClick={() => setShowCashPaymentModal(true)}
               >
@@ -217,6 +226,12 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
       </div>
 
       {/* Modals */}
+      <MarkTerminalPaymentModal
+        open={showTerminalPaymentModal}
+        onOpenChange={setShowTerminalPaymentModal}
+        player={player}
+      />
+
       <MarkCashPaymentModal
         open={showCashPaymentModal}
         onOpenChange={setShowCashPaymentModal}
