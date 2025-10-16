@@ -37,7 +37,6 @@ export async function GET(
     const search = searchParams.get("search") || undefined;
 
     const players = await getPlayersWithPaymentStatus({
-      cityId: params.cityId,
       locationId,
       divisionId,
       teamId,
@@ -45,10 +44,7 @@ export async function GET(
       search,
     });
 
-    return NextResponse.json(
-      { success: true, data: players },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, data: players }, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching payment data:", error);
     return NextResponse.json(
