@@ -19,7 +19,14 @@ export async function getPlayerPaymentStatus(playerId: string) {
   await connectDB();
 
   const player = await Player.findById(playerId)
-    .populate("paymentMethods")
+    .populate({
+      path: "paymentMethods",
+      populate: {
+        path: "cashPayment.receivedBy",
+        model: "Admin",
+        select: "name email",
+      },
+    })
     .lean();
 
   if (!player || !player.paymentMethods || player.paymentMethods.length === 0) {
@@ -205,8 +212,12 @@ export async function getPlayersWithPaymentStatus({
     { path: "team", select: "teamName" },
     { path: "user", select: "name email phoneNumber" },
     {
-      path: "paymentMethod.cashPayment.receivedBy",
-      select: "name email",
+      path: "paymentMethod",
+      populate: {
+        path: "cashPayment.receivedBy",
+        model: "Admin",
+        select: "name email",
+      },
     },
   ]);
 

@@ -56,21 +56,21 @@ function getLabelForPath(path: string): string {
     return routeLabels[path];
   }
 
-  // Check dynamic routes - support both /admin/league/... and /admin/{cityId}/league/... patterns
+  // Check dynamic routes - support both /league/... and /league/... patterns
 
-  // Division details: /league/divisions/{id} or /admin/{cityId}/league/divisions/{id}
+  // Division details: /league/divisions/{id} or /league/divisions/{id}
   if (
     path.match(/^\/(league\/divisions\/[^/]+|[^/]+\/league\/divisions\/[^/]+)$/)
   ) {
     return "Division Details";
   }
 
-  // Team details: /league/teams/{id} or /admin/{cityId}/league/teams/{id}
+  // Team details: /league/teams/{id} or /league/teams/{id}
   if (path.match(/^\/(league\/teams\/[^/]+|[^/]+\/league\/teams\/[^/]+)$/)) {
     return "Team Details";
   }
 
-  // Player details: /league/players/{id} or /admin/{cityId}/league/players/{id}
+  // Player details: /league/players/{id} or /league/players/{id}
   if (
     path.match(/^\/(league\/players\/[^/]+|[^/]+\/league\/players\/[^/]+)$/)
   ) {

@@ -96,3 +96,78 @@ export async function emailExists(email: string): Promise<boolean> {
   const count = await Admin.countDocuments({ email: email.toLowerCase() });
   return count > 0;
 }
+
+/**
+ * Update admin details
+ */
+export async function updateAdmin(
+  id: string,
+  data: {
+    name?: string;
+    email?: string;
+    phoneNumber?: string;
+    role?: IAdmin["role"];
+    assignedLocations?: string[];
+    password?: string;
+  }
+): Promise<IAdmin | null> {
+  await connectDB();
+
+  const updateData: any = {};
+  if (data.name) updateData.name = data.name;
+  if (data.email) updateData.email = data.email.toLowerCase();
+  if (data.phoneNumber !== undefined) updateData.phoneNumber = data.phoneNumber;
+  if (data.role) updateData.role = data.role;
+  if (data.assignedLocations) updateData.assignedLocations = data.assignedLocations;
+
+  // Hash password if provided
+  if (data.password) {
+    updateData.password = await bcrypt.hash(data.password, 12);
+  }
+
+  const admin = await Admin.findByIdAndUpdate(id, updateData, {
+    new: true,
+    runValidators: true,
+  })
+    .select("-password")
+    .populate("assignedLocations", "name address");
+
+  return admin;
+}
+
+/**
+ * Deactivate admin
+ */
+export async function deactivateAdmin(id: string): Promise<IAdmin | null> {
+  await connectDB();
+  return Admin.findByIdAndUpdate(
+    id,
+    { isActive: false },
+    { new: true }
+  )
+    .select("-password")
+    .populate("assignedLocations", "name address");
+}
+
+/**
+ * Reactivate admin
+ */
+export async function reactivateAdmin(id: string): Promise<IAdmin | null> {
+  await connectDB();
+  return Admin.findByIdAndUpdate(
+    id,
+    { isActive: true },
+    { new: true }
+  )
+    .select("-password")
+    .populate("assignedLocations", "name address");
+}
+
+/**
+ * Delete admin (permanent)
+ */
+export async function deleteAdmin(id: string): Promise<boolean> {
+  await connectDB();
+  const result = await Admin.findByIdAndDelete(id);
+  return !!result;
+}

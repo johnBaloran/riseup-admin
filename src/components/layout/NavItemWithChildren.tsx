@@ -30,7 +30,7 @@ export function NavItemWithChildren({
 }: NavItemWithChildrenProps) {
   // Check if any child route is active (exact match or starts with the route)
   const isActiveParent = item.children?.some((child) => {
-    // Handle both /admin/league/teams and /admin/league/teams patterns
+    // Handle both /league/teams and /league/teams patterns
     const href = child.href?.startsWith("/") ? child.href : `/${child.href}`;
     const childPath = `${href}`;
     const isActive =
@@ -91,7 +91,7 @@ export function NavItemWithChildren({
         <ul className="mt-1 ml-4 space-y-1 border-l border-gray-700 pl-4">
           {item.children.map((child) => {
             const ChildIcon = (LucideIcons as any)[child.icon];
-            // Handle both /admin/league/teams and /admin//league/teams patterns
+            // Handle both /league/teams and /league/teams patterns
             const href = child.href?.startsWith("/")
               ? child.href
               : `/${child.href}`;
