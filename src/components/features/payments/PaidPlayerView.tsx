@@ -7,6 +7,7 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,12 @@ import {
   Users,
   MapPin,
   CreditCard,
+  DollarSign,
+  User,
+  FileText,
 } from "lucide-react";
 import { format } from "date-fns";
+import { RevertCashPaymentModal } from "./RevertCashPaymentModal";
 
 interface PaidPlayerViewProps {
   player: any;
@@ -35,6 +40,9 @@ export function PaidPlayerView({
   paymentMethod,
   cityId,
 }: PaidPlayerViewProps) {
+  const [showRevertModal, setShowRevertModal] = useState(false);
+  const isCashPayment = paymentMethod?.paymentType === "CASH";
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -89,6 +97,8 @@ export function PaidPlayerView({
                   <p className="font-medium">
                     {paymentMethod.paymentType === "FULL_PAYMENT"
                       ? "Full Payment"
+                      : paymentMethod.paymentType === "CASH"
+                      ? "Cash Payment"
                       : "Installments"}
                   </p>
                 </div>
@@ -107,7 +117,12 @@ export function PaidPlayerView({
                 <div>
                   <p className="text-sm text-gray-500">Payment Date</p>
                   <p className="font-medium">
-                    {paymentMethod.createdAt
+                    {isCashPayment && paymentMethod.cashPayment?.paidDate
+                      ? format(
+                          new Date(paymentMethod.cashPayment.paidDate),
+                          "MMM dd, yyyy 'at' h:mm a"
+                        )
+                      : paymentMethod.createdAt
                       ? format(
                           new Date(paymentMethod.createdAt),
                           "MMM dd, yyyy"
@@ -132,6 +147,50 @@ export function PaidPlayerView({
                   </p>
                 </div>
               </div>
+
+              {/* Cash Payment Specific Details */}
+              {isCashPayment && paymentMethod.cashPayment && (
+                <>
+                  <div className="pt-3 border-t" />
+
+                  {paymentMethod.cashPayment.receivedBy && (
+                    <div className="flex items-center gap-3">
+                      <User className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Received By</p>
+                        <p className="font-medium">
+                          {typeof paymentMethod.cashPayment.receivedBy === 'object'
+                            ? paymentMethod.cashPayment.receivedBy.name ||
+                              paymentMethod.cashPayment.receivedBy.email
+                            : paymentMethod.cashPayment.receivedBy}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentMethod.cashPayment.notes && (
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Notes</p>
+                        <p className="font-medium text-sm">
+                          {paymentMethod.cashPayment.notes}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Amount Received</p>
+                      <p className="font-medium">
+                        ${paymentMethod.originalPrice?.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -233,6 +292,27 @@ export function PaidPlayerView({
             </CardContent>
           </Card>
 
+          {/* Admin Actions - Only for Cash Payments */}
+          {isCashPayment && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => setShowRevertModal(true)}
+                >
+                  Delete Cash Payment
+                </Button>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Remove payment record completely
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Registration Timeline</CardTitle>
@@ -286,6 +366,14 @@ export function PaidPlayerView({
           </Card>
         </div>
       </div>
+
+      {/* Revert Cash Payment Modal */}
+      <RevertCashPaymentModal
+        open={showRevertModal}
+        onOpenChange={setShowRevertModal}
+        player={player}
+        paymentMethod={paymentMethod}
+      />
     </div>
   );
 }

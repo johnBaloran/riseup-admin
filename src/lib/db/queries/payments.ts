@@ -204,6 +204,10 @@ export async function getPlayersWithPaymentStatus({
     },
     { path: "team", select: "teamName" },
     { path: "user", select: "name email phoneNumber" },
+    {
+      path: "paymentMethod.cashPayment.receivedBy",
+      select: "name email",
+    },
   ]);
 
   return {

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { SendReminderModal } from "./SendReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
+import { MarkCashPaymentModal } from "./MarkCashPaymentModal";
 import { formatDistanceToNow } from "date-fns";
 
 interface UnpaidPlayerViewProps {
@@ -36,6 +37,7 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
   const router = useRouter();
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showCaptainModal, setShowCaptainModal] = useState(false);
+  const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
 
   const daysSinceRegistration = player.createdAt
     ? Math.floor(
@@ -170,6 +172,13 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={() => setShowCashPaymentModal(true)}
+              >
+                Mark Cash Payment Received
+              </Button>
+
+              <Button
                 className="w-full"
                 onClick={() => setShowReminderModal(true)}
               >
@@ -208,6 +217,12 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
       </div>
 
       {/* Modals */}
+      <MarkCashPaymentModal
+        open={showCashPaymentModal}
+        onOpenChange={setShowCashPaymentModal}
+        player={player}
+      />
+
       <SendReminderModal
         open={showReminderModal}
         onOpenChange={setShowReminderModal}

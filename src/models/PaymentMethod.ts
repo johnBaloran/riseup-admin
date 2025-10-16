@@ -12,7 +12,7 @@ const Schema = mongoose.Schema;
 export interface IPaymentMethod extends mongoose.Document {
   player: mongoose.Types.ObjectId;
   division: mongoose.Types.ObjectId;
-  paymentType: "FULL_PAYMENT" | "INSTALLMENTS";
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "CASH";
   pricingTier: "EARLY_BIRD" | "REGULAR";
   originalPrice: number;
   amountPaid: number;
@@ -33,6 +33,11 @@ export interface IPaymentMethod extends mongoose.Document {
       dueDate?: Date;
     }>;
   };
+  cashPayment?: {
+    paidDate?: Date;
+    notes?: string;
+    receivedBy?: mongoose.Types.ObjectId; // Reference to Admin who received payment
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,7 +56,7 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
     },
     paymentType: {
       type: String,
-      enum: ["FULL_PAYMENT", "INSTALLMENTS"],
+      enum: ["FULL_PAYMENT", "INSTALLMENTS", "CASH"],
       required: [true, "Payment type is required"],
     },
     pricingTier: {
@@ -92,6 +97,14 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
           dueDate: Date,
         },
       ],
+    },
+    cashPayment: {
+      paidDate: Date,
+      notes: String,
+      receivedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "Admin",
+      },
     },
   },
   {

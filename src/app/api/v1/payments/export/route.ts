@@ -35,6 +35,12 @@ interface PaymentExportPlayer {
         status: string;
       }>;
     };
+    cashPayment?: {
+      receivedBy?: {
+        name?: string;
+        email?: string;
+      };
+    };
   };
   createdAt?: Date;
 }
@@ -79,12 +85,14 @@ export async function POST(request: NextRequest) {
       "Registration Date",
       "Payments Completed",
       "Failed Payments",
+      "Received By",
     ];
 
     const rows = result.players.map((player: PaymentExportPlayer) => {
       const paymentMethod = player.paymentMethod;
       let paymentsCompleted = "N/A";
       let failedPayments = "N/A";
+      let receivedBy = "N/A";
 
       if (paymentMethod?.paymentType === "INSTALLMENTS") {
         const subscriptionPayments =
@@ -97,6 +105,28 @@ export async function POST(request: NextRequest) {
         ).length;
         paymentsCompleted = `${completed}/8`;
         failedPayments = failed.toString();
+        receivedBy = "Online Registration";
+      } else if (paymentMethod?.paymentType === "CASH") {
+        // Cash payment
+        if (player.paymentStatus === "paid") {
+          paymentsCompleted = "1/1 (Cash)";
+          failedPayments = "0";
+          receivedBy = paymentMethod.cashPayment?.receivedBy?.name || "Unknown Admin";
+        } else {
+          paymentsCompleted = "0/1 (Cash)";
+          failedPayments = "0";
+          receivedBy = "N/A";
+        }
+      } else if (paymentMethod?.paymentType === "FULL_PAYMENT" || player.paymentStatus === "paid") {
+        // Full payment completed
+        paymentsCompleted = "1/1";
+        failedPayments = "0";
+        receivedBy = "Online Registration";
+      } else if (paymentMethod && player.paymentStatus === "unpaid") {
+        // Payment method exists but not completed
+        paymentsCompleted = "0/1";
+        failedPayments = "0";
+        receivedBy = "N/A";
       }
 
       return [
@@ -112,6 +142,7 @@ export async function POST(request: NextRequest) {
         player.createdAt ? new Date(player.createdAt).toLocaleDateString() : "",
         paymentsCompleted,
         failedPayments,
+        receivedBy,
       ];
     });
 
