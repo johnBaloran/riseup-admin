@@ -125,6 +125,14 @@ export async function getPlayersWithPaymentStatus({
       },
     },
     {
+      $lookup: {
+        from: "admins", // collection name for Admin model
+        localField: "paymentMethod.cashPayment.receivedBy",
+        foreignField: "_id",
+        as: "paymentMethod.cashPayment.receivedBy",
+      },
+    },
+    {
       $addFields: {
         paymentStatus: {
           $cond: {
@@ -211,14 +219,6 @@ export async function getPlayersWithPaymentStatus({
     },
     { path: "team", select: "teamName" },
     { path: "user", select: "name email phoneNumber" },
-    {
-      path: "paymentMethod",
-      populate: {
-        path: "cashPayment.receivedBy",
-        model: "Admin",
-        select: "name email",
-      },
-    },
   ]);
 
   return {
