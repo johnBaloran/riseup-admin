@@ -11,6 +11,34 @@ import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getPlayersWithPaymentStatus } from "@/lib/db/queries/payments";
 
+interface PaymentExportPlayer {
+  playerName: string;
+  user?: {
+    email?: string;
+    phoneNumber?: string;
+  };
+  team?: {
+    teamName: string;
+  };
+  division?: {
+    divisionName: string;
+    location?: {
+      name: string;
+    };
+  };
+  paymentStatus: string;
+  paymentMethod?: {
+    paymentType?: string;
+    pricingTier?: string;
+    installments?: {
+      subscriptionPayments?: Array<{
+        status: string;
+      }>;
+    };
+  };
+  createdAt?: Date;
+}
+
 /**
  * POST /api/v1/payments/export
  * Export payment data to CSV
@@ -28,12 +56,13 @@ export async function POST(request: NextRequest) {
 
     const { filters } = await request.json();
 
-    const players = await getPlayersWithPaymentStatus({
+    const result = await getPlayersWithPaymentStatus({
       locationId: filters?.location,
       divisionId: filters?.division,
       teamId: filters?.team,
       paymentStatusFilter: filters?.payment || "all",
       search: filters?.search,
+      limit: 10000, // High limit for export to get all records
     });
 
     // Create CSV content
@@ -52,7 +81,7 @@ export async function POST(request: NextRequest) {
       "Failed Payments",
     ];
 
-    const rows = players.map((player: any) => {
+    const rows = result.players.map((player: PaymentExportPlayer) => {
       const paymentMethod = player.paymentMethod;
       let paymentsCompleted = "N/A";
       let failedPayments = "N/A";
@@ -61,10 +90,10 @@ export async function POST(request: NextRequest) {
         const subscriptionPayments =
           paymentMethod.installments?.subscriptionPayments || [];
         const completed = subscriptionPayments.filter(
-          (p: any) => p.status === "succeeded"
+          (p) => p.status === "succeeded"
         ).length;
         const failed = subscriptionPayments.filter(
-          (p: any) => p.status === "failed"
+          (p) => p.status === "failed"
         ).length;
         paymentsCompleted = `${completed}/8`;
         failedPayments = failed.toString();
@@ -89,8 +118,8 @@ export async function POST(request: NextRequest) {
     // Convert to CSV format
     const csvContent = [
       headers.join(","),
-      ...rows.map((row) =>
-        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ...rows.map((row: string[]) =>
+        row.map((cell: string) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
       ),
     ].join("\n");
 

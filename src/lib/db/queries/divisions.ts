@@ -169,7 +169,7 @@ export async function createDivision(data: {
     installment: string;
     regularInstallment: string;
     firstInstallment: string;
-    free: string;
+    free?: string;
   };
   active: boolean;
   register: boolean;

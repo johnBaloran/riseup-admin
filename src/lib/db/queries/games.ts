@@ -200,7 +200,7 @@ export async function getGamesByTeam(teamId: string) {
  * Create a single game
  */
 export async function createGame(data: {
-  gameName: string;
+  gameName?: string;
   date: string;
   time: string;
   homeTeam: string;
@@ -232,9 +232,13 @@ export async function createGame(data: {
     throw new Error("Teams must be in the same division");
   }
 
+  // Auto-generate gameName if not provided
+  const gameName = data.gameName || `${homeTeam.teamName} vs. ${awayTeam.teamName}`;
+
   // Create game
   const game = await Game.create({
     ...data,
+    gameName,
     date: new Date(data.date),
     homeTeamScore: 0,
     awayTeamScore: 0,
@@ -268,7 +272,7 @@ export async function createGame(data: {
  */
 export async function createGames(
   games: Array<{
-    gameName: string;
+    gameName?: string;
     date: string;
     time: string;
     homeTeam: string;
