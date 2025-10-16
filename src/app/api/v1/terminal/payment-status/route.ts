@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
 
       if (paymentMethod.terminalPayment) {
         paymentMethod.terminalPayment.status = "succeeded";
-        paymentMethod.terminalPayment.chargeId = paymentResult.chargeId;
-        paymentMethod.terminalPayment.cardBrand = paymentResult.cardBrand;
-        paymentMethod.terminalPayment.cardLast4 = paymentResult.cardLast4;
-        paymentMethod.terminalPayment.receiptUrl = paymentResult.receiptUrl;
-        paymentMethod.terminalPayment.authorizationCode = paymentResult.authorizationCode;
+        paymentMethod.terminalPayment.chargeId = paymentResult.chargeId ?? undefined;
+        paymentMethod.terminalPayment.cardBrand = paymentResult.cardBrand ?? undefined;
+        paymentMethod.terminalPayment.cardLast4 = paymentResult.cardLast4 ?? undefined;
+        paymentMethod.terminalPayment.receiptUrl = paymentResult.receiptUrl ?? undefined;
+        paymentMethod.terminalPayment.authorizationCode = paymentResult.authorizationCode ?? undefined;
       }
 
       await paymentMethod.save();

@@ -97,7 +97,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     ? await stripe.charges.retrieve(paymentIntent.latest_charge as string)
     : null;
 
-  const paymentMethodDetails = charge?.payment_method_details?.card_present;
+  const paymentMethodDetails = charge?.payment_method_details?.card_present as any;
 
   // Update payment method
   paymentMethod.status = "COMPLETED";
@@ -105,12 +105,12 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
 
   if (paymentMethod.terminalPayment) {
     paymentMethod.terminalPayment.status = "succeeded";
-    paymentMethod.terminalPayment.chargeId = charge?.id;
-    paymentMethod.terminalPayment.cardBrand = paymentMethodDetails?.brand;
-    paymentMethod.terminalPayment.cardLast4 = paymentMethodDetails?.last4;
-    paymentMethod.terminalPayment.receiptUrl = charge?.receipt_url || undefined;
+    paymentMethod.terminalPayment.chargeId = charge?.id ?? undefined;
+    paymentMethod.terminalPayment.cardBrand = paymentMethodDetails?.brand ?? undefined;
+    paymentMethod.terminalPayment.cardLast4 = paymentMethodDetails?.last4 ?? undefined;
+    paymentMethod.terminalPayment.receiptUrl = charge?.receipt_url ?? undefined;
     paymentMethod.terminalPayment.authorizationCode =
-      paymentMethodDetails?.authorization_code || undefined;
+      paymentMethodDetails?.authorization_code ?? undefined;
   }
 
   await paymentMethod.save();
