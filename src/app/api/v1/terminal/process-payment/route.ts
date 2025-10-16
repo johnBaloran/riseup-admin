@@ -39,7 +39,10 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!playerId || !readerId || !amount || !pricingTier || !divisionId) {
       return NextResponse.json(
-        { error: "Player ID, reader ID, amount, pricing tier, and division ID are required" },
+        {
+          error:
+            "Player ID, reader ID, amount, pricing tier, and division ID are required",
+        },
         { status: 400 }
       );
     }
@@ -62,12 +65,17 @@ export async function POST(request: NextRequest) {
     // Get reader details
     const reader = await getTerminalReader(readerId);
     if (!reader) {
-      return NextResponse.json({ error: "Terminal reader not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Terminal reader not found" },
+        { status: 404 }
+      );
     }
 
     if (reader.status !== "online") {
       return NextResponse.json(
-        { error: `Terminal reader is ${reader.status}. Please ensure it's connected.` },
+        {
+          error: `Terminal reader is ${reader.status}. Please ensure it's connected.`,
+        },
         { status: 400 }
       );
     }
@@ -80,7 +88,7 @@ export async function POST(request: NextRequest) {
       readerId,
       amountInCents,
       currency: "cad",
-      description: `Payment for ${player.firstName} ${player.lastName}`,
+      description: `Payment for ${player.playerName}`,
       metadata: {
         playerId: playerId.toString(),
         divisionId: divisionId.toString(),
@@ -118,7 +126,12 @@ export async function POST(request: NextRequest) {
       });
 
       // Add payment method to player's paymentMethods array
-      console.log("💾 Adding payment method to player:", playerId, "->", paymentMethod._id);
+      console.log(
+        "💾 Adding payment method to player:",
+        playerId,
+        "->",
+        paymentMethod._id
+      );
       const updatedPlayer = await Player.findByIdAndUpdate(
         playerId,
         {
@@ -126,7 +139,10 @@ export async function POST(request: NextRequest) {
         },
         { new: true }
       );
-      console.log("✅ Player paymentMethods array:", updatedPlayer?.paymentMethods);
+      console.log(
+        "✅ Player paymentMethods array:",
+        updatedPlayer?.paymentMethods
+      );
     } else {
       // Update existing payment method
       paymentMethod.status = "IN_PROGRESS";
@@ -144,7 +160,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message: "Payment processing initiated on terminal. Please have customer present card.",
+        message:
+          "Payment processing initiated on terminal. Please have customer present card.",
         paymentIntentId: paymentResult.paymentIntentId,
         status: paymentResult.status,
         readerLabel: reader.label,
