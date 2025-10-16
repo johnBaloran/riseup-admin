@@ -116,15 +116,20 @@ export async function getTerminalReader(
   try {
     const reader = await stripe.terminal.readers.retrieve(readerId);
 
+    // Type guard - check if reader was deleted
+    if ('deleted' in reader && reader.deleted) {
+      return null;
+    }
+
     return {
       id: reader.id,
       object: reader.object,
-      label: reader.label || "",
-      status: reader.status as "online" | "offline",
-      device_type: reader.device_type,
-      serial_number: reader.serial_number || "",
-      ip_address: reader.ip_address || undefined,
-      location: reader.location as string | undefined,
+      label: (reader as any).label || "",
+      status: (reader as any).status as "online" | "offline",
+      device_type: (reader as any).device_type,
+      serial_number: (reader as any).serial_number || "",
+      ip_address: (reader as any).ip_address || undefined,
+      location: (reader as any).location as string | undefined,
     };
   } catch (error) {
     return null;
@@ -136,7 +141,7 @@ export async function getTerminalReader(
  */
 export async function deleteTerminalReader(readerId: string): Promise<boolean> {
   try {
-    await stripe.terminal.readers.delete(readerId);
+    await stripe.terminal.readers.del(readerId);
     return true;
   } catch (error) {
     return false;
@@ -189,17 +194,17 @@ export async function getPaymentIntent(
     ? await stripe.charges.retrieve(paymentIntent.latest_charge as string)
     : null;
 
-  const paymentMethodDetails = charge?.payment_method_details?.card_present;
+  const paymentMethodDetails = charge?.payment_method_details?.card_present as any;
 
   return {
     paymentIntentId: paymentIntent.id,
     status: paymentIntent.status,
     amount: paymentIntent.amount,
-    chargeId: charge?.id,
-    cardBrand: paymentMethodDetails?.brand,
-    cardLast4: paymentMethodDetails?.last4,
-    receiptUrl: charge?.receipt_url || undefined,
-    authorizationCode: paymentMethodDetails?.authorization_code || undefined,
+    chargeId: charge?.id ?? undefined,
+    cardBrand: paymentMethodDetails?.brand ?? undefined,
+    cardLast4: paymentMethodDetails?.last4 ?? undefined,
+    receiptUrl: charge?.receipt_url ?? undefined,
+    authorizationCode: paymentMethodDetails?.authorization_code ?? undefined,
   };
 }
 
