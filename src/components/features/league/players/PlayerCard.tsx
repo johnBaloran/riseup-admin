@@ -18,7 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Trophy, Mail, User, MoreVertical, Pencil, MapPin, Users } from "lucide-react";
+import {
+  Trophy,
+  Mail,
+  User,
+  MoreVertical,
+  Pencil,
+  MapPin,
+  Users,
+} from "lucide-react";
 
 interface PlayerCardProps {
   player: any;
@@ -68,7 +76,7 @@ export function PlayerCard({ player }: PlayerCardProps) {
                 </Badge>
               )}
             </div>
-            <Link href={`/admin/league/players/${player._id}`}>
+            <Link href={`/league/players/${player._id}`}>
               <h3 className="font-semibold text-lg leading-tight hover:underline">
                 {player.playerName}
               </h3>
@@ -86,7 +94,7 @@ export function PlayerCard({ player }: PlayerCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/admin/league/players/${player._id}/edit`)
+                  router.push(`/league/players/${player._id}/edit`)
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />
@@ -102,7 +110,8 @@ export function PlayerCard({ player }: PlayerCardProps) {
           <Trophy className="h-4 w-4 flex-shrink-0" />
           <span className="truncate">
             {player.team?.teamName || "Free Agent"}
-            {player.division?.divisionName && ` - ${player.division.divisionName}`}
+            {player.division?.divisionName &&
+              ` - ${player.division.divisionName}`}
           </span>
         </div>
 
@@ -110,7 +119,8 @@ export function PlayerCard({ player }: PlayerCardProps) {
           <MapPin className="h-4 w-4 flex-shrink-0" />
           <span className="truncate">
             {player.division?.location?.name || "N/A"}
-            {player.division?.city?.cityName && `, ${player.division.city.cityName}`}
+            {player.division?.city?.cityName &&
+              `, ${player.division.city.cityName}`}
           </span>
         </div>
 

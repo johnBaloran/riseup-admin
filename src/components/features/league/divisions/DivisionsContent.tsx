@@ -56,7 +56,10 @@ export function DivisionsContent({
   const searchParams = useSearchParams();
   const [searchValue, setSearchValue] = useState(currentFilters.search || "");
 
-  const updateFilters = (updates: Record<string, string | undefined>, resetPage = true) => {
+  const updateFilters = (
+    updates: Record<string, string | undefined>,
+    resetPage = true
+  ) => {
     const params = new URLSearchParams(searchParams.toString());
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -73,7 +76,7 @@ export function DivisionsContent({
     }
 
     // Use replace instead of push to avoid adding filter changes to browser history
-    router.replace(`/admin/league/divisions?${params.toString()}`);
+    router.replace(`/league/divisions?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -179,7 +182,9 @@ export function DivisionsContent({
           totalPages={pagination.totalPages}
           total={pagination.total}
           limit={pagination.limit}
-          onPageChange={(page) => updateFilters({ page: page.toString() }, false)}
+          onPageChange={(page) =>
+            updateFilters({ page: page.toString() }, false)
+          }
         />
       )}
     </div>

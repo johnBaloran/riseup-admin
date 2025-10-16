@@ -64,7 +64,7 @@ export function DivisionTeamsSection({
               {teams.map((team: any) => (
                 <Link
                   key={team._id}
-                  href={`/admin/league/teams/${team._id}`}
+                  href={`/league/teams/${team._id}`}
                   className="block"
                 >
                   <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors h-full">

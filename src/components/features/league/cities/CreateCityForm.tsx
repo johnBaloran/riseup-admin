@@ -71,7 +71,7 @@ export function CreateCityForm() {
       }
 
       toast.success("City created successfully!");
-      router.push("/admin/league/cities");
+      router.push("/league/cities");
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create city");

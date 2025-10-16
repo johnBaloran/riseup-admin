@@ -51,7 +51,7 @@ export function DivisionScheduleSection({
 
   const renderGameCard = (game: any) => {
     return (
-      <Link key={game._id} href={`/admin/games/${game._id}`} className="block">
+      <Link key={game._id} href={`/games/${game._id}`} className="block">
         <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -139,7 +139,7 @@ export function DivisionScheduleSection({
               {upcomingGames.length > 5 && (
                 <div className="text-center pt-2">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/games/${divisionId}`}>
+                    <Link href={`/games/${divisionId}`}>
                       View All {upcomingGames.length} Upcoming Games
                     </Link>
                   </Button>
@@ -160,9 +160,7 @@ export function DivisionScheduleSection({
             </CardTitle>
             {pastGames.length > 0 && (
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/admin/games/${divisionId}`}>
-                  View Full Schedule
-                </Link>
+                <Link href={`/games/${divisionId}`}>View Full Schedule</Link>
               </Button>
             )}
           </div>
@@ -179,7 +177,7 @@ export function DivisionScheduleSection({
               {pastGames.length > 5 && (
                 <div className="text-center pt-2">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/admin/games/${divisionId}`}>
+                    <Link href={`/games/${divisionId}`}>
                       View All {pastGames.length} Past Games
                     </Link>
                   </Button>

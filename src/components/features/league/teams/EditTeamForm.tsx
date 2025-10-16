@@ -162,7 +162,7 @@ export function EditTeamForm({ team, cityId, cities }: EditTeamFormProps) {
       }
 
       toast.success("Team updated successfully!");
-      router.push(`/admin/league/teams/${team._id}`);
+      router.push(`/league/teams/${team._id}`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to update team");

@@ -78,7 +78,7 @@ export function TeamsContent({
     }
 
     // Use replace instead of push to avoid adding filter changes to browser history
-    router.replace(`/admin/league/teams?${params.toString()}`);
+    router.replace(`/league/teams?${params.toString()}`);
   };
 
   const handleTabChange = (tab: string) => {
@@ -112,7 +112,7 @@ export function TeamsContent({
   // Sort locations by name
   const sortedLocations = useMemo(() => {
     return [...locations].sort((a, b) =>
-      (a.name || '').localeCompare(b.name || '')
+      (a.name || "").localeCompare(b.name || "")
     );
   }, [locations]);
 
@@ -120,16 +120,18 @@ export function TeamsContent({
   const filteredDivisions = useMemo(() => {
     let filtered = divisions;
     if (currentFilters.location && currentFilters.location !== "all") {
-      filtered = divisions.filter((d) => d.location?._id === currentFilters.location);
+      filtered = divisions.filter(
+        (d) => d.location?._id === currentFilters.location
+      );
     }
     return filtered.sort((a, b) =>
-      (a.location?.name || '').localeCompare(b.location?.name || '')
+      (a.location?.name || "").localeCompare(b.location?.name || "")
     );
   }, [divisions, currentFilters.location]);
 
   const clearAllFilters = () => {
     // Use replace to avoid adding to browser history
-    router.replace(`/admin/league/teams?tab=${currentTab}&view=${currentView}`);
+    router.replace(`/league/teams?tab=${currentTab}&view=${currentView}`);
     setSearchValue("");
   };
 

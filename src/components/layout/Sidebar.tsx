@@ -90,8 +90,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }
 
               // For top-level items without children
-              const href = item.href?.startsWith('/') ? item.href : `/${item.href}`;
-              const fullPath = `/admin${href}`;
+              const href = item.href?.startsWith("/")
+                ? item.href
+                : `/${item.href}`;
+              const fullPath = `${href}`;
               // Check if current page is this route or a sub-page of it
               const isActive =
                 pathname === fullPath || pathname.startsWith(`${fullPath}/`);

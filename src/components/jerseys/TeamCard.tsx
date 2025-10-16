@@ -63,7 +63,7 @@ export default function TeamCard({ team }: TeamCardProps) {
   };
 
   const handleViewTeam = () => {
-    router.push(`/admin/jerseys/${team._id}`);
+    router.push(`/jerseys/${team._id}`);
   };
 
   return (

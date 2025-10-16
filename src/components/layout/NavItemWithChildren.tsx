@@ -30,10 +30,11 @@ export function NavItemWithChildren({
 }: NavItemWithChildrenProps) {
   // Check if any child route is active (exact match or starts with the route)
   const isActiveParent = item.children?.some((child) => {
-    // Handle both /admin/league/teams and /admin//league/teams patterns
-    const href = child.href?.startsWith('/') ? child.href : `/${child.href}`;
-    const childPath = `/admin${href}`;
-    const isActive = pathname === childPath || pathname.startsWith(`${childPath}/`);
+    // Handle both /admin/league/teams and /admin/league/teams patterns
+    const href = child.href?.startsWith("/") ? child.href : `/${child.href}`;
+    const childPath = `${href}`;
+    const isActive =
+      pathname === childPath || pathname.startsWith(`${childPath}/`);
     console.log("NavItemWithChildren check:", {
       itemLabel: item.label,
       childLabel: child.label,
@@ -91,8 +92,10 @@ export function NavItemWithChildren({
           {item.children.map((child) => {
             const ChildIcon = (LucideIcons as any)[child.icon];
             // Handle both /admin/league/teams and /admin//league/teams patterns
-            const href = child.href?.startsWith('/') ? child.href : `/${child.href}`;
-            const childPath = `/admin${href}`;
+            const href = child.href?.startsWith("/")
+              ? child.href
+              : `/${child.href}`;
+            const childPath = `${href}`;
             // Check if current page is this child or a sub-page of it
             const isActive =
               pathname === childPath || pathname.startsWith(`${childPath}/`);

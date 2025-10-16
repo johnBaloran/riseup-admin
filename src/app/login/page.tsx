@@ -59,7 +59,7 @@ export default function LoginPage() {
       if (result?.error) {
         setError(result.error);
       } else {
-        router.push("/admin");
+        router.push("/");
         router.refresh();
       }
     } catch (err: any) {

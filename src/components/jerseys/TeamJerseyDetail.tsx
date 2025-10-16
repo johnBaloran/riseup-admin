@@ -40,7 +40,7 @@ export default function TeamJerseyDetail({ teamId }: TeamJerseyDetailProps) {
   const [showUploadPopup, setShowUploadPopup] = useState(false);
 
   const handleBack = () => {
-    router.push("/admin/jerseys");
+    router.push("/jerseys");
   };
 
   const handleDownloadCSV = () => {

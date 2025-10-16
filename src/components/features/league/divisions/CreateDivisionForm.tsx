@@ -137,7 +137,7 @@ export function CreateDivisionForm({
       }
 
       toast.success("Division created successfully!");
-      router.push(`/admin/league/divisions`);
+      router.push(`/league/divisions`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create division");

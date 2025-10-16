@@ -47,7 +47,7 @@ export function CreateLevelForm() {
       }
 
       toast.success("Level created successfully!");
-      router.push(`/admin/league/levels`);
+      router.push(`/league/levels`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to create level");

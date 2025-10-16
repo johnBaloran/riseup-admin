@@ -65,7 +65,7 @@ export function LevelsContent({ activeFilter }: LevelsContentProps) {
         </Tabs>
 
         <Button asChild>
-          <Link href="/admin/league/levels/new">
+          <Link href="/league/levels/new">
             <Plus className="mr-2 h-4 w-4" />
             Add Level
           </Link>

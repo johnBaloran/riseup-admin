@@ -104,7 +104,7 @@ export function TeamCard({ team }: TeamCardProps) {
                   No Captain
                 </Badge>
               )}
-              <Link href={`/admin/league/teams/${team._id}`}>
+              <Link href={`/league/teams/${team._id}`}>
                 <h3 className="font-semibold text-lg leading-tight hover:underline">
                   {team.teamName}
                 </h3>
@@ -120,9 +120,7 @@ export function TeamCard({ team }: TeamCardProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() =>
-                    router.push(`/admin/league/teams/${team._id}/edit`)
-                  }
+                  onClick={() => router.push(`/league/teams/${team._id}/edit`)}
                 >
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit Team

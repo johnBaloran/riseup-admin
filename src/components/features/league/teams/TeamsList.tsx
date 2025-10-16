@@ -119,7 +119,7 @@ export function TeamsList({ teams }: TeamsListProps) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/league/teams/${team._id}`}>
+                    <Link href={`/league/teams/${team._id}`}>
                       <ExternalLink className="h-4 w-4" />
                     </Link>
                   </Button>

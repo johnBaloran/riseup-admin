@@ -47,7 +47,7 @@ export function UpcomingGames({ games }: UpcomingGamesProps) {
           {games.map((game) => (
             <Link
               key={game._id}
-              href={`/admin/games/${game._id}`}
+              href={`/games/${game._id}`}
               className="block p-3 rounded-lg hover:bg-gray-50 transition-colors"
             >
               {/* <div className="font-medium">

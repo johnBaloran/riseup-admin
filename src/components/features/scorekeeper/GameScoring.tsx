@@ -119,13 +119,14 @@ const GameScoring = ({ currentGame, allPlayers }: GameScoringProps) => {
         const { player } = await response.json();
         updatedPlayers[playerIndex] = player;
 
-        toast.custom((t) => (
+        toast.custom((id) => (
           <div
-            onClick={() => toast.dismiss(t.id)}
+            onClick={() => toast.dismiss(id)}
             className="p-3 bg-blue-500 text-white rounded-lg shadow-md cursor-pointer"
           >
-            #{player.jerseyNumber} {player.playerName} with {point}{" "}
-            {point === 1 ? "point" : "points"}
+            #{player.jerseyNumber} {player.playerName} now has{" "}
+            {statistics[statName]}{" "}
+            {statistics[statName] === 1 ? statName : `${statName}s`}
           </div>
         ));
 

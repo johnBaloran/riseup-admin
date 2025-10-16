@@ -90,7 +90,7 @@ export function PaymentsList({ players }: PaymentsListProps) {
                 )}
               </div>
               <Button variant="ghost" size="sm" asChild className="ml-2">
-                <Link href={`/admin/payments/${player._id}`}>
+                <Link href={`/payments/${player._id}`}>
                   <ExternalLink className="h-4 w-4" />
                 </Link>
               </Button>

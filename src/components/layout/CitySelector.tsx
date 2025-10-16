@@ -34,7 +34,7 @@ export function CitySelector({ currentCityId }: CitySelectorProps) {
   const handleCityChange = (newCityId: string) => {
     const pathSegments = pathname.split("/");
     const routeAfterCity = pathSegments.slice(3).join("/") || "dashboard";
-    router.push(`/admin/${newCityId}/${routeAfterCity}`);
+    router.push(`/${newCityId}/${routeAfterCity}`);
   };
 
   return (

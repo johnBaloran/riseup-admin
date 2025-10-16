@@ -76,7 +76,6 @@ export function PaymentDashboard({
     return { total, unpaid, onTrack, hasIssues, critical, paid };
   }, [allPlayers]);
 
-
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -91,11 +90,11 @@ export function PaymentDashboard({
     // Reset to page 1 when filters change
     params.set("page", "1");
 
-    router.push(`/admin/payments?${params.toString()}`);
+    router.push(`/payments?${params.toString()}`);
   };
 
   const clearAllFilters = () => {
-    router.push(`/admin/payments`);
+    router.push(`/payments`);
     setSearchValue("");
   };
 
@@ -342,7 +341,7 @@ export function PaymentDashboard({
           onPageChange={(page) => {
             const params = new URLSearchParams(searchParams.toString());
             params.set("page", page.toString());
-            router.push(`/admin/payments?${params.toString()}`);
+            router.push(`/payments?${params.toString()}`);
           }}
           label="players"
         />

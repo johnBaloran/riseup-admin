@@ -7,7 +7,13 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface HistoryEntry {
@@ -33,14 +39,14 @@ const STORAGE_KEY = "nav_history";
 
 // Map of routes to their labels
 const routeLabels: Record<string, string> = {
-  "/admin/dashboard": "Dashboard",
-  "/admin/games": "Game Schedule",
-  "/admin/payments": "Payments",
+  "/dashboard": "Dashboard",
+  "/games": "Game Schedule",
+  "/payments": "Payments",
   // League routes
-  "/admin/league/divisions": "Divisions",
-  "/admin/league/teams": "Teams",
-  "/admin/league/players": "Players",
-  "/admin/league/locations": "Locations",
+  "/league/divisions": "Divisions",
+  "/league/teams": "Teams",
+  "/league/players": "Players",
+  "/league/locations": "Locations",
 };
 
 // Get label for a path
@@ -52,34 +58,38 @@ function getLabelForPath(path: string): string {
 
   // Check dynamic routes - support both /admin/league/... and /admin/{cityId}/league/... patterns
 
-  // Division details: /admin/league/divisions/{id} or /admin/{cityId}/league/divisions/{id}
-  if (path.match(/^\/admin\/(league\/divisions\/[^/]+|[^/]+\/league\/divisions\/[^/]+)$/)) {
+  // Division details: /league/divisions/{id} or /admin/{cityId}/league/divisions/{id}
+  if (
+    path.match(/^\/(league\/divisions\/[^/]+|[^/]+\/league\/divisions\/[^/]+)$/)
+  ) {
     return "Division Details";
   }
 
-  // Team details: /admin/league/teams/{id} or /admin/{cityId}/league/teams/{id}
-  if (path.match(/^\/admin\/(league\/teams\/[^/]+|[^/]+\/league\/teams\/[^/]+)$/)) {
+  // Team details: /league/teams/{id} or /admin/{cityId}/league/teams/{id}
+  if (path.match(/^\/(league\/teams\/[^/]+|[^/]+\/league\/teams\/[^/]+)$/)) {
     return "Team Details";
   }
 
-  // Player details: /admin/league/players/{id} or /admin/{cityId}/league/players/{id}
-  if (path.match(/^\/admin\/(league\/players\/[^/]+|[^/]+\/league\/players\/[^/]+)$/)) {
+  // Player details: /league/players/{id} or /admin/{cityId}/league/players/{id}
+  if (
+    path.match(/^\/(league\/players\/[^/]+|[^/]+\/league\/players\/[^/]+)$/)
+  ) {
     return "Player Details";
   }
 
-  // Division schedule: /admin/games/{divisionId}
-  if (path.match(/^\/admin\/games\/[^/]+$/)) {
+  // Division schedule:/games/{divisionId}
+  if (path.match(/^\/games\/[^/]+$/)) {
     return "Division Schedule";
   }
 
   // List pages
-  if (path.match(/^\/admin\/(league\/divisions|[^/]+\/league\/divisions)$/)) {
+  if (path.match(/^\/(league\/divisions|[^/]+\/league\/divisions)$/)) {
     return "Divisions";
   }
-  if (path.match(/^\/admin\/(league\/teams|[^/]+\/league\/teams)$/)) {
+  if (path.match(/^\/(league\/teams|[^/]+\/league\/teams)$/)) {
     return "Teams";
   }
-  if (path.match(/^\/admin\/(league\/players|[^/]+\/league\/players)$/)) {
+  if (path.match(/^\/(league\/players|[^/]+\/league\/players)$/)) {
     return "Players";
   }
 
@@ -138,14 +148,17 @@ export function NavigationProvider({
         }
 
         // Don't update if we're losing search params (could be a temporary state during navigation)
-        const hadSearchParams = lastEntry.fullUrl.includes('?');
-        const hasSearchParams = fullUrl.includes('?');
+        const hadSearchParams = lastEntry.fullUrl.includes("?");
+        const hasSearchParams = fullUrl.includes("?");
 
         if (hadSearchParams && !hasSearchParams) {
-          console.log("NavigationContext: Skipping update - would lose search params", {
-            oldUrl: lastEntry.fullUrl,
-            newUrl: fullUrl,
-          });
+          console.log(
+            "NavigationContext: Skipping update - would lose search params",
+            {
+              oldUrl: lastEntry.fullUrl,
+              newUrl: fullUrl,
+            }
+          );
           return prev;
         }
 

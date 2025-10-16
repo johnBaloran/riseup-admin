@@ -57,9 +57,7 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem
-          onClick={() => router.push("/admin/settings/profile")}
-        >
+        <DropdownMenuItem onClick={() => router.push("/settings/profile")}>
           <User className="w-4 h-4 mr-2" />
           Profile Settings
         </DropdownMenuItem>

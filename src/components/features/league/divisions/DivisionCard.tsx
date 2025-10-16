@@ -146,7 +146,7 @@ export function DivisionCard({ division }: DivisionCardProps) {
         <div className="flex items-start justify-between">
           <div className="space-y-1 flex-1">
             <div className="flex items-center gap-2">{getStatusBadge()}</div>
-            <Link href={`/admin/league/divisions/${division._id}`}>
+            <Link href={`/league/divisions/${division._id}`}>
               <h3 className="font-semibold text-lg leading-tight hover:underline">
                 {division.divisionName}
               </h3>
@@ -161,7 +161,7 @@ export function DivisionCard({ division }: DivisionCardProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/admin/league/divisions/${division._id}/edit`)
+                  router.push(`/league/divisions/${division._id}/edit`)
                 }
               >
                 <Pencil className="mr-2 h-4 w-4" />
@@ -179,7 +179,7 @@ export function DivisionCard({ division }: DivisionCardProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
-                  router.push(`/admin/league/teams?division=${division._id}`)
+                  router.push(`/league/teams?division=${division._id}`)
                 }
               >
                 <Users className="mr-2 h-4 w-4" />
@@ -227,7 +227,8 @@ export function DivisionCard({ division }: DivisionCardProps) {
               {(division as any).freeAgentCounts.total} free agents
               {(division as any).freeAgentCounts.total > 0 && (
                 <span className="text-xs text-gray-500 ml-1">
-                  ({(division as any).freeAgentCounts.withTeam} with team, {(division as any).freeAgentCounts.withoutTeam} unassigned)
+                  ({(division as any).freeAgentCounts.withTeam} with team,{" "}
+                  {(division as any).freeAgentCounts.withoutTeam} unassigned)
                 </span>
               )}
             </span>

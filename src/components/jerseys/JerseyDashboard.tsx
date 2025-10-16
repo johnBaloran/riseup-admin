@@ -45,7 +45,7 @@ export default function JerseyDashboard() {
       }
     });
 
-    router.push(`/admin/jerseys?${params.toString()}`);
+    router.push(`/jerseys?${params.toString()}`);
   };
 
   // Filter divisions by selected location
@@ -87,9 +87,7 @@ export default function JerseyDashboard() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Jersey Management
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Jersey Management</h1>
         <p className="text-gray-600 mt-1">
           Manage jersey designs and player details across all teams
         </p>

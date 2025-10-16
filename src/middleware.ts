@@ -42,5 +42,5 @@ export default withAuth(
 
 // Protect all admin routes
 export const config = {
-  matcher: ["/admin/:path*", "/api/v1/:path*"],
+  matcher: ["/:path*", "/api/v1/:path*"],
 };

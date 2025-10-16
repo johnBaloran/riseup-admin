@@ -422,20 +422,20 @@ export async function deleteGame(gameId: string) {
     await recalculatePlayerAverageStats(player._id.toString());
   }
 
-  // Step 3: Remove game from teams' games arrays
+  // Step 4: Remove game from both home team and away team games arrays
   await Team.updateMany({ games: gameId }, { $pull: { games: gameId } });
 
-  // Step 4: Remove game from division's games array
+  // Step 5: Remove game from division's games array
   await Division.findByIdAndUpdate(game.division, {
     $pull: { games: gameId },
   });
 
-  // Step 5: If game was completed, adjust team records
+  // Step 6: If game was completed, adjust team records
   if (game.status === true) {
     await adjustTeamRecords(game, "REVERSE");
   }
 
-  // Step 6: Delete the game
+  // Step 7: Delete the game
   await Game.findByIdAndDelete(gameId);
 
   return { deleted: true };
