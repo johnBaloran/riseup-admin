@@ -16,6 +16,7 @@ import {
 import PaymentMethod from "@/models/PaymentMethod";
 import Player from "@/models/Player";
 import { connectDB } from "@/lib/db/mongodb";
+import mongoose from "mongoose";
 
 /**
  * POST /api/v1/terminal/process-payment
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
           readerId: reader.id,
           readerLabel: reader.label,
           paidDate: new Date(),
-          processedBy: session.user.id,
+          processedBy: new mongoose.Types.ObjectId(session.user.id),
           status: "processing",
         },
       });
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
         readerId: reader.id,
         readerLabel: reader.label,
         paidDate: new Date(),
-        processedBy: session.user.id,
+        processedBy: new mongoose.Types.ObjectId(session.user.id),
         status: "processing",
       };
       await paymentMethod.save();
