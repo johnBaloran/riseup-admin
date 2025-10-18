@@ -118,7 +118,7 @@ export async function getTerminalReader(
     const reader = await stripe.terminal.readers.retrieve(readerId);
 
     // Type guard - check if reader was deleted
-    if ('deleted' in reader && reader.deleted) {
+    if ("deleted" in reader && reader.deleted) {
       return null;
     }
 
@@ -156,11 +156,16 @@ export async function deleteTerminalReader(readerId: string): Promise<boolean> {
 export async function processTerminalPayment(
   input: ProcessPaymentInput
 ): Promise<PaymentResult> {
+  // Determine payment method types based on currency
+  const paymentMethodTypes =
+    input.currency === "cad"
+      ? ["card_present", "interac_present"] // Canada: support Interac debit
+      : ["card_present"]; // Other currencies
   // Step 1: Create Payment Intent
   const paymentIntent = await stripe.paymentIntents.create({
     amount: input.amountInCents,
     currency: input.currency || "cad",
-    payment_method_types: ["card_present"],
+    payment_method_types: paymentMethodTypes,
     capture_method: "automatic",
     description: input.description,
     metadata: input.metadata || {},
@@ -205,7 +210,8 @@ export async function getPaymentIntent(
     ? await stripe.charges.retrieve(paymentIntent.latest_charge as string)
     : null;
 
-  const paymentMethodDetails = charge?.payment_method_details?.card_present as any;
+  const paymentMethodDetails = charge?.payment_method_details
+    ?.card_present as any;
 
   return {
     paymentIntentId: paymentIntent.id,
