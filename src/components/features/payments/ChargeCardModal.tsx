@@ -60,14 +60,13 @@ export function ChargeCardModal({
     setError(null);
 
     try {
-      const response = await fetch(`/api/v1/${cityId}/payments/charge-card`, {
+      const response = await fetch(`/api/v1/payments/charge-card`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           playerId: player._id,
           paymentMethodId: paymentMethod._id,
           paymentNumber: payment.paymentNumber,
-          amount: amount * 100, // Convert to cents
         }),
       });
 
@@ -117,8 +116,12 @@ export function ChargeCardModal({
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Amount:</span>
-                <span className="font-bold text-lg">${amount}.00</span>
+                <span className="text-gray-600">Base Amount:</span>
+                <span className="font-medium">${amount}.00</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-500 text-xs">
+                <span>+ Tax (calculated by region)</span>
+                <span>Varies by province</span>
               </div>
             </div>
           </div>
@@ -140,8 +143,9 @@ export function ChargeCardModal({
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              This will immediately charge ${amount} to the customer's card. An
-              SMS confirmation and Stripe receipt will be sent automatically.
+              This will immediately charge ${amount}.00 + tax to the customer's card.
+              Tax will be calculated based on the division's province. An SMS
+              confirmation and Stripe receipt will be sent automatically.
             </AlertDescription>
           </Alert>
 
@@ -175,7 +179,7 @@ export function ChargeCardModal({
             ) : (
               <>
                 <Zap className="mr-2 h-4 w-4" />
-                Charge ${amount}
+                Charge Card
               </>
             )}
           </Button>

@@ -1,10 +1,10 @@
 "use client";
 
-// src/components/features/payments/MarkTerminalPaymentModal.tsx
+// src/components/features/payments/PayInstallmentTerminalModal.tsx
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
- * Modal for processing terminal payment ONLY
+ * Modal for processing failed installment payment via terminal ONLY
  */
 
 import { useState, useEffect } from "react";
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,30 +35,44 @@ interface TerminalReader {
   status: "online" | "offline";
 }
 
-interface MarkTerminalPaymentModalProps {
+interface PayInstallmentTerminalModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   player: any;
+  payment: any;
+  paymentMethod: any;
+  cityId: string;
 }
 
-export function MarkTerminalPaymentModal({
+export function PayInstallmentTerminalModal({
   open,
   onOpenChange,
   player,
-}: MarkTerminalPaymentModalProps) {
+  payment,
+  paymentMethod,
+  cityId,
+}: PayInstallmentTerminalModalProps) {
   const router = useRouter();
   const [readers, setReaders] = useState<TerminalReader[]>([]);
   const [selectedReader, setSelectedReader] = useState("");
-  const [amount, setAmount] = useState("");
-  const [pricingTier, setPricingTier] = useState<"EARLY_BIRD" | "REGULAR">("REGULAR");
   const [loading, setLoading] = useState(false);
   const [loadingReaders, setLoadingReaders] = useState(true);
-  const [paymentStatus, setPaymentStatus] = useState<"idle" | "processing" | "polling" | "succeeded" | "failed">("idle");
+  const [paymentStatus, setPaymentStatus] = useState<
+    "idle" | "processing" | "polling" | "succeeded" | "failed"
+  >("idle");
   const [paymentIntentId, setPaymentIntentId] = useState("");
   const [cardDetails, setCardDetails] = useState<{
     brand?: string;
     last4?: string;
   }>({});
+
+  // Calculate installment amount
+  const installmentAmount =
+    payment.paymentNumber === 1
+      ? 60
+      : paymentMethod.pricingTier === "EARLY_BIRD"
+      ? 25
+      : 30;
 
   // Fetch terminal readers
   useEffect(() => {
@@ -94,7 +107,7 @@ export function MarkTerminalPaymentModal({
     }
   };
 
-  // Poll payment status
+  // Poll payment status after processing
   const pollPaymentStatus = async (paymentIntentId: string) => {
     let attempts = 0;
     const maxAttempts = 60; // 60 seconds (poll every 1 second)
@@ -108,7 +121,12 @@ export function MarkTerminalPaymentModal({
 
       try {
         const response = await fetch(
-          `/api/v1/terminal/payment-status?paymentIntentId=${paymentIntentId}`
+          `/api/v1/payments/update-installment-status`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paymentIntentId }),
+          }
         );
 
         if (!response.ok) {
@@ -117,13 +135,10 @@ export function MarkTerminalPaymentModal({
 
         const data = await response.json();
 
-        if (data.status === "succeeded") {
+        if (data.status === "COMPLETED" || data.status === "IN_PROGRESS") {
+          // Payment succeeded and installment updated
           setPaymentStatus("succeeded");
-          setCardDetails({
-            brand: data.cardBrand,
-            last4: data.cardLast4,
-          });
-          toast.success("Payment successful!");
+          toast.success("Installment payment successful!");
 
           // Close modal after 2 seconds
           setTimeout(() => {
@@ -136,15 +151,38 @@ export function MarkTerminalPaymentModal({
           setPaymentStatus("failed");
           toast.error("Payment was canceled");
           return;
-        } else if (data.status === "requires_payment_method" && attempts > 50) {
-          // Only fail after 50 seconds if still waiting for card
-          // This gives plenty of time for customer to present card
-          setPaymentStatus("failed");
-          toast.error("Payment failed - no card presented");
-          return;
         }
 
-        // Still processing or waiting for card, poll again
+        // Check the underlying payment intent status
+        const statusResponse = await fetch(
+          `/api/v1/terminal/payment-status?paymentIntentId=${paymentIntentId}`
+        );
+
+        if (statusResponse.ok) {
+          const statusData = await statusResponse.json();
+
+          if (statusData.status === "succeeded") {
+            // Payment succeeded, continue polling for status update
+            attempts++;
+            setTimeout(poll, 1000);
+            return;
+          } else if (statusData.status === "canceled") {
+            setPaymentStatus("failed");
+            toast.error("Payment was canceled");
+            return;
+          } else if (
+            statusData.status === "requires_payment_method" &&
+            attempts > 50
+          ) {
+            // Only fail after 50 seconds if still waiting for card
+            // This gives plenty of time for customer to present card
+            setPaymentStatus("failed");
+            toast.error("Payment failed - no card presented");
+            return;
+          }
+        }
+
+        // Still processing, poll again
         attempts++;
         setTimeout(poll, 1000);
       } catch (error) {
@@ -157,13 +195,6 @@ export function MarkTerminalPaymentModal({
   };
 
   const handleProcessPayment = async () => {
-    // Validation
-    const amountNum = parseFloat(amount);
-    if (!amount || isNaN(amountNum) || amountNum <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
-
     if (!selectedReader) {
       toast.error("Please select a terminal reader");
       return;
@@ -173,15 +204,13 @@ export function MarkTerminalPaymentModal({
       setLoading(true);
       setPaymentStatus("processing");
 
-      const response = await fetch("/api/v1/terminal/process-payment", {
+      const response = await fetch("/api/v1/payments/pay-installment-terminal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          playerId: player._id,
+          paymentMethodId: paymentMethod._id,
+          installmentInvoiceId: payment.invoiceId,
           readerId: selectedReader,
-          amount: amountNum,
-          pricingTier: pricingTier,
-          divisionId: player.division._id,
         }),
       });
 
@@ -207,8 +236,6 @@ export function MarkTerminalPaymentModal({
   };
 
   const resetForm = () => {
-    setAmount("");
-    setPricingTier("REGULAR");
     setSelectedReader("");
     setPaymentStatus("idle");
     setPaymentIntentId("");
@@ -255,31 +282,40 @@ export function MarkTerminalPaymentModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-blue-600" />
-            <DialogTitle>Process Terminal Payment</DialogTitle>
+            <CreditCard className="h-5 w-5 text-purple-600" />
+            <DialogTitle>Pay Installment via Terminal</DialogTitle>
           </div>
           <DialogDescription>
-            Process card payment on terminal for {player.playerName}
+            Process installment payment on terminal for {player.playerName}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Player Info */}
-          <div className="rounded-lg bg-gray-50 p-4 space-y-2">
+          {/* Payment Info */}
+          <div className="rounded-lg bg-purple-50 border border-purple-200 p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Player:</span>
               <span className="font-medium">{player.playerName}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Team:</span>
+              <span className="text-gray-600">Installment:</span>
               <span className="font-medium">
-                {player.team?.teamName || "No Team"}
+                Payment #{payment.paymentNumber}
+                {payment.paymentNumber === 1 && " (Down Payment)"}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Division:</span>
+              <span className="text-gray-600">Amount (incl. tax):</span>
+              <span className="font-bold text-purple-900">
+                ${installmentAmount}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Pricing Tier:</span>
               <span className="font-medium">
-                {player.division?.divisionName}
+                {paymentMethod.pricingTier === "EARLY_BIRD"
+                  ? "Early Bird"
+                  : "Regular"}
               </span>
             </div>
           </div>
@@ -295,8 +331,8 @@ export function MarkTerminalPaymentModal({
               </div>
             ) : readers.length === 0 ? (
               <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-900">
-                No online terminal readers found. Please ensure a reader is connected
-                and online, or{" "}
+                No online terminal readers found. Please ensure a reader is
+                connected and online, or{" "}
                 <a href="/settings/terminal" className="underline font-medium">
                   register a new terminal
                 </a>
@@ -325,49 +361,6 @@ export function MarkTerminalPaymentModal({
             )}
           </div>
 
-          {/* Amount Field */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">
-              Amount <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                $
-              </span>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={loading || paymentStatus !== "idle"}
-                className="pl-7"
-              />
-            </div>
-          </div>
-
-          {/* Pricing Tier Field */}
-          <div className="space-y-2">
-            <Label htmlFor="pricingTier">
-              Pricing Tier <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={pricingTier}
-              onValueChange={(value) => setPricingTier(value as "EARLY_BIRD" | "REGULAR")}
-              disabled={loading || paymentStatus !== "idle"}
-            >
-              <SelectTrigger id="pricingTier">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="EARLY_BIRD">Early Bird</SelectItem>
-                <SelectItem value="REGULAR">Regular</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Payment Status */}
           {paymentStatus === "polling" && (
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
@@ -385,22 +378,18 @@ export function MarkTerminalPaymentModal({
             <div className="rounded-lg bg-green-50 border border-green-200 p-4 text-center">
               <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
               <p className="text-sm font-medium text-green-900">
-                Payment Successful!
+                Installment Payment Successful!
               </p>
-              {cardDetails.brand && cardDetails.last4 && (
-                <p className="text-xs text-green-700 mt-1">
-                  {cardDetails.brand} •••• {cardDetails.last4}
-                </p>
-              )}
+              <p className="text-xs text-green-700 mt-1">
+                Payment #{payment.paymentNumber} has been marked as paid
+              </p>
             </div>
           )}
 
           {paymentStatus === "failed" && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-center">
               <XCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-red-900">
-                Payment Failed
-              </p>
+              <p className="text-sm font-medium text-red-900">Payment Failed</p>
               <p className="text-xs text-red-700 mt-1">
                 Please try again or use a different payment method
               </p>
@@ -410,10 +399,7 @@ export function MarkTerminalPaymentModal({
 
         <DialogFooter>
           {paymentStatus === "polling" ? (
-            <Button
-              variant="destructive"
-              onClick={handleCancelPayment}
-            >
+            <Button variant="destructive" onClick={handleCancelPayment}>
               Cancel Payment
             </Button>
           ) : (
@@ -433,6 +419,7 @@ export function MarkTerminalPaymentModal({
                   readers.length === 0 ||
                   paymentStatus !== "idle"
                 }
+                className="bg-purple-600 hover:bg-purple-700"
               >
                 {loading ? (
                   <>

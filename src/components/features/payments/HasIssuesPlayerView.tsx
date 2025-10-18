@@ -33,6 +33,7 @@ import { SendSpecificReminderModal } from "./SendSpecificReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
 import { ChargeCardModal } from "./ChargeCardModal";
 import { SendPaymentLinkModal } from "./SendPaymentLinkModal";
+import { PayInstallmentTerminalModal } from "./PayInstallmentTerminalModal";
 
 interface HasIssuesPlayerViewProps {
   player: any;
@@ -50,6 +51,7 @@ export function HasIssuesPlayerView({
   const [showCaptainModal, setShowCaptainModal] = useState(false);
   const [showChargeModal, setShowChargeModal] = useState(false);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+  const [showTerminalModal, setShowTerminalModal] = useState(false);
   const [cardInfo, setCardInfo] = useState<any>(null);
   const [loadingCard, setLoadingCard] = useState(true);
 
@@ -113,6 +115,11 @@ export function HasIssuesPlayerView({
   const handleSendPaymentLink = (payment: any) => {
     setSelectedPayment(payment);
     setShowPaymentLinkModal(true);
+  };
+
+  const handlePayViaTerminal = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowTerminalModal(true);
   };
 
   const getCardDisplay = () => {
@@ -251,7 +258,7 @@ export function HasIssuesPlayerView({
                       </Badge>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {cardInfo?.isValid ? (
                         <Button
                           size="sm"
@@ -265,8 +272,17 @@ export function HasIssuesPlayerView({
 
                       <Button
                         size="sm"
+                        className="flex-1 bg-purple-600 hover:bg-purple-700"
+                        onClick={() => handlePayViaTerminal(payment)}
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pay via Terminal
+                      </Button>
+
+                      <Button
+                        size="sm"
                         variant="outline"
-                        className={cardInfo?.isValid ? "flex-1" : "flex-1"}
+                        className="flex-1"
                         onClick={() => handleSendPaymentLink(payment)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
@@ -565,6 +581,17 @@ export function HasIssuesPlayerView({
           onOpenChange={setShowCaptainModal}
           player={player}
           teamId={player.team._id}
+          cityId={cityId}
+        />
+      )}
+
+      {selectedPayment && (
+        <PayInstallmentTerminalModal
+          open={showTerminalModal}
+          onOpenChange={setShowTerminalModal}
+          player={player}
+          payment={selectedPayment}
+          paymentMethod={paymentMethod}
           cityId={cityId}
         />
       )}

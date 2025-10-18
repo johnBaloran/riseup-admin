@@ -265,7 +265,7 @@ export default async function PlayerDetailPage({
 
             {hasPermission(session, "manage_payments") && (
               <Button variant="outline" className="w-full" asChild>
-                <Link href={`/payments?player=${params.id}`}>
+                <Link href={`/payments/${params.id}`}>
                   <DollarSign className="mr-2 h-4 w-4" />
                   Manage Payment
                 </Link>

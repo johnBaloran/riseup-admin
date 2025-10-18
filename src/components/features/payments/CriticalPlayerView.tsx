@@ -31,6 +31,8 @@ import { format } from "date-fns";
 import { SendSpecificReminderModal } from "./SendSpecificReminderModal";
 import { EscalateToCaptainModal } from "./EscalateToCaptainModal";
 import { SuspensionWarningModal } from "./SuspensionWarningModal";
+import { PayInstallmentTerminalModal } from "./PayInstallmentTerminalModal";
+import { CreditCard } from "lucide-react";
 
 interface CriticalPlayerViewProps {
   player: any;
@@ -47,6 +49,7 @@ export function CriticalPlayerView({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showEscalateModal, setShowEscalateModal] = useState(false);
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
+  const [showTerminalModal, setShowTerminalModal] = useState(false);
 
   const subscriptionPayments =
     paymentMethod.installments?.subscriptionPayments || [];
@@ -71,6 +74,11 @@ export function CriticalPlayerView({
   const handleSendReminder = (payment: any) => {
     setSelectedPayment(payment);
     setShowReminderModal(true);
+  };
+
+  const handlePayViaTerminal = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowTerminalModal(true);
   };
 
   return (
@@ -155,7 +163,16 @@ export function CriticalPlayerView({
                     </Badge>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-purple-600 hover:bg-purple-700"
+                      onClick={() => handlePayViaTerminal(payment)}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Pay via Terminal
+                    </Button>
+
                     <Button
                       size="sm"
                       className="flex-1 bg-yellow-600 hover:bg-yellow-700"
@@ -164,6 +181,7 @@ export function CriticalPlayerView({
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Send Reminder
                     </Button>
+
                     {payment.paymentLink && (
                       <Button
                         size="sm"
@@ -458,6 +476,17 @@ export function CriticalPlayerView({
         failedPaymentsCount={failedPayments.length}
         cityId={cityId}
       />
+
+      {selectedPayment && (
+        <PayInstallmentTerminalModal
+          open={showTerminalModal}
+          onOpenChange={setShowTerminalModal}
+          player={player}
+          payment={selectedPayment}
+          paymentMethod={paymentMethod}
+          cityId={cityId}
+        />
+      )}
     </div>
   );
 }

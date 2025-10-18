@@ -99,6 +99,8 @@ export function PaidPlayerView({
                       ? "Full Payment"
                       : paymentMethod.paymentType === "CASH"
                       ? "Cash Payment"
+                      : paymentMethod.paymentType === "TERMINAL"
+                      ? "Terminal Payment"
                       : "Installments"}
                   </p>
                 </div>
@@ -159,7 +161,8 @@ export function PaidPlayerView({
                       <div>
                         <p className="text-sm text-gray-500">Received By</p>
                         <p className="font-medium">
-                          {typeof paymentMethod.cashPayment.receivedBy === 'object'
+                          {typeof paymentMethod.cashPayment.receivedBy ===
+                          "object"
                             ? paymentMethod.cashPayment.receivedBy.name ||
                               paymentMethod.cashPayment.receivedBy.email
                             : paymentMethod.cashPayment.receivedBy}

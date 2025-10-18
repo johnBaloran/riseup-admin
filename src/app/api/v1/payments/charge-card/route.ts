@@ -13,6 +13,8 @@ import { connectDB } from "@/lib/db/mongodb";
 import { chargeCustomerCard } from "@/lib/services/stripe-customer-service";
 import Player from "@/models/Player";
 import PaymentMethod from "@/models/PaymentMethod";
+import Price from "@/models/Price";
+import { getTaxRateByRegion, calculateTotalWithTax } from "@/lib/utils/tax-rates";
 import twilio from "twilio";
 
 const twilioClient = twilio(
@@ -21,13 +23,10 @@ const twilioClient = twilio(
 );
 
 /**
- * POST /api/v1/[cityId]/payments/charge-card
+ * POST /api/v1/payments/charge-card
  * Charge customer's card on file
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { cityId: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -38,8 +37,7 @@ export async function POST(
       );
     }
 
-    const { playerId, paymentMethodId, paymentNumber, amount } =
-      await request.json();
+    const { playerId, paymentMethodId, paymentNumber } = await request.json();
 
     await connectDB();
 
@@ -56,8 +54,24 @@ export async function POST(
       );
     }
 
-    // Get payment method
-    const paymentMethod = await PaymentMethod.findById(paymentMethodId).lean();
+    // Get payment method with full population to calculate tax
+    const paymentMethod = await PaymentMethod.findById(paymentMethodId).populate({
+      path: "division",
+      populate: [
+        {
+          path: "prices.installment",
+          model: "Price",
+        },
+        {
+          path: "prices.regularInstallment",
+          model: "Price",
+        },
+        {
+          path: "city",
+          select: "region",
+        },
+      ],
+    });
 
     if (!paymentMethod) {
       return NextResponse.json(
@@ -66,11 +80,59 @@ export async function POST(
       );
     }
 
+    if (paymentMethod.paymentType !== "INSTALLMENTS") {
+      return NextResponse.json(
+        { success: false, error: "This payment method is not an installment plan" },
+        { status: 400 }
+      );
+    }
+
+    // Get the correct price based on pricing tier
+    const priceId =
+      paymentMethod.pricingTier === "EARLY_BIRD"
+        ? (paymentMethod.division as any).prices.installment
+        : (paymentMethod.division as any).prices.regularInstallment;
+
+    const price = await Price.findById(priceId);
+    if (!price) {
+      return NextResponse.json(
+        { success: false, error: "Price not found" },
+        { status: 404 }
+      );
+    }
+
+    // Calculate amount with tax
+    const division = paymentMethod.division as any;
+    if (!division?.city?.region) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unable to determine region for tax calculation. Division city data is missing.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const region = division.city.region;
+    const taxRate = getTaxRateByRegion(region);
+    const baseAmount = price.amount;
+    const totalAmount = calculateTotalWithTax(baseAmount, taxRate);
+    const amountInCents = Math.round(totalAmount * 100);
+
+    console.log("💰 Charge card payment calculation:", {
+      paymentNumber,
+      baseAmount,
+      region,
+      taxRate,
+      totalAmount,
+      amountInCents,
+    });
+
     // Charge card via Stripe
     try {
       const paymentIntent = await chargeCustomerCard({
         customerId: player.customerId,
-        amount,
+        amount: amountInCents,
         description: `${
           (player.team as any)?.teamName || "Team"
         } - Payment #${paymentNumber} - ${player.playerName}`,
@@ -79,6 +141,10 @@ export async function POST(
           paymentMethodId: paymentMethod._id.toString(),
           paymentNumber: paymentNumber.toString(),
           chargedBy: session.user?.email || "admin",
+          region: region,
+          taxRate: taxRate.toString(),
+          baseAmount: baseAmount.toString(),
+          totalWithTax: totalAmount.toString(),
         },
       });
 
@@ -88,40 +154,90 @@ export async function POST(
         );
       }
 
-      // Create new FULL_PAYMENT PaymentMethod for this installment
-      const manualPayment = new PaymentMethod({
-        paymentType: "FULL_PAYMENT",
-        pricingTier: paymentMethod.pricingTier,
-        originalPrice: amount / 100, // Convert back to dollars
-        amountPaid: amount / 100,
-        status: "COMPLETED",
-        player: player._id,
-        division: paymentMethod.division,
-        isManualInstallment: true,
-        installmentNumber: paymentNumber,
-        replacedPaymentMethod: paymentMethod._id,
-        stripePaymentIntentId: paymentIntent.id,
-      });
+      // Update the installment payment method directly
+      const fullPaymentMethod = await PaymentMethod.findById(paymentMethodId);
 
-      await manualPayment.save();
+      if (!fullPaymentMethod || !fullPaymentMethod.installments) {
+        throw new Error("Payment method or installments not found");
+      }
 
-      // Add to player's payment methods
-      await Player.findByIdAndUpdate(player._id, {
-        $push: { paymentMethods: manualPayment._id },
-      });
+      // Find the specific installment by payment number
+      const installmentIndex =
+        fullPaymentMethod.installments.subscriptionPayments.findIndex(
+          (payment: any) => payment.paymentNumber === paymentNumber
+        );
 
-      // Mark original subscription payment as replaced
-      await PaymentMethod.updateOne(
-        {
-          _id: paymentMethod._id,
-          "installments.subscriptionPayments.paymentNumber": paymentNumber,
-        },
-        {
-          $set: {
-            "installments.subscriptionPayments.$.replacedBy": manualPayment._id,
-          },
-        }
+      if (installmentIndex === -1) {
+        throw new Error("Installment not found");
+      }
+
+      console.log(
+        "🔄 Updating installment:",
+        paymentNumber,
+        "from",
+        fullPaymentMethod.installments.subscriptionPayments[installmentIndex]
+          .status,
+        "to succeeded"
       );
+
+      // Update installment status and amount
+      fullPaymentMethod.installments.subscriptionPayments[
+        installmentIndex
+      ].status = "succeeded";
+      fullPaymentMethod.installments.subscriptionPayments[
+        installmentIndex
+      ].amountPaid = totalAmount; // Amount with tax
+      fullPaymentMethod.installments.subscriptionPayments[
+        installmentIndex
+      ].stripePaymentIntentId = paymentIntent.id;
+
+      // Recalculate total amount paid
+      const totalPaid = fullPaymentMethod.installments.subscriptionPayments
+        .filter((payment: any) => payment.status === "succeeded")
+        .reduce(
+          (sum: number, payment: any) => sum + (payment.amountPaid || 0),
+          0
+        );
+
+      fullPaymentMethod.amountPaid = totalPaid;
+
+      // Recalculate remaining balance
+      if (fullPaymentMethod.installments.totalAmountDue) {
+        fullPaymentMethod.installments.remainingBalance =
+          fullPaymentMethod.installments.totalAmountDue - totalPaid;
+      }
+
+      // Check if all installments are paid
+      const allPaid = fullPaymentMethod.installments.subscriptionPayments.every(
+        (payment: any) => payment.status === "succeeded"
+      );
+
+      if (
+        allPaid &&
+        fullPaymentMethod.installments.remainingBalance === 0
+      ) {
+        fullPaymentMethod.status = "COMPLETED";
+        console.log("🎉 All installments paid! Marking as COMPLETED");
+      } else {
+        fullPaymentMethod.status = "IN_PROGRESS";
+      }
+
+      await fullPaymentMethod.save();
+
+      // Update player payment status if completed
+      if (fullPaymentMethod.status === "COMPLETED") {
+        await Player.findByIdAndUpdate(player._id, {
+          "paymentStatus.hasPaid": true,
+        });
+      }
+
+      console.log("✅ Installment updated successfully");
+      console.log("   Total paid:", totalPaid);
+      console.log(
+        "   Remaining balance:",
+        fullPaymentMethod.installments.remainingBalance
+      );
+      console.log("   Status:", fullPaymentMethod.status);
 
       // Send SMS confirmation to player
       const userPhone = (player.user as any)?.phoneNumber;
@@ -130,9 +246,9 @@ export async function POST(
           await twilioClient.messages.create({
             body: `Hi ${
               player.playerName
-            }, your payment #${paymentNumber} for $${
-              amount / 100
-            } has been processed successfully. You'll receive a receipt from Stripe via email.`,
+            }, your payment #${paymentNumber} for $${totalAmount.toFixed(
+              2
+            )} (incl. tax) has been processed successfully. You'll receive a receipt from Stripe via email.`,
             from: process.env.TWILIO_MESSAGING_SERVICE_SID,
             to: userPhone,
           });
@@ -147,8 +263,10 @@ export async function POST(
           success: true,
           data: {
             paymentIntentId: paymentIntent.id,
-            manualPaymentId: manualPayment._id,
-            amount: amount / 100,
+            status: fullPaymentMethod.status,
+            amountPaid: totalPaid,
+            remainingBalance: fullPaymentMethod.installments.remainingBalance,
+            installmentNumber: paymentNumber,
           },
         },
         { status: 200 }

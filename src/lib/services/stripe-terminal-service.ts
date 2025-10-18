@@ -163,6 +163,12 @@ export async function processTerminalPayment(
     capture_method: "automatic",
     description: input.description,
     metadata: input.metadata || {},
+    payment_method_options: {
+      card_present: {
+        request_extended_authorization: false,
+        request_incremental_authorization_support: false,
+      },
+    },
   });
 
   // Step 2: Process on Terminal Reader
@@ -170,6 +176,10 @@ export async function processTerminalPayment(
     input.readerId,
     {
       payment_intent: paymentIntent.id,
+      process_config: {
+        skip_tipping: true,
+        enable_customer_cancellation: true,
+      },
     }
   );
 
