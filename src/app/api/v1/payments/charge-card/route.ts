@@ -1,4 +1,4 @@
-// src/app/api/v1/[cityId]/payments/charge-card/route.ts
+// src/app/api/v1/payments/charge-card/route.ts
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -14,13 +14,11 @@ import { chargeCustomerCard } from "@/lib/services/stripe-customer-service";
 import Player from "@/models/Player";
 import PaymentMethod from "@/models/PaymentMethod";
 import Price from "@/models/Price";
-import { getTaxRateByRegion, calculateTotalWithTax } from "@/lib/utils/tax-rates";
+import {
+  getTaxRateByRegion,
+  calculateTotalWithTax,
+} from "@/lib/utils/tax-rates";
 import twilio from "twilio";
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 
 /**
  * POST /api/v1/payments/charge-card
@@ -55,7 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get payment method with full population to calculate tax
-    const paymentMethod = await PaymentMethod.findById(paymentMethodId).populate({
+    const paymentMethod = await PaymentMethod.findById(
+      paymentMethodId
+    ).populate({
       path: "division",
       populate: [
         {
@@ -82,7 +82,10 @@ export async function POST(request: NextRequest) {
 
     if (paymentMethod.paymentType !== "INSTALLMENTS") {
       return NextResponse.json(
-        { success: false, error: "This payment method is not an installment plan" },
+        {
+          success: false,
+          error: "This payment method is not an installment plan",
+        },
         { status: 400 }
       );
     }
@@ -107,7 +110,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unable to determine region for tax calculation. Division city data is missing.",
+          error:
+            "Unable to determine region for tax calculation. Division city data is missing.",
         },
         { status: 400 }
       );
@@ -187,9 +191,6 @@ export async function POST(request: NextRequest) {
       fullPaymentMethod.installments.subscriptionPayments[
         installmentIndex
       ].amountPaid = totalAmount; // Amount with tax
-      fullPaymentMethod.installments.subscriptionPayments[
-        installmentIndex
-      ].stripePaymentIntentId = paymentIntent.id;
 
       // Recalculate total amount paid
       const totalPaid = fullPaymentMethod.installments.subscriptionPayments
@@ -212,10 +213,7 @@ export async function POST(request: NextRequest) {
         (payment: any) => payment.status === "succeeded"
       );
 
-      if (
-        allPaid &&
-        fullPaymentMethod.installments.remainingBalance === 0
-      ) {
+      if (allPaid && fullPaymentMethod.installments.remainingBalance === 0) {
         fullPaymentMethod.status = "COMPLETED";
         console.log("🎉 All installments paid! Marking as COMPLETED");
       } else {
@@ -238,25 +236,6 @@ export async function POST(request: NextRequest) {
         fullPaymentMethod.installments.remainingBalance
       );
       console.log("   Status:", fullPaymentMethod.status);
-
-      // Send SMS confirmation to player
-      const userPhone = (player.user as any)?.phoneNumber;
-      if (userPhone) {
-        try {
-          await twilioClient.messages.create({
-            body: `Hi ${
-              player.playerName
-            }, your payment #${paymentNumber} for $${totalAmount.toFixed(
-              2
-            )} (incl. tax) has been processed successfully. You'll receive a receipt from Stripe via email.`,
-            from: process.env.TWILIO_MESSAGING_SERVICE_SID,
-            to: userPhone,
-          });
-        } catch (smsError) {
-          console.error("Failed to send SMS confirmation:", smsError);
-          // Don't fail the whole request if SMS fails
-        }
-      }
 
       return NextResponse.json(
         {

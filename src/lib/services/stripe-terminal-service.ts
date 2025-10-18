@@ -52,6 +52,7 @@ export interface PaymentResult {
   cardLast4?: string;
   receiptUrl?: string;
   authorizationCode?: string;
+  metadata?: Record<string, string>;
 }
 
 /**
@@ -215,6 +216,7 @@ export async function getPaymentIntent(
     cardLast4: paymentMethodDetails?.last4 ?? undefined,
     receiptUrl: charge?.receipt_url ?? undefined,
     authorizationCode: paymentMethodDetails?.authorization_code ?? undefined,
+    metadata: paymentIntent.metadata as Record<string, string>,
   };
 }
 
