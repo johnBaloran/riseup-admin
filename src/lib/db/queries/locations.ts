@@ -19,6 +19,14 @@ export async function getAllLocations() {
 }
 
 /**
+ * Get active locations only
+ */
+export async function getActiveLocations() {
+  await connectDB();
+  return Location.find({ active: true }).sort({ name: 1 }).lean();
+}
+
+/**
  * Get locations by city
  */
 export async function getLocationsByCity(cityId: string) {

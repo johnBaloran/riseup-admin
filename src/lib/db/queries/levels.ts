@@ -30,6 +30,14 @@ export async function getAllLevels(activeFilter?: string | null, activeOnly?: bo
 }
 
 /**
+ * Get active levels only
+ */
+export async function getActiveLevels() {
+  await connectDB();
+  return Level.find({ active: true }).sort({ grade: 1 }).lean();
+}
+
+/**
  * Get level by ID
  */
 export async function getLevelById(id: string) {

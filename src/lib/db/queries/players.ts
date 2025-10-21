@@ -35,6 +35,9 @@ async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
       status: "unpaid",
       type: null,
       installmentProgress: null,
+      pricingTier: null,
+      originalPrice: null,
+      amountPaid: null,
     };
   }
 
@@ -43,6 +46,9 @@ async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
       status: "paid",
       type: payment.paymentType,
       installmentProgress: null,
+      pricingTier: payment.pricingTier,
+      originalPrice: payment.originalPrice,
+      amountPaid: payment.amountPaid,
     };
   }
 
@@ -80,6 +86,9 @@ async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
       installmentProgress: progress,
       remainingBalance: payment.installments?.remainingBalance,
       nextPaymentDate: payment.installments?.nextPaymentDate,
+      pricingTier: payment.pricingTier,
+      originalPrice: payment.originalPrice,
+      amountPaid: payment.amountPaid,
     };
   }
 
@@ -87,6 +96,9 @@ async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
     status: "unpaid",
     type: payment.paymentType,
     installmentProgress: null,
+    pricingTier: payment.pricingTier,
+    originalPrice: payment.originalPrice,
+    amountPaid: payment.amountPaid,
   };
 }
 
@@ -290,6 +302,9 @@ export async function getPlayerById(id: string) {
     installmentProgress: paymentInfo.installmentProgress,
     remainingBalance: paymentInfo.remainingBalance,
     nextPaymentDate: paymentInfo.nextPaymentDate,
+    pricingTier: paymentInfo.pricingTier,
+    originalPrice: paymentInfo.originalPrice,
+    amountPaid: paymentInfo.amountPaid,
   };
 }
 

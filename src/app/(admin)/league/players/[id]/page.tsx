@@ -263,6 +263,39 @@ export default async function PlayerDetailPage({
               )}
             </div>
 
+            {/* Pricing & Amount Information */}
+            {player.pricingTier && (
+              <div className="pt-4 border-t space-y-2">
+                <p className="text-sm font-medium text-gray-700 mb-2">
+                  Payment Details
+                </p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Pricing Tier:</span>
+                  <span className="font-medium">
+                    {player.pricingTier === "EARLY_BIRD"
+                      ? "Early Bird"
+                      : "Regular"}
+                  </span>
+                </div>
+                {player.originalPrice !== null && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Original Price:</span>
+                    <span className="font-medium">
+                      ${player.originalPrice.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {player.amountPaid !== null && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Amount Paid:</span>
+                    <span className="font-medium text-green-700">
+                      ${player.amountPaid.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {hasPermission(session, "manage_payments") && (
               <Button variant="outline" className="w-full" asChild>
                 <Link href={`/payments/${params.id}`}>
