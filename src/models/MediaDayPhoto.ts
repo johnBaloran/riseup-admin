@@ -15,6 +15,7 @@ export interface IMediaDayPhoto extends mongoose.Document {
   thumbnail: string;
   location: mongoose.Types.ObjectId;
   date: Date;
+  photographer?: mongoose.Types.ObjectId;
   tags: string[];
   isHighlight: boolean;
   uploadedAt: Date;
@@ -45,6 +46,11 @@ const mediaDayPhotoSchema = new Schema<IMediaDayPhoto>(
     date: {
       type: Date,
       required: [true, "Media day date is required"],
+    },
+    photographer: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+      required: false,
     },
     tags: [String],
     isHighlight: {

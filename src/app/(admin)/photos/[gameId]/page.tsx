@@ -12,6 +12,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { getGameById } from "@/lib/db/queries/games";
 import { getGamePhotos } from "@/lib/db/queries/gamePhotos";
 import { PhotoUploadManager } from "@/components/features/photos/PhotoUploadManager";
+import { Camera } from "lucide-react";
 
 export default async function GamePhotoUploadPage({
   params,
@@ -36,6 +37,16 @@ export default async function GamePhotoUploadPage({
   if (!game) {
     redirect("/photos");
   }
+
+  // Extract unique photographers from photos
+  const photographers = Array.from(
+    new Map(
+      photos
+        .map((photo: any) => photo.photographer)
+        .filter(Boolean)
+        .map((p: any) => [p._id?.toString() || p, p])
+    ).values()
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -63,6 +74,16 @@ export default async function GamePhotoUploadPage({
             <span className="font-medium">Score:</span> {game.homeTeamScore} -{" "}
             {game.awayTeamScore}
           </div>
+          {photographers.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Camera className="w-4 h-4" />
+              <span className="font-medium">
+                {photographers.length === 1
+                  ? (photographers[0] as any).name || "Unknown"
+                  : `${photographers.map((p: any) => p.name || "Unknown").join(", ")}`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

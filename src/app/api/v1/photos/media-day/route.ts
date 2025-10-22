@@ -97,10 +97,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = createPhotoSchema.parse(body);
 
-    // Convert YYYY-MM-DD to Date in UTC
+    // Convert YYYY-MM-DD to Date in UTC and auto-assign photographer
     const photo = await createMediaDayPhoto({
       ...validatedData,
       date: new Date(validatedData.date + "T00:00:00Z"),
+      photographer: session.user.id,
     });
 
     return NextResponse.json(photo, { status: 201 });

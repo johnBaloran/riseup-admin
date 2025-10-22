@@ -8,6 +8,7 @@
 import { connectDB } from "../mongodb";
 import MediaDayPhoto from "@/models/MediaDayPhoto";
 import Location from "@/models/Location";
+import Admin from "@/models/Admin";
 import mongoose from "mongoose";
 
 /**
@@ -140,7 +141,7 @@ export async function getMediaDayPhotos(locationId: string, date: Date) {
   const endOfDay = new Date(date);
   endOfDay.setUTCHours(23, 59, 59, 999);
 
-  return MediaDayPhoto.find({
+  const photos = await MediaDayPhoto.find({
     location: locationId,
     date: {
       $gte: startOfDay,
@@ -149,6 +150,22 @@ export async function getMediaDayPhotos(locationId: string, date: Date) {
   })
     .sort({ uploadedAt: -1 })
     .lean();
+
+  // Manually populate photographer data
+  const photosWithPhotographer = await Promise.all(
+    photos.map(async (photo: any) => {
+      if (photo.photographer) {
+        const admin = await Admin.findById(photo.photographer).select("name email").lean();
+        return {
+          ...photo,
+          photographer: admin,
+        };
+      }
+      return photo;
+    })
+  );
+
+  return photosWithPhotographer;
 }
 
 /**
@@ -160,6 +177,7 @@ export async function createMediaDayPhoto(data: {
   thumbnail: string;
   location: string;
   date: Date;
+  photographer?: string;
   tags?: string[];
 }) {
   await connectDB();

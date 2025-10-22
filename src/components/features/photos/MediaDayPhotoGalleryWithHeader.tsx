@@ -9,7 +9,7 @@
 
 import { useState } from "react";
 import { MediaDayPhotoGallery } from "./MediaDayPhotoGallery";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Camera } from "lucide-react";
 import { format } from "date-fns";
 
 interface Photo {
@@ -18,6 +18,7 @@ interface Photo {
   url: string;
   thumbnail: string;
   uploadedAt: Date;
+  photographer?: any;
   tags?: string[];
   isHighlight?: boolean;
 }
@@ -50,6 +51,16 @@ export function MediaDayPhotoGalleryWithHeader({
 
   const date = new Date(dateStr + "T00:00:00Z");
 
+  // Extract unique photographers from photos
+  const photographers = Array.from(
+    new Map(
+      initialPhotos
+        .map((photo) => photo.photographer)
+        .filter(Boolean)
+        .map((p: any) => [p._id?.toString() || p, p])
+    ).values()
+  );
+
   return (
     <>
       <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
@@ -66,6 +77,16 @@ export function MediaDayPhotoGalleryWithHeader({
         <div>
           <span className="font-medium">{photoCount} photos</span>
         </div>
+        {photographers.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            <span className="font-medium">
+              {photographers.length === 1
+                ? (photographers[0] as any).name || "Unknown"
+                : `${photographers.map((p: any) => p.name || "Unknown").join(", ")}`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm">

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Upload, Image, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, Upload, Image, CheckCircle2, AlertCircle, Camera } from "lucide-react";
 
 const DAYS = [
   "monday",
@@ -338,6 +338,14 @@ export function PhotosTable({
                             year: "numeric",
                           })}
                         </p>
+                        {game.photographers && game.photographers.length > 0 && (
+                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
+                            <Camera className="w-3 h-3" />
+                            <span>
+                              {game.photographers.map((p: any) => p.name).join(", ")}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <Button asChild className="w-full" size="sm">

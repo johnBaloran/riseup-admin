@@ -14,6 +14,7 @@ export interface IGamePhoto extends mongoose.Document {
   publicId: string;
   thumbnail: string;
   game: mongoose.Types.ObjectId;
+  photographer?: mongoose.Types.ObjectId;
   tags: string[];
   isHighlight: boolean;
   uploadedAt: Date;
@@ -40,6 +41,11 @@ const gamePhotoSchema = new Schema<IGamePhoto>(
       type: Schema.Types.ObjectId,
       ref: "Game",
       required: [true, "Game is required"],
+    },
+    photographer: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
+      required: false,
     },
     tags: [String],
     isHighlight: {

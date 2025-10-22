@@ -102,8 +102,11 @@ export async function POST(
       game: params.gameId, // Ensure game ID matches route param
     });
 
-    // Create photo
-    const photo = await createGamePhoto(validatedData);
+    // Create photo with photographer auto-assigned from session
+    const photo = await createGamePhoto({
+      ...validatedData,
+      photographer: session.user.id,
+    });
 
     return NextResponse.json(photo, { status: 201 });
   } catch (error: any) {

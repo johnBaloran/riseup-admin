@@ -8,6 +8,7 @@
 import { connectDB } from "../mongodb";
 import GamePhoto from "@/models/GamePhoto";
 import Game from "@/models/Game";
+import Admin from "@/models/Admin";
 import Division from "@/models/Division";
 import City from "@/models/City";
 
@@ -68,6 +69,29 @@ export async function getGamesWithPhotoStatus({
     filteredGames = games.filter((game) => (game.gamePhotosCount || 0) === 0);
   }
 
+  // Get photographers for each game
+  const gamesWithPhotographers = await Promise.all(
+    filteredGames.map(async (game: any) => {
+      // Get unique photographers for this game
+      const photos = await GamePhoto.find({ game: game._id })
+        .select("photographer")
+        .lean();
+
+      const photographerIds = Array.from(
+        new Set(photos.map((p: any) => p.photographer?.toString()).filter(Boolean))
+      );
+
+      const photographers = await Admin.find({ _id: { $in: photographerIds } })
+        .select("name")
+        .lean();
+
+      return {
+        ...game,
+        photographers,
+      };
+    })
+  );
+
   // Organize games by division
   const gamesByDivision = divisions.map((division) => ({
     division: {
@@ -78,7 +102,7 @@ export async function getGamesWithPhotoStatus({
       location: division.location,
       level: division.level,
     },
-    games: filteredGames.filter(
+    games: gamesWithPhotographers.filter(
       (game) => game.division._id.toString() === division._id.toString()
     ),
   }));
@@ -93,7 +117,26 @@ export async function getGamesWithPhotoStatus({
 export async function getGamePhotos(gameId: string) {
   await connectDB();
 
-  return GamePhoto.find({ game: gameId }).sort({ uploadedAt: -1 }).lean();
+  // Get photos without populate first
+  const photos = await GamePhoto.find({ game: gameId })
+    .sort({ uploadedAt: -1 })
+    .lean();
+
+  // Manually populate photographer data
+  const photosWithPhotographer = await Promise.all(
+    photos.map(async (photo: any) => {
+      if (photo.photographer) {
+        const admin = await Admin.findById(photo.photographer).select("name email").lean();
+        return {
+          ...photo,
+          photographer: admin,
+        };
+      }
+      return photo;
+    })
+  );
+
+  return photosWithPhotographer;
 }
 
 /**
@@ -104,6 +147,7 @@ export async function createGamePhoto(data: {
   url: string;
   thumbnail: string;
   game: string;
+  photographer?: string;
   tags?: string[];
   isHighlight?: boolean;
 }) {
