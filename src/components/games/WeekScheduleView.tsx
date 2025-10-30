@@ -37,6 +37,8 @@ interface Game {
   homeTeam: string;
   awayTeam: string;
   published?: boolean;
+  status?: boolean;
+  date?: Date;
 }
 
 interface WeekScheduleViewProps {
@@ -48,9 +50,14 @@ interface WeekScheduleViewProps {
   games: Game[];
   teams: Team[];
   teamCounts: TeamScheduleCount[];
-  onSave: (games: Game[]) => Promise<void>;
+  onSave: (gamesToCreate: Game[], gamesToUpdate: Game[]) => Promise<void>;
   onCancel: () => void;
-  onDeleteGame?: (gameId: string, gameName: string, isPublished: boolean) => void;
+  onDeleteGame?: (
+    gameId: string,
+    gameName: string,
+    isPublished: boolean,
+    isCompleted: boolean
+  ) => void;
 }
 
 export function WeekScheduleView({
@@ -66,15 +73,13 @@ export function WeekScheduleView({
   onCancel,
   onDeleteGame,
 }: WeekScheduleViewProps) {
-  const [games, setGames] = useState<Game[]>(
-    initialGames.length > 0 ? initialGames : []
-  );
+  const [games, setGames] = useState<Game[]>(initialGames);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync games state when week changes ONLY
+  // Sync games state when week changes
   useEffect(() => {
-    setGames(initialGames.length > 0 ? initialGames : []);
-  }, [weekNumber]); // Removed initialGames from dependencies
+    setGames(initialGames);
+  }, [initialGames]);
 
   const isPlayoff = weekType !== "REGULAR";
   const hasGames = games.length > 0;
@@ -87,6 +92,7 @@ export function WeekScheduleView({
       homeTeam: "",
       awayTeam: "",
       published: false,
+      status: false,
     };
     setGames([...games, newGame]);
   };
@@ -97,12 +103,9 @@ export function WeekScheduleView({
     field: keyof Game,
     value: string
   ) => {
-    console.log("onChange called:", { index, field, value });
-
     const updated = [...games];
     updated[index] = { ...updated[index], [field]: value };
     setGames(updated);
-    console.log("Updated games array:", updated); // Add this line too
   };
 
   // Delete game
@@ -113,11 +116,17 @@ export function WeekScheduleView({
     if (game.id && onDeleteGame) {
       const homeTeam = teams.find((t) => t.id === game.homeTeam);
       const awayTeam = teams.find((t) => t.id === game.awayTeam);
-      const gameName = homeTeam && awayTeam
-        ? `${homeTeam.name} vs. ${awayTeam.name}`
-        : game.gameName || "Unknown Game";
+      const gameName =
+        homeTeam && awayTeam
+          ? `${homeTeam.name} vs. ${awayTeam.name}`
+          : game.gameName || "Unknown Game";
 
-      onDeleteGame(game.id, gameName, game.published || false);
+      onDeleteGame(
+        game.id,
+        gameName,
+        game.published || false,
+        game.status || false
+      );
     } else {
       // If no ID, it's a draft - just remove from local state
       setGames(games.filter((_, i) => i !== index));
@@ -128,21 +137,28 @@ export function WeekScheduleView({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Auto-generate game names before saving
-      const gamesWithNames = games.map((game) => {
+      // Auto-generate game names and partition games
+      const gamesToCreate: Game[] = [];
+      const gamesToUpdate: Game[] = [];
+
+      games.forEach((game) => {
         const homeTeam = teams.find((t) => t.id === game.homeTeam);
         const awayTeam = teams.find((t) => t.id === game.awayTeam);
-        const gameName = homeTeam && awayTeam
-          ? `${homeTeam.name} vs. ${awayTeam.name}`
-          : game.gameName || "";
+        const gameName =
+          homeTeam && awayTeam
+            ? `${homeTeam.name} vs. ${awayTeam.name}`
+            : game.gameName || "";
 
-        return {
-          ...game,
-          gameName,
-        };
+        const processedGame = { ...game, gameName };
+
+        if (game.id) {
+          gamesToUpdate.push(processedGame);
+        } else {
+          gamesToCreate.push(processedGame);
+        }
       });
 
-      await onSave(gamesWithNames);
+      await onSave(gamesToCreate, gamesToUpdate);
     } catch (error) {
       console.error("Failed to save games:", error);
     } finally {
@@ -232,7 +248,7 @@ export function WeekScheduleView({
               <div className="space-y-4">
                 {games.map((game, index) => (
                   <GameFormCard
-                    key={index}
+                    key={game.id || index}
                     index={index}
                     data={game}
                     teams={teams}

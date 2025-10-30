@@ -23,6 +23,7 @@ export interface IUser extends mongoose.Document {
     jerseyNumber?: string;
   };
   basketball: mongoose.Types.ObjectId[];
+  personId?: mongoose.Types.ObjectId; // Face Recognition - Link to Person
   resetToken?: string;
   resetTokenExpiry?: Date;
   createdAt: Date;
@@ -65,6 +66,10 @@ const userSchema = new Schema<IUser>(
         ref: "Player",
       },
     ],
+    personId: {
+      type: Schema.Types.ObjectId,
+      ref: "Person",
+    },
     resetToken: String,
     resetTokenExpiry: Date,
   },
@@ -76,6 +81,7 @@ const userSchema = new Schema<IUser>(
 // Indexes
 userSchema.index({ email: 1 });
 userSchema.index({ stripeCustomerId: 1 });
+userSchema.index({ personId: 1 });
 
 export default (mongoose.models.User as mongoose.Model<IUser>) ||
   mongoose.model<IUser>("User", userSchema);

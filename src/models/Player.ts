@@ -40,9 +40,10 @@ export interface IPlayer extends mongoose.Document {
     email?: string;
     phoneNumber?: string;
   };
-  paymentMethods: mongoose.Types.ObjectId[]; // ADD THIS LINE
+  paymentMethods: mongoose.Types.ObjectId[];
   user?: mongoose.Types.ObjectId;
   division?: mongoose.Types.ObjectId;
+  personId?: mongoose.Types.ObjectId; // Face Recognition - Link to Person
   averageStats?: any;
   allStats: Array<any>;
 }
@@ -81,6 +82,10 @@ const playerSchema = new Schema<IPlayer>(
         ref: "PaymentMethod",
       },
     ],
+    personId: {
+      type: Schema.Types.ObjectId,
+      ref: "Person",
+    },
     jerseyNumber: Number,
     jerseySize: String,
     jerseyName: String,
@@ -157,6 +162,7 @@ playerSchema.index({ user: 1 });
 playerSchema.index({ team: 1 });
 playerSchema.index({ division: 1 });
 playerSchema.index({ freeAgent: 1 });
+playerSchema.index({ personId: 1 });
 
 export default (mongoose.models.Player as mongoose.Model<IPlayer>) ||
   mongoose.model<IPlayer>("Player", playerSchema);

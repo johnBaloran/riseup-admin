@@ -18,7 +18,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Image as ImageIcon } from "lucide-react";
+import {
+  Upload,
+  Trash2,
+  Loader2,
+  Image as ImageIcon,
+  Scan,
+} from "lucide-react";
+import { CircularFaceFilters } from "./CircularFaceFilters";
 
 interface Game {
   _id: string;
@@ -38,21 +45,62 @@ interface Photo {
   url: string;
   thumbnail: string;
   uploadedAt: Date;
+  detectedFaces?: Array<{
+    personId?: string;
+    [key: string]: any;
+  }>;
 }
 
 interface PhotoUploadManagerProps {
   game: Game;
   initialPhotos: Photo[];
+  selectedPersonId?: string | null;
+  onPersonSelect?: (personId: string) => void;
+  onClearFilter?: () => void;
+  gameId: string;
 }
 
 export function PhotoUploadManager({
   game,
   initialPhotos,
+  selectedPersonId,
+  onPersonSelect,
+  onClearFilter,
+  gameId,
 }: PhotoUploadManagerProps) {
-  const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
+  // Deduplicate photos by publicId to avoid duplicate rendering
+  const deduplicatedPhotos = initialPhotos.reduce((acc, photo) => {
+    if (!acc.some((p) => p.publicId === photo.publicId)) {
+      acc.push(photo);
+    }
+    return acc;
+  }, [] as Photo[]);
+
+  const [photos, setPhotos] = useState<Photo[]>(deduplicatedPhotos);
+
+  // Filter photos by selected person
+  const filteredPhotos = selectedPersonId
+    ? selectedPersonId === "unknown"
+      ? photos.filter(
+          (photo) => !photo.detectedFaces || photo.detectedFaces.length === 0
+        )
+      : photos.filter((photo) =>
+          photo.detectedFaces?.some(
+            (face) => face.personId?.toString() === selectedPersonId
+          )
+        )
+    : photos;
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadWidget, setUploadWidget] = useState<any>(null);
   const uploadingPhotosRef = useRef<Set<string>>(new Set());
+
+  // Face processing state
+  const [isProcessingFaces, setIsProcessingFaces] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState({
+    current: 0,
+    total: 0,
+  });
 
   /**
    * Handle successful upload
@@ -232,7 +280,16 @@ export function PhotoUploadManager({
         }
       };
     }
-  }, [uploadWidget, game._id, game.division._id, game.week, game.homeTeam?.teamName, game.awayTeam?.teamName, game.date, handleUploadSuccess]);
+  }, [
+    uploadWidget,
+    game._id,
+    game.division._id,
+    game.week,
+    game.homeTeam?.teamName,
+    game.awayTeam?.teamName,
+    game.date,
+    handleUploadSuccess,
+  ]);
 
   /**
    * Open upload widget
@@ -277,6 +334,96 @@ export function PhotoUploadManager({
     }
   };
 
+  /**
+   * Process all photos for face detection
+   * Sends photos to backend for AWS Rekognition processing
+   */
+  const handleProcessAllPhotos = async () => {
+    if (photos.length === 0) {
+      toast.error("No photos to process");
+      return;
+    }
+
+    if (
+      !confirm(
+        `Process ${photos.length} photos for face detection?\n\nThis will:\n- Detect faces using AWS Rekognition\n- Create Person records for new faces\n- Match faces to existing persons`
+      )
+    ) {
+      return;
+    }
+
+    setIsProcessingFaces(true);
+    setProcessingProgress({ current: 0, total: photos.length });
+
+    try {
+      const BACKEND_URL =
+        process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Process photos in batches of 5 to avoid overwhelming the server
+      const batchSize = 5;
+      for (let i = 0; i < photos.length; i += batchSize) {
+        const batch = photos.slice(i, i + batchSize);
+
+        const results = await Promise.allSettled(
+          batch.map(async (photo) => {
+            const response = await fetch(
+              `${BACKEND_URL}/api/v1/faces/process`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  photoId: photo._id,
+                  photoUrl: photo.url,
+                  gameId: game._id,
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.message || "Processing failed");
+            }
+
+            return await response.json();
+          })
+        );
+
+        // Count successes and failures
+        results.forEach((result) => {
+          if (result.status === "fulfilled") {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error("Photo processing error:", result.reason);
+          }
+        });
+
+        setProcessingProgress({
+          current: i + batch.length,
+          total: photos.length,
+        });
+      }
+
+      if (successCount === photos.length) {
+        toast.success(`Successfully processed all ${photos.length} photos!`);
+      } else if (successCount > 0) {
+        toast.success(
+          `Processed ${successCount} of ${photos.length} photos (${errorCount} failed)`
+        );
+      } else {
+        toast.error("Failed to process photos. Check backend connection.");
+      }
+    } catch (error: any) {
+      console.error("Batch processing error:", error);
+      toast.error(error.message || "Failed to process photos");
+    } finally {
+      setIsProcessingFaces(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Upload Section */}
@@ -285,39 +432,105 @@ export function PhotoUploadManager({
           <div>
             <h2 className="text-xl font-semibold">Game Photos</h2>
             <p className="text-sm text-gray-600 mt-1">
-              {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
+              {selectedPersonId ? (
+                <>
+                  Showing {filteredPhotos.length} of {photos.length} photo
+                  {photos.length !== 1 ? "s" : ""}
+                </>
+              ) : (
+                <>
+                  {photos.length} photo{photos.length !== 1 ? "s" : ""} uploaded
+                </>
+              )}
             </p>
           </div>
-          <Button onClick={handleUploadClick} disabled={isUploading} size="lg">
-            {isUploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Photos
-              </>
-            )}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleProcessAllPhotos}
+              disabled={isProcessingFaces || photos.length === 0}
+              variant="outline"
+              size="lg"
+            >
+              {isProcessingFaces ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing {processingProgress.current}/
+                  {processingProgress.total}...
+                </>
+              ) : (
+                <>
+                  <Scan className="w-4 h-4 mr-2" />
+                  Process Faces ({photos.length})
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              size="lg"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photos
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </Card>
 
+      {/* Circular Face Filters */}
+      <CircularFaceFilters
+        gameId={gameId}
+        selectedPersonId={selectedPersonId}
+        onPersonSelect={(personId) => {
+          if (personId) {
+            onPersonSelect?.(personId);
+          } else {
+            onClearFilter?.();
+          }
+        }}
+        photos={photos}
+      />
+
       {/* Photo Grid */}
-      {photos.length === 0 ? (
+      {filteredPhotos.length === 0 ? (
         <Card className="p-12">
           <div className="text-center text-gray-500">
             <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No photos yet</p>
-            <p className="text-sm mt-1">
-              Upload photos from this game to get started
-            </p>
+            {selectedPersonId === "unknown" ? (
+              <>
+                <p className="text-lg font-medium">No photos without faces</p>
+                <p className="text-sm mt-1">All photos have detected faces</p>
+              </>
+            ) : selectedPersonId ? (
+              <>
+                <p className="text-lg font-medium">
+                  No photos found for this person
+                </p>
+                <p className="text-sm mt-1">
+                  This person doesn't appear in any photos yet
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-medium">No photos yet</p>
+                <p className="text-sm mt-1">
+                  Upload photos from this game to get started
+                </p>
+              </>
+            )}
           </div>
         </Card>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {photos.map((photo) => (
+          {filteredPhotos.map((photo) => (
             <Card
               key={photo.publicId}
               className="group relative aspect-square overflow-hidden hover:shadow-lg transition-shadow"

@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "12");
     const divisionId = searchParams.get("division") || undefined;
     const locationId = searchParams.get("location") || undefined;
     const teamId = searchParams.get("team") || undefined;
@@ -47,9 +48,11 @@ export async function GET(request: NextRequest) {
       ? searchParams.get("hasUser") === "true"
       : undefined;
     const search = searchParams.get("search") || undefined;
+    const unlinked = searchParams.get("unlinked") === "true";
 
     const result = await getPlayers({
       page,
+      limit,
       divisionId,
       locationId,
       teamId,
@@ -57,6 +60,7 @@ export async function GET(request: NextRequest) {
       freeAgentsOnly,
       hasUserAccount,
       search,
+      unlinked,
     });
 
     return NextResponse.json({ success: true, data: result }, { status: 200 });

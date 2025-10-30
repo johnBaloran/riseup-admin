@@ -222,38 +222,6 @@ export default async function PlayerDetailPage({
                   <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                     Installment Plan Active
                   </Badge>
-                  {player.installmentProgress && (
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">
-                        Weekly Progress
-                      </p>
-                      <InstallmentProgress
-                        payments={player.installmentProgress}
-                        size="md"
-                      />
-                      <div className="mt-3 pt-3 border-t space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">
-                            Remaining Balance:
-                          </span>
-                          <span className="font-medium">
-                            ${player.remainingBalance?.toFixed(2) || "0.00"}
-                          </span>
-                        </div>
-                        {player.nextPaymentDate && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">Next Payment:</span>
-                            <span className="font-medium">
-                              {format(
-                                new Date(player.nextPaymentDate),
-                                "MMM dd, yyyy"
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
               {player.paymentStatus === "unpaid" && (
@@ -277,14 +245,7 @@ export default async function PlayerDetailPage({
                       : "Regular"}
                   </span>
                 </div>
-                {player.originalPrice !== null && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Original Price:</span>
-                    <span className="font-medium">
-                      ${player.originalPrice.toFixed(2)}
-                    </span>
-                  </div>
-                )}
+
                 {player.amountPaid !== null && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Amount Paid:</span>

@@ -9,7 +9,7 @@
 
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +22,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { WeekTypeBadge } from "./WeekTypeBadge";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/lib/utils/date";
+import Link from "next/link";
 
 interface Team {
   id: string;
@@ -30,10 +32,13 @@ interface Team {
 }
 
 interface GameFormData {
+  id?: string;
   gameName: string;
   time: string;
   homeTeam: string;
   awayTeam: string;
+  status?: boolean;
+  date?: Date;
 }
 
 interface GameFormCardProps {
@@ -60,6 +65,7 @@ export function GameFormCard({
   className,
 }: GameFormCardProps) {
   const isPlayoff = weekType !== "REGULAR";
+  const isCompleted = data.status === true;
 
   // Get team names for display
   const homeTeamData = teams.find((t) => t.id === data.homeTeam);
@@ -87,16 +93,26 @@ export function GameFormCard({
     <div
       className={cn(
         "border rounded-lg p-4",
-        published && !isDraft && "border-green-300 bg-green-50",
-        isDraft && "border-blue-300 bg-blue-50",
+        isCompleted
+          ? "bg-gray-100 border-gray-300"
+          : published && !isDraft
+          ? "border-green-300 bg-green-50"
+          : isDraft
+          ? "border-blue-300 bg-blue-50"
+          : "",
         className
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-x-3 gap-y-2 flex-wrap">
           {isPlayoff && <WeekTypeBadge weekType={weekType} />}
-          {published && !isDraft && (
+          {isCompleted && (
+            <span className="px-2 py-1 bg-gray-500 text-white text-xs font-semibold rounded">
+              COMPLETED
+            </span>
+          )}
+          {published && !isDraft && !isCompleted && (
             <span className="px-2 py-1 bg-green-600 text-white text-xs font-semibold rounded">
               PUBLISHED
             </span>
@@ -107,9 +123,11 @@ export function GameFormCard({
             </span>
           )}
           {displayGameName && (
-            <span className="text-sm font-semibold text-gray-900">
-              {displayGameName}
-            </span>
+            <Link href={`/scorekeeper/${data.id}`}>
+              <span className="text-sm font-semibold text-gray-900">
+                {displayGameName}
+              </span>
+            </Link>
           )}
         </div>
         <Button
@@ -117,11 +135,19 @@ export function GameFormCard({
           variant="ghost"
           size="icon"
           onClick={() => onDelete(index)}
-          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+          disabled={isCompleted}
+          className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-4 h-4" />
         </Button>
       </div>
+
+      {data.date && (
+        <div className="flex items-center text-sm  my-2">
+          <Calendar className="w-4 h-4 mr-1.5" />
+          {formatDate(data.date)}
+        </div>
+      )}
 
       {/* Form Fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -135,6 +161,7 @@ export function GameFormCard({
             onValueChange={(value) => {
               onChange(index, "homeTeam", value);
             }}
+            disabled={isCompleted}
           >
             <SelectTrigger id={`home-team-${index}`} className="text-sm">
               <SelectValue placeholder="Select home team" />
@@ -159,6 +186,7 @@ export function GameFormCard({
             onValueChange={(value) => {
               onChange(index, "awayTeam", value);
             }}
+            disabled={isCompleted}
           >
             <SelectTrigger id={`away-team-${index}`} className="text-sm">
               <SelectValue placeholder="Select away team" />
@@ -184,6 +212,7 @@ export function GameFormCard({
             value={data.time}
             onChange={(e) => onChange(index, "time", e.target.value)}
             className="text-sm w-[130px]"
+            disabled={isCompleted}
           />
         </div>
       </div>
@@ -194,11 +223,13 @@ export function GameFormCard({
           Home team and away team cannot be the same
         </p>
       )}
-      {(!data.time || !data.homeTeam || !data.awayTeam) && !isDraft && (
-        <p className="text-xs text-orange-600 mt-2">
-          Incomplete matchup - fill all fields to publish
-        </p>
-      )}
+      {!isCompleted &&
+        (!data.time || !data.homeTeam || !data.awayTeam) &&
+        !isDraft && (
+          <p className="text-xs text-orange-600 mt-2">
+            Incomplete matchup - fill all fields to publish
+          </p>
+        )}
     </div>
   );
 }

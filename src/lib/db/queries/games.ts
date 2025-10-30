@@ -31,8 +31,22 @@ export async function getGameById(id: string) {
   await connectDB();
 
   return Game.findById(id)
-    .populate("homeTeam", "teamName teamCode teamNameShort")
-    .populate("awayTeam", "teamName teamCode teamNameShort")
+    .populate({
+      path: "homeTeam",
+      select: "teamName teamCode teamNameShort players",
+      populate: {
+        path: "players",
+        select: "playerName jerseyNumber team",
+      },
+    })
+    .populate({
+      path: "awayTeam",
+      select: "teamName teamCode teamNameShort players",
+      populate: {
+        path: "players",
+        select: "playerName jerseyNumber team",
+      },
+    })
     .populate(
       "division",
       "divisionName location city day startDate seasonConfig"

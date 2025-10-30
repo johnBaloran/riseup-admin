@@ -11,7 +11,7 @@ import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getGameById } from "@/lib/db/queries/games";
 import { getGamePhotos } from "@/lib/db/queries/gamePhotos";
-import { PhotoUploadManager } from "@/components/features/photos/PhotoUploadManager";
+import { GamePhotosPageClient } from "@/components/features/photos/GamePhotosPageClient";
 import { Camera } from "lucide-react";
 
 export default async function GamePhotoUploadPage({
@@ -49,46 +49,11 @@ export default async function GamePhotoUploadPage({
   );
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Game Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{game.gameName}</h1>
-        <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-          <div>
-            <span className="font-medium">Division:</span>{" "}
-            {(game.division as any)?.divisionName}
-          </div>
-          <div>
-            <span className="font-medium">Date:</span>{" "}
-            {new Date(game.date).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </div>
-          <div>
-            <span className="font-medium">Week:</span> {game.week}
-          </div>
-          <div>
-            <span className="font-medium">Score:</span> {game.homeTeamScore} -{" "}
-            {game.awayTeamScore}
-          </div>
-          {photographers.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Camera className="w-4 h-4" />
-              <span className="font-medium">
-                {photographers.length === 1
-                  ? (photographers[0] as any).name || "Unknown"
-                  : `${photographers.map((p: any) => p.name || "Unknown").join(", ")}`}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Photo Upload Manager */}
-      <PhotoUploadManager game={game} initialPhotos={photos} />
-    </div>
+    <GamePhotosPageClient
+      game={game}
+      photos={photos}
+      photographers={photographers}
+      gameId={params.gameId}
+    />
   );
 }

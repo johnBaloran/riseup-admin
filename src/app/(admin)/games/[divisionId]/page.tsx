@@ -43,6 +43,17 @@ interface Team {
   shortName: string;
 }
 
+interface Game {
+  id: string;
+  gameName: string;
+  time: string;
+  homeTeam: { id: string; name: string; code: string };
+  awayTeam: { id: string; name: string; code: string };
+  published: boolean;
+  status: boolean;
+  date: Date;
+}
+
 interface Week {
   weekNumber: number;
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
@@ -52,23 +63,7 @@ interface Week {
   isPlayoff: boolean;
   isComplete: boolean;
   isCurrent: boolean;
-  games: Array<{
-    id: string;
-    gameName: string;
-    time: string;
-    homeTeam: {
-      id: string;
-      name: string;
-      code: string;
-    };
-    awayTeam: {
-      id: string;
-      name: string;
-      code: string;
-    };
-    published: boolean;
-    status: boolean;
-  }>;
+  games: Game[];
 }
 
 interface DivisionSchedule {
@@ -84,6 +79,17 @@ interface TeamScheduleCount {
   teamCode: string;
   teamName: string;
   gameCount: number;
+}
+
+interface GameToSave {
+  id?: string;
+  gameName: string;
+  time: string;
+  homeTeam: string;
+  awayTeam: string;
+  published?: boolean;
+  status?: boolean;
+  date?: Date;
 }
 
 export default function DivisionSchedulePage() {
@@ -105,13 +111,7 @@ export default function DivisionSchedulePage() {
     gameName: string;
     isPublished: boolean;
     isCompleted: boolean;
-  }>({
-    open: false,
-    gameId: "",
-    gameName: "",
-    isPublished: false,
-    isCompleted: false,
-  });
+  }>({ open: false, gameId: "", gameName: "", isPublished: false, isCompleted: false });
 
   useEffect(() => {
     fetchDivisionSchedule();
@@ -136,6 +136,10 @@ export default function DivisionSchedulePage() {
       const weeksWithDates = data.weeks.map((week: any) => ({
         ...week,
         date: new Date(week.date),
+        games: week.games.map((game: any) => ({
+          ...game,
+          date: new Date(game.date),
+        })),
       }));
 
       setSchedule({
@@ -169,7 +173,10 @@ export default function DivisionSchedulePage() {
   };
 
   // Save games for a week
-  const handleSaveGames = async (games: any[]) => {
+  const handleSaveGames = async (
+    gamesToCreate: GameToSave[],
+    gamesToUpdate: GameToSave[]
+  ) => {
     try {
       setSaving(true);
 
@@ -179,53 +186,37 @@ export default function DivisionSchedulePage() {
 
       if (!selectedWeekData) throw new Error("Week not found");
 
-      // Prepare games data
-      const gamesData = games.map((game) => {
-        // Create date in local timezone by combining week date + game time
-        const weekDate = new Date(selectedWeekData.date);
-        const [hours, minutes] = game.time.split(":").map(Number);
+      const promises = [];
 
-        // Create a new date with the correct local date and time
-        const localDate = new Date(
-          weekDate.getFullYear(),
-          weekDate.getMonth(),
-          weekDate.getDate(),
-          hours,
-          minutes,
-          0,
-          0
-        );
-
-        return {
-          gameName: game.gameName,
-          date: localDate.toISOString(),
-          time: game.time,
-          homeTeam: game.homeTeam,
-          awayTeam: game.awayTeam,
-          published: true, // Publish by default
-          week: selectedWeek,
-          weekType: selectedWeekData.weekType,
-        };
-      });
-
-      // Create games
-      const response = await fetch("/api/v1/games/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          divisionId,
-          week: selectedWeek,
-          weekType: selectedWeekData.weekType,
-          games: gamesData,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save games");
+      // Handle games to create
+      if (gamesToCreate.length > 0) {
+        promises.push(handleCreateGames(gamesToCreate, selectedWeekData));
       }
 
-      toast.success(`Successfully saved ${games.length} game(s)`);
+      // Handle games to update
+      if (gamesToUpdate.length > 0) {
+        promises.push(handleUpdateGames(gamesToUpdate));
+      }
+
+      const results = await Promise.all(promises);
+
+      let totalCreated = 0;
+      let totalUpdated = 0;
+
+      results.forEach((result) => {
+        if (result) {
+          if ("created" in result) {
+            totalCreated += result.created;
+          }
+          if ("updated" in result) {
+            totalUpdated += result.updated;
+          }
+        }
+      });
+
+      toast.success(
+        `Successfully saved schedule: ${totalCreated} created, ${totalUpdated} updated.`
+      );
 
       // Refresh schedule
       await fetchDivisionSchedule();
@@ -235,6 +226,77 @@ export default function DivisionSchedulePage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCreateGames = async (games: GameToSave[], weekData: Week) => {
+    const gamesData = games.map((game) => {
+      const weekDate = new Date(weekData.date);
+      const [hours, minutes] = game.time.split(":").map(Number);
+      const localDate = new Date(
+        weekDate.getFullYear(),
+        weekDate.getMonth(),
+        weekDate.getDate(),
+        hours,
+        minutes
+      );
+
+      return {
+        gameName: game.gameName,
+        date: localDate.toISOString(),
+        time: game.time,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        published: true,
+        week: selectedWeek,
+        weekType: weekData.weekType,
+      };
+    });
+
+    const response = await fetch("/api/v1/games/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        divisionId,
+        week: selectedWeek,
+        weekType: weekData.weekType,
+        games: gamesData,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to create games");
+    }
+
+    return { created: games.length };
+  };
+
+  const handleUpdateGames = async (games: GameToSave[]) => {
+    const gamesToUpdate = games.filter((game) => !game.status);
+
+    const updatePromises = gamesToUpdate.map((game) => {
+      if (!game.id) return Promise.resolve(null);
+
+      return fetch(`/api/v1/games/${game.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          time: game.time,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+        }),
+      });
+    });
+
+    const responses = await Promise.all(updatePromises);
+
+    responses.forEach((response) => {
+      if (response && !response.ok) {
+        console.error("Failed to update a game");
+      }
+    });
+
+    return { updated: gamesToUpdate.length };
   };
 
   // Delete game
@@ -282,14 +344,15 @@ export default function DivisionSchedulePage() {
   const handleDeleteGameRequest = (
     gameId: string,
     gameName: string,
-    isPublished: boolean
+    isPublished: boolean,
+    isCompleted: boolean
   ) => {
     setDeleteDialog({
       open: true,
       gameId,
       gameName,
       isPublished,
-      isCompleted: false,
+      isCompleted,
     });
   };
 
@@ -396,6 +459,8 @@ export default function DivisionSchedulePage() {
                 homeTeam: g.homeTeam.id,
                 awayTeam: g.awayTeam.id,
                 published: g.published,
+                status: g.status,
+                date: g.date,
               }))}
               teams={schedule.teams}
               teamCounts={teamCounts}

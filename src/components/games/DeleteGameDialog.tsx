@@ -41,6 +41,7 @@ export function DeleteGameDialog({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleConfirm = async () => {
+    if (isCompleted) return;
     setIsDeleting(true);
     try {
       await onConfirm();
@@ -56,28 +57,39 @@ export function DeleteGameDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Published Game?</AlertDialogTitle>
-          <AlertDialogDescription className="space-y-2">
-            <p>This game has been published and is visible to players.</p>
-            {isCompleted && (
-              <p className="text-orange-600 font-medium">
-                ⚠️ This game has been completed. Deleting it will remove all
-                player stats and adjust team records.
+          <AlertDialogTitle>
+            {isCompleted ? "Cannot Delete Game" : "Delete Game?"}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2 pt-2">
+            {isCompleted ? (
+              <p className="text-red-600 font-medium">
+                This game has been completed and recorded. It cannot be
+                deleted to preserve historical data and stats.
               </p>
+            ) : isPublished ? (
+              <p>
+                This game is <span className="font-medium">published</span> and
+                visible to players. Deleting it will remove it from the
+                schedule.
+              </p>
+            ) : (
+              <p>This game is a draft and has not been published yet.</p>
             )}
             <p className="font-medium text-foreground mt-2">Game: {gameName}</p>
-            <p>Are you sure you want to delete it?</p>
+            {!isCompleted && <p>Are you sure you want to delete it?</p>}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            disabled={isDeleting}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isDeleting ? "Deleting..." : "Delete Game"}
-          </AlertDialogAction>
+          {!isCompleted && (
+            <AlertDialogAction
+              onClick={handleConfirm}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Deleting..." : "Delete Game"}
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

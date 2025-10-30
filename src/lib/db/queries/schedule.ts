@@ -181,17 +181,19 @@ export interface WeekSchedule {
     gameName: string;
     time: string;
     homeTeam: {
-      id: string;
-      name: string;
-      code: string;
+      id?: string;
+      name?: string;
+      code?: string;
     };
     awayTeam: {
-      id: string;
-      name: string;
-      code: string;
+      id?: string;
+      name?: string;
+      code?: string;
     };
     published: boolean;
     status: boolean;
+    date: Date;
+    calculatedDate?: Date;
   }>;
   isComplete: boolean;
   isCurrent: boolean;
@@ -248,17 +250,19 @@ export async function getDivisionSchedule(divisionId: string) {
         gameName: game.gameName,
         time: game.time,
         homeTeam: {
-          id: (game.homeTeam as any)._id.toString(),
-          name: (game.homeTeam as any).teamName,
-          code: (game.homeTeam as any).teamCode,
+          id: (game.homeTeam as any)?._id.toString(),
+          name: (game.homeTeam as any)?.teamName,
+          code: (game.homeTeam as any)?.teamCode,
         },
         awayTeam: {
-          id: (game.awayTeam as any)._id.toString(),
-          name: (game.awayTeam as any).teamName,
-          code: (game.awayTeam as any).teamCode,
+          id: (game.awayTeam as any)?._id.toString(),
+          name: (game.awayTeam as any)?.teamName,
+          code: (game.awayTeam as any)?.teamCode,
         },
         published: game.published ?? true,
         status: game.status,
+        date: game.date,
+        calculatedDate: game.calculatedDate,
       })),
       isComplete: weekGames.length > 0 && weekGames.every((g) => g.status),
       isCurrent: week.weekNumber === currentWeek,

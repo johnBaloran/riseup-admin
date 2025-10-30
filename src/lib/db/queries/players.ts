@@ -115,6 +115,7 @@ export async function getPlayers({
   hasUserAccount,
   search,
   activeFilter = "active",
+  unlinked = false,
 }: {
   page?: number;
   limit?: number;
@@ -125,6 +126,7 @@ export async function getPlayers({
   hasUserAccount?: boolean;
   search?: string;
   activeFilter?: "active" | "inactive" | "all";
+  unlinked?: boolean;
 }) {
   await connectDB();
 
@@ -166,6 +168,11 @@ export async function getPlayers({
     filter.user = hasUserAccount
       ? { $exists: true, $ne: null }
       : { $in: [null] };
+  }
+
+  // Filter for unlinked players (no personId)
+  if (unlinked) {
+    filter.personId = { $in: [null, undefined] };
   }
 
   if (search) {

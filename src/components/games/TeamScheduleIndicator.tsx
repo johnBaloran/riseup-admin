@@ -36,7 +36,9 @@ export function TeamScheduleIndicator({
     >
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-blue-600" />
-        <h3 className="text-sm font-medium text-blue-900">Team Schedule</h3>
+        <h3 className="text-sm font-medium text-blue-900">
+          Teams Playing This Week
+        </h3>
       </div>
 
       <div className="flex flex-wrap gap-2">
