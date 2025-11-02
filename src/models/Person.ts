@@ -1,20 +1,21 @@
 // src/models/Person.ts
 
 /**
- * Person Model - Face Recognition
+ * Person Model - Face Recognition (Game-Scoped Architecture)
  *
- * Purpose: Represents a unique human face identity indexed in AWS Rekognition
+ * Purpose: Represents a unique human face identity detected in a game
  *
  * Key Concept:
- * - Person = Permanent face identity (persists across seasons)
- * - Player = Roster entry (changes per division/season)
- * - One Person can have multiple Players across different seasons
+ * - Person = Face identity in a specific game (game-scoped)
+ * - Player = Roster entry (can be linked to multiple persons across games)
+ * - One Person belongs to one game
+ * - One Player can have multiple Persons (one per game they appear in)
  *
  * Example Flow:
- * 1. Photo uploaded → Face detected → AWS Rekognition creates faceId
- * 2. New Person created with that faceId
- * 3. Admin links Person to Player (current roster)
- * 4. Next season: Same Person linked to new Player (new roster entry)
+ * 1. Photo uploaded for Game A → Face detected → Person created for Game A
+ * 2. Admin links Person to Player
+ * 3. Photo uploaded for Game B → Same face detected → New Person created for Game B
+ * 4. Admin links new Person to same Player
  */
 
 import mongoose from "mongoose";
@@ -30,9 +31,12 @@ export interface ISuggestedDuplicate {
 }
 
 export interface IPerson extends mongoose.Document {
-  faceId: string;
+  gameId: mongoose.Types.ObjectId; // Game-scoped: Person exists only within one game
+  playerId?: mongoose.Types.ObjectId; // Manual link to Player (optional)
+  faceId?: string; // AWS Rekognition temp ID (deleted after processing)
+  faceCropUrl: string; // Cloudinary face crop URL (permanent)
   metadata: {
-    averageConfidence: number;
+    qualityScore: number; // AWS quality score (0-100) = (brightness + sharpness) / 2
   };
   suggestedDuplicates?: ISuggestedDuplicate[];
   createdAt: Date;
@@ -68,30 +72,50 @@ const suggestedDuplicateSchema = new Schema<ISuggestedDuplicate>(
 
 const personSchema = new Schema<IPerson>(
   {
+    gameId: {
+      type: Schema.Types.ObjectId,
+      ref: "Game",
+      required: [true, "Game ID is required"],
+      index: true, // Index for fast game-scoped queries
+    },
+    playerId: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+      required: false,
+      index: true, // Index for querying all photos of a player
+    },
     faceId: {
       type: String,
-      required: [true, "Face ID is required"],
-      unique: true,
+      required: false, // Optional - deleted after processing
+      sparse: true, // Allow multiple null values (unique index only for non-null)
       trim: true,
-      index: true,
+      index: true, // Index for fast lookups during face matching
+    },
+    faceCropUrl: {
+      type: String,
+      required: [true, "Face crop URL is required"],
+      trim: true,
     },
     metadata: {
-      averageConfidence: {
+      qualityScore: {
         type: Number,
         default: 0,
         min: 0,
-        max: 100,
+        max: 100, // Quality score from AWS (brightness + sharpness) / 2
       },
     },
     suggestedDuplicates: [suggestedDuplicateSchema],
   },
   {
     timestamps: true,
+    collection: "persons",
   }
 );
 
 // Indexes for query optimization
-personSchema.index({ faceId: 1 }, { unique: true });
+personSchema.index({ gameId: 1 });
+personSchema.index({ playerId: 1 });
+personSchema.index({ faceId: 1 }, { sparse: true }); // Sparse allows multiple nulls
 
 export default (mongoose.models.Person as mongoose.Model<IPerson>) ||
   mongoose.model<IPerson>("Person", personSchema);

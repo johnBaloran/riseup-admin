@@ -11,8 +11,8 @@ import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getGamesWithPhotoStatus } from "@/lib/db/queries/gamePhotos";
 import { getAllCities } from "@/lib/db/queries/cities";
-import { getActiveLocations } from "@/lib/db/queries/locations";
-import { getActiveLevels } from "@/lib/db/queries/levels";
+import { getAllLocations } from "@/lib/db/queries/locations";
+import { getAllLevels } from "@/lib/db/queries/levels";
 import { PhotosTable } from "@/components/features/photos/PhotosTable";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,9 @@ export default async function PhotosManagementPage({
     photoStatus?: "hasPhotos" | "needsPhotos" | "all";
     day?: string;
     levelId?: string;
+    activeOnly?: string;
+    page?: string;
+    search?: string;
   };
 }) {
   const session = await getServerSession(authOptions);
@@ -40,18 +43,33 @@ export default async function PhotosManagementPage({
     redirect("/unauthorized");
   }
 
-  const [games, cities, locations, levels] = await Promise.all([
+  // Parse pagination params
+  const page = parseInt(searchParams.page || "1");
+  const activeOnly = searchParams.activeOnly || "active"; // Default to "active"
+
+  const [gamesData, cities, locations, levels] = await Promise.all([
     getGamesWithPhotoStatus({
       cityId: searchParams.cityId,
       locationId: searchParams.locationId,
       photoStatus: searchParams.photoStatus || "all",
       day: searchParams.day,
       levelId: searchParams.levelId,
+      divisionStatus: activeOnly as "all" | "active" | "inactive", // Pass as "all", "active", or "inactive"
+      search: searchParams.search,
+      page,
+      limit: 20, // Show 20 games per page
     }),
     getAllCities(),
-    getActiveLocations(),
-    getActiveLevels(),
+    getAllLocations(),
+    getAllLevels(), // Show all levels in filter dropdown
   ]);
+
+  // Serialize data to ensure it's JSON-safe for client components
+  const serializedGames = JSON.parse(JSON.stringify(gamesData.games));
+  const serializedPagination = JSON.parse(JSON.stringify(gamesData.pagination));
+  const serializedCities = JSON.parse(JSON.stringify(cities));
+  const serializedLocations = JSON.parse(JSON.stringify(locations));
+  const serializedLevels = JSON.parse(JSON.stringify(levels));
 
   return (
     <div className="p-6 space-y-6">
@@ -110,16 +128,19 @@ export default async function PhotosManagementPage({
       <div id="game-photos" className="scroll-mt-6">
         <h2 className="text-2xl font-bold mb-4">Game Photos</h2>
         <PhotosTable
-          games={games}
-          cities={cities}
-          locations={locations}
-          levels={levels}
+          games={serializedGames}
+          cities={serializedCities}
+          locations={serializedLocations}
+          levels={serializedLevels}
+          pagination={serializedPagination}
           filters={{
             cityId: searchParams.cityId,
             locationId: searchParams.locationId,
             photoStatus: searchParams.photoStatus || "all",
             day: searchParams.day,
             levelId: searchParams.levelId,
+            activeOnly: activeOnly, // "all", "active", or "inactive"
+            search: searchParams.search,
           }}
         />
       </div>

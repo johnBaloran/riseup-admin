@@ -143,7 +143,6 @@ export function NavigationProvider({
       // If same pathname but different search params, UPDATE the last entry instead of adding new
       if (lastEntry && lastEntry.path === pathname) {
         if (lastEntry.fullUrl === fullUrl) {
-          console.log("NavigationContext: Skipping duplicate path", fullUrl);
           return prev;
         }
 
@@ -152,13 +151,6 @@ export function NavigationProvider({
         const hasSearchParams = fullUrl.includes("?");
 
         if (hadSearchParams && !hasSearchParams) {
-          console.log(
-            "NavigationContext: Skipping update - would lose search params",
-            {
-              oldUrl: lastEntry.fullUrl,
-              newUrl: fullUrl,
-            }
-          );
           return prev;
         }
 
@@ -169,12 +161,6 @@ export function NavigationProvider({
           fullUrl,
           timestamp: Date.now(),
         };
-
-        console.log("NavigationContext: Updating last entry with new params", {
-          pathname,
-          oldUrl: lastEntry.fullUrl,
-          newUrl: fullUrl,
-        });
 
         return updatedHistory;
       }
@@ -188,7 +174,6 @@ export function NavigationProvider({
         pathname.endsWith("/new");
 
       if (isUtilityPage) {
-        console.log("NavigationContext: Skipping utility page", fullUrl);
         return prev;
       }
 
@@ -202,14 +187,6 @@ export function NavigationProvider({
 
       // Add to history and keep only last MAX_HISTORY entries
       const newHistory = [...prev, newEntry].slice(-MAX_HISTORY);
-
-      console.log("NavigationContext: Adding to history", {
-        pathname,
-        fullUrl,
-        label,
-        historyLength: newHistory.length,
-        fullHistory: newHistory,
-      });
 
       return newHistory;
     });

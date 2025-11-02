@@ -50,8 +50,8 @@ export default async function GamePhotoUploadPage({
 
   return (
     <GamePhotosPageClient
-      game={game}
-      photos={photos}
+      game={game as any}
+      photos={photos as any}
       photographers={photographers}
       gameId={params.gameId}
     />

@@ -89,10 +89,8 @@ export interface PersonDetailResponse {
     _id: string;
     cloudinaryUrl: string;
     game: string;
-    isPrimary: boolean;
     detectedFaces: Array<{
       faceCropUrl: string;
-      boundingBox: any;
       confidence: number;
       personId?: string;
     }>;

@@ -29,6 +29,10 @@ import {
 } from "lucide-react";
 import { InstallmentProgress } from "@/components/features/payments/InstallmentProgress";
 import { format } from "date-fns";
+import { PlayerAverageStats } from "@/components/features/league/players/PlayerAverageStats";
+import { PlayerGameStatsTable } from "@/components/features/league/players/PlayerGameStatsTable";
+import { getPhotosByPlayerId } from "@/lib/db/queries/gamePhotos";
+import { PlayerPhotos } from "@/components/features/league/players/PlayerPhotos";
 
 interface PlayerDetailPageProps {
   params: { cityId: string; id: string };
@@ -52,6 +56,9 @@ export default async function PlayerDetailPage({
   if (!player) {
     redirect(`/league/players`);
   }
+
+  // Get all photos for this player (queries all persons linked to this player)
+  const photos = await getPhotosByPlayerId(params.id);
 
   return (
     <div className="p-6 space-y-6">
@@ -373,23 +380,10 @@ export default async function PlayerDetailPage({
         </CardContent>
       </Card>
 
-      {/* Game Statistics - Placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Game Statistics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <Trophy className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-500">
-              Game statistics will be tracked here
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              (Statistics tracking to be implemented)
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Game Statistics */}
+      <PlayerAverageStats stats={player.averageStats} playerId={params.id} />
+      <PlayerGameStatsTable stats={player.allStats} />
+      <PlayerPhotos photos={photos} />
     </div>
   );
 }

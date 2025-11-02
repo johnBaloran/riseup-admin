@@ -331,11 +331,6 @@ export function PersonDetailModal({ personId, isOpen, onClose }: Props) {
                       fill
                       className="object-cover"
                     />
-                    {photo.isPrimary && (
-                      <div className="absolute top-1 right-1 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                        Primary
-                      </div>
-                    )}
                     <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-2 py-1 rounded">
                       {Math.round(photo.detectedFaces[0]?.confidence || 0)}%
                     </div>

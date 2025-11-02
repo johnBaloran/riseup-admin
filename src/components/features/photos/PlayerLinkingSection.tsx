@@ -75,19 +75,20 @@ export function PlayerLinkingSection({ gameId, game }: Props) {
 
   // Build player lookup from game object
   useEffect(() => {
-    const homePlayers = game.homeTeam?.players || [];
-    const awayPlayers = game.awayTeam?.players || [];
+    const gameAny = game as any;
+    const homePlayers = gameAny.homeTeam?.players || [];
+    const awayPlayers = gameAny.awayTeam?.players || [];
     const allPlayers = [...homePlayers, ...awayPlayers];
 
-    const lookup = allPlayers.reduce((acc, player) => {
+    const lookup = allPlayers.reduce((acc: any, player: any) => {
       acc[player._id] = {
         ...player,
         teamName: homePlayers.includes(player)
-          ? game.homeTeam?.teamName
-          : game.awayTeam?.teamName,
+          ? gameAny.homeTeam?.teamName
+          : gameAny.awayTeam?.teamName,
         teamCode: homePlayers.includes(player)
-          ? game.homeTeam?.teamCode
-          : game.awayTeam?.teamCode,
+          ? gameAny.homeTeam?.teamCode
+          : gameAny.awayTeam?.teamCode,
       };
       return acc;
     }, {} as Record<string, Player>);
@@ -120,16 +121,17 @@ export function PlayerLinkingSection({ gameId, game }: Props) {
       setLoadingPlayers(true);
 
       // Get players from game object (already populated)
-      const homePlayers = (game.homeTeam?.players || []).map((p) => ({
+      const gameAny = game as any;
+      const homePlayers = (gameAny.homeTeam?.players || []).map((p: any) => ({
         ...p,
-        teamName: game.homeTeam?.teamName,
-        teamCode: game.homeTeam?.teamCode,
+        teamName: gameAny.homeTeam?.teamName,
+        teamCode: gameAny.homeTeam?.teamCode,
       }));
 
-      const awayPlayers = (game.awayTeam?.players || []).map((p) => ({
+      const awayPlayers = (gameAny.awayTeam?.players || []).map((p: any) => ({
         ...p,
-        teamName: game.awayTeam?.teamName,
-        teamCode: game.awayTeam?.teamCode,
+        teamName: gameAny.awayTeam?.teamName,
+        teamCode: gameAny.awayTeam?.teamCode,
       }));
 
       if (homePlayers.length === 0 && awayPlayers.length === 0) {
@@ -146,7 +148,7 @@ export function PlayerLinkingSection({ gameId, game }: Props) {
       const linkedPlayerIds = new Set(
         gamePersons?.persons
           .filter((p) => p.playerId)
-          .map((p) => p.playerId.toString()) || []
+          .map((p) => p.playerId?.toString()) || []
       );
 
       // Only show players that haven't been linked yet

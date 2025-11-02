@@ -4,26 +4,12 @@
  * Represents a photo uploaded to a game with face detection data
  */
 
-export interface BoundingBox {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
-}
-
 export interface DetectedFace {
-  faceId: string;
-  boundingBox: BoundingBox;
+  faceCropUrl: string; // Cloudinary URL with crop transformation (face only)
   confidence: number;
   personId?: string;
   playerId?: string;
   manuallyLinked: boolean;
-}
-
-export interface PrimaryPerson {
-  personId: string;
-  faceId: string;
-  confidence: number;
 }
 
 export interface GamePhoto {
@@ -39,7 +25,6 @@ export interface GamePhoto {
 
   // Face Recognition
   detectedFaces: DetectedFace[];
-  primaryPerson?: PrimaryPerson;
   faceProcessingStatus: "pending" | "processing" | "completed" | "failed";
   faceProcessingError?: string;
   faceProcessedAt?: Date;

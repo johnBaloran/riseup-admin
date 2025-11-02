@@ -9,16 +9,8 @@ import mongoose from "mongoose";
 
 const Schema = mongoose.Schema;
 
-export interface IBoundingBox {
-  width: number;
-  height: number;
-  left: number;
-  top: number;
-}
-
 export interface IDetectedFace {
-  faceId: string;
-  boundingBox: IBoundingBox;
+  faceCropUrl: string; // Cloudinary URL with crop transformation (face only)
   confidence: number;
   personId?: mongoose.Types.ObjectId;
   playerId?: mongoose.Types.ObjectId;
@@ -47,15 +39,9 @@ export interface IGamePhoto extends mongoose.Document {
 
 const detectedFaceSchema = new Schema<IDetectedFace>(
   {
-    faceId: {
+    faceCropUrl: {
       type: String,
       required: true,
-    },
-    boundingBox: {
-      width: { type: Number, required: true },
-      height: { type: Number, required: true },
-      left: { type: Number, required: true },
-      top: { type: Number, required: true },
     },
     confidence: {
       type: Number,
@@ -136,6 +122,7 @@ gamePhotoSchema.index({ publicId: 1 }, { unique: true });
 gamePhotoSchema.index({ isHighlight: 1 });
 gamePhotoSchema.index({ faceProcessingStatus: 1 });
 gamePhotoSchema.index({ "detectedFaces.personId": 1 });
+gamePhotoSchema.index({ "detectedFaces.playerId": 1 });
 
 export default (mongoose.models.GamePhoto as mongoose.Model<IGamePhoto>) ||
   mongoose.model<IGamePhoto>("GamePhoto", gamePhotoSchema);

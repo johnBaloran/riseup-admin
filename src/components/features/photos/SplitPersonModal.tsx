@@ -25,9 +25,9 @@ interface Photo {
   thumbnail?: string;
   uploadedAt: Date;
   detectedFaces?: Array<{
+    faceCropUrl: string;
     personId?: string;
     confidence?: number;
-    boundingBox?: any;
   }>;
 }
 

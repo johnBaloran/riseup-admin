@@ -12,26 +12,43 @@ const Schema = mongoose.Schema;
 // src/models/Player.ts - Add paymentMethods to interface
 
 export interface IPlayer extends mongoose.Document {
-  createdAt: Date;
-  freeAgent: boolean;
-  agreeToRefundPolicy: boolean;
-  agreeToTerms: boolean;
-  receiveNews: boolean;
-  customerId?: string;
-  subscriptionPayments: Array<any>;
+  // Basic Info
   playerName: string;
-  playerImage?: {
-    id: string;
-    image: string;
-  };
-  instagram?: string;
+  user?: mongoose.Types.ObjectId; // Reference to User (parent/guardian)
+  team?: mongoose.Types.ObjectId; // Current team
+  division?: mongoose.Types.ObjectId; // Current division
+
+  // Photos
+  playerPhotos: mongoose.Types.ObjectId[]; // All photos featuring this player
+
+  // Jersey Info
   jerseyNumber?: number;
   jerseyNumberTwo?: number;
   jerseyNumberThree?: number;
   jerseySize?: string;
   jerseyName?: string;
-  team?: mongoose.Types.ObjectId;
+
+  // Player Image
+  playerImage?: {
+    id: string;
+    image: string;
+  };
+
+  // Social
+  instagram?: string;
+
+  // Team Role
   teamCaptain: boolean;
+  freeAgent: boolean;
+
+  // Consent & Terms
+  agreeToRefundPolicy: boolean;
+  agreeToTerms: boolean;
+  receiveNews: boolean;
+
+  // Payment Info
+  customerId?: string;
+  paymentMethods: mongoose.Types.ObjectId[];
   paymentStatus: {
     hasPaid?: boolean;
     reminderCount?: number;
@@ -40,12 +57,14 @@ export interface IPlayer extends mongoose.Document {
     email?: string;
     phoneNumber?: string;
   };
-  paymentMethods: mongoose.Types.ObjectId[];
-  user?: mongoose.Types.ObjectId;
-  division?: mongoose.Types.ObjectId;
-  personId?: mongoose.Types.ObjectId; // Face Recognition - Link to Person
+  subscriptionPayments: Array<any>;
+
+  // Stats
   averageStats?: any;
   allStats: Array<any>;
+
+  // Timestamps
+  createdAt: Date;
 }
 
 const playerSchema = new Schema<IPlayer>(
@@ -67,28 +86,21 @@ const playerSchema = new Schema<IPlayer>(
       type: Schema.Types.ObjectId,
       ref: "Division",
     },
-    paymentStatus: {
-      hasPaid: Boolean,
-      reminderCount: Number,
-      teamCreatedDate: Date,
-      lastAttempt: Date,
-      email: String,
-      phoneNumber: String,
-    },
-
-    paymentMethods: [
+    playerPhotos: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "PaymentMethod",
+        ref: "GamePhoto",
       },
     ],
-    personId: {
-      type: Schema.Types.ObjectId,
-      ref: "Person",
-    },
     jerseyNumber: Number,
+    jerseyNumberTwo: Number,
+    jerseyNumberThree: Number,
     jerseySize: String,
     jerseyName: String,
+    playerImage: {
+      id: String,
+      image: String,
+    },
     instagram: String,
     teamCaptain: {
       type: Boolean,
@@ -111,9 +123,19 @@ const playerSchema = new Schema<IPlayer>(
       default: false,
     },
     customerId: String,
-    playerImage: {
-      id: String,
-      image: String,
+    paymentMethods: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PaymentMethod",
+      },
+    ],
+    paymentStatus: {
+      hasPaid: Boolean,
+      reminderCount: Number,
+      teamCreatedDate: Date,
+      lastAttempt: Date,
+      email: String,
+      phoneNumber: String,
     },
     averageStats: {
       points: { type: Number, default: 0 },
@@ -162,7 +184,6 @@ playerSchema.index({ user: 1 });
 playerSchema.index({ team: 1 });
 playerSchema.index({ division: 1 });
 playerSchema.index({ freeAgent: 1 });
-playerSchema.index({ personId: 1 });
 
 export default (mongoose.models.Player as mongoose.Model<IPlayer>) ||
   mongoose.model<IPlayer>("Player", playerSchema);

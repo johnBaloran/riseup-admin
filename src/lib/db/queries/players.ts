@@ -294,6 +294,10 @@ export async function getPlayerById(id: string) {
       ],
     })
     .populate("user", "name email phoneNumber instagram")
+    .populate({
+      path: "allStats.game",
+      select: "gameName date",
+    })
     .lean();
 
   if (!player) return null;
@@ -310,7 +314,6 @@ export async function getPlayerById(id: string) {
     remainingBalance: paymentInfo.remainingBalance,
     nextPaymentDate: paymentInfo.nextPaymentDate,
     pricingTier: paymentInfo.pricingTier,
-    originalPrice: paymentInfo.originalPrice,
     amountPaid: paymentInfo.amountPaid,
   };
 }

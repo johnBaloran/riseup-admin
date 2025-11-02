@@ -7,11 +7,13 @@
 
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,7 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar, Upload, Image, CheckCircle2, AlertCircle, Camera } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Calendar,
+  Upload,
+  Image,
+  CheckCircle2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+  Filter,
+} from "lucide-react";
 
 const DAYS = [
   "monday",
@@ -50,9 +64,15 @@ interface DivisionGroup {
     _id: any;
     divisionName: string;
     day: string;
-    city: any;
-    location: any;
-    level: any;
+    city: {
+      cityName: string;
+    };
+    location: {
+      name: string;
+    };
+    level: {
+      name: string;
+    };
   };
   games: any[];
 }
@@ -72,17 +92,28 @@ interface Level {
   name: string;
 }
 
+interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalGames: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 interface PhotosTableProps {
   games: DivisionGroup[];
   cities: City[];
   locations: Location[];
   levels: Level[];
+  pagination: Pagination;
   filters: {
     cityId?: string;
     locationId?: string;
     photoStatus?: string;
     day?: string;
     levelId?: string;
+    activeOnly?: string;
+    search?: string;
   };
 }
 
@@ -91,18 +122,22 @@ export function PhotosTable({
   cities,
   locations,
   levels,
+  pagination,
   filters,
 }: PhotosTableProps) {
   const router = useRouter();
+  const [searchValue, setSearchValue] = useState(filters.search || "");
 
   const buildUrl = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
     const newFilters = { ...filters, ...updates };
 
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && value !== "all") {
-        params.set(key, value);
-      }
+      // Skip default values and empty values
+      if (!value || value === "all") return;
+      if (key === "activeOnly" && value === "active") return; // Skip default "active"
+
+      params.set(key, value);
     });
 
     const queryString = params.toString();
@@ -110,17 +145,51 @@ export function PhotosTable({
   };
 
   const handleFilterChange = (key: string, value: string) => {
-    router.push(buildUrl({ [key]: value === "all" ? undefined : value }));
+    // Reset to page 1 when changing filters
+    router.push(buildUrl({ [key]: value === "all" ? undefined : value, page: "1" }));
   };
 
-  // Count stats
-  const totalGames = games.reduce((sum, group) => sum + group.games.length, 0);
-  const gamesWithPhotos = games.reduce(
+  const handlePageChange = (page: number) => {
+    router.push(buildUrl({ page: page.toString() }));
+  };
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchValue !== filters.search) {
+        router.push(buildUrl({ search: searchValue || undefined, page: "1" }));
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+  };
+
+  const clearAllFilters = () => {
+    setSearchValue("");
+    router.push("/photos");
+  };
+
+  const hasActiveFilters =
+    filters.search ||
+    filters.cityId ||
+    filters.locationId ||
+    filters.levelId ||
+    filters.day ||
+    filters.photoStatus !== "all" ||
+    (filters.activeOnly && filters.activeOnly !== "active");
+
+  // Count stats from current page
+  const pageGamesCount = games.reduce((sum, group) => sum + group.games.length, 0);
+  const pageGamesWithPhotos = games.reduce(
     (sum, group) =>
       sum + group.games.filter((g) => g.gamePhotosCount > 0).length,
     0
   );
-  const gamesNeedingPhotos = totalGames - gamesWithPhotos;
+  const pageGamesNeedingPhotos = pageGamesCount - pageGamesWithPhotos;
 
   return (
     <div className="space-y-6">
@@ -130,7 +199,10 @@ export function PhotosTable({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Games</p>
-              <p className="text-2xl font-bold">{totalGames}</p>
+              <p className="text-2xl font-bold">{pagination.totalGames}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Showing {pageGamesCount} on this page
+              </p>
             </div>
             <Calendar className="w-8 h-8 text-blue-500" />
           </div>
@@ -140,8 +212,9 @@ export function PhotosTable({
             <div>
               <p className="text-sm text-gray-600">Photos Uploaded</p>
               <p className="text-2xl font-bold text-green-600">
-                {gamesWithPhotos}
+                {pageGamesWithPhotos}
               </p>
+              <p className="text-xs text-gray-500 mt-1">On this page</p>
             </div>
             <CheckCircle2 className="w-8 h-8 text-green-500" />
           </div>
@@ -151,8 +224,9 @@ export function PhotosTable({
             <div>
               <p className="text-sm text-gray-600">Needs Photos</p>
               <p className="text-2xl font-bold text-red-600">
-                {gamesNeedingPhotos}
+                {pageGamesNeedingPhotos}
               </p>
+              <p className="text-xs text-gray-500 mt-1">On this page</p>
             </div>
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
@@ -161,15 +235,38 @@ export function PhotosTable({
 
       {/* Filters */}
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* City Filter */}
+        <div className="flex flex-col gap-4">
+          {/* Division Status Tabs */}
           <div>
-            <label className="text-sm font-medium mb-2 block">City</label>
+            <Tabs
+              value={filters.activeOnly || "active"}
+              onValueChange={(value) => handleFilterChange("activeOnly", value)}
+            >
+              <TabsList>
+                <TabsTrigger value="all">All Divisions</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="inactive">Inactive</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* First row: Search + Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search games..."
+                value={searchValue}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
             <Select
               value={filters.cityId || "all"}
               onValueChange={(value) => handleFilterChange("cityId", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Cities" />
               </SelectTrigger>
               <SelectContent>
@@ -181,18 +278,12 @@ export function PhotosTable({
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Location Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Location</label>
             <Select
               value={filters.locationId || "all"}
-              onValueChange={(value) =>
-                handleFilterChange("locationId", value)
-              }
+              onValueChange={(value) => handleFilterChange("locationId", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Locations" />
               </SelectTrigger>
               <SelectContent>
@@ -204,16 +295,12 @@ export function PhotosTable({
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Level Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Level</label>
             <Select
               value={filters.levelId || "all"}
               onValueChange={(value) => handleFilterChange("levelId", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Levels" />
               </SelectTrigger>
               <SelectContent>
@@ -225,16 +312,12 @@ export function PhotosTable({
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Day Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Day</label>
             <Select
               value={filters.day || "all"}
               onValueChange={(value) => handleFilterChange("day", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="All Days" />
               </SelectTrigger>
               <SelectContent>
@@ -246,21 +329,15 @@ export function PhotosTable({
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          {/* Photo Status Filter */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Photo Status
-            </label>
             <Select
               value={filters.photoStatus || "all"}
               onValueChange={(value) =>
                 handleFilterChange("photoStatus", value)
               }
             >
-              <SelectTrigger>
-                <SelectValue placeholder="All Games" />
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Photo Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Games</SelectItem>
@@ -268,7 +345,74 @@ export function PhotosTable({
                 <SelectItem value="needsPhotos">Needs Photos</SelectItem>
               </SelectContent>
             </Select>
+
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                onClick={clearAllFilters}
+                disabled={!hasActiveFilters}
+                className="w-full"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+            </div>
           </div>
+
+          {/* Active Filters */}
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <span className="text-sm text-gray-500">Active Filters:</span>
+              <div className="flex flex-wrap gap-2">
+                {filters.search && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Search className="h-3 w-3" />
+                    {filters.search}
+                  </span>
+                )}
+                {filters.cityId && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    City
+                  </span>
+                )}
+                {filters.locationId && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    Location
+                  </span>
+                )}
+                {filters.levelId && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    Level
+                  </span>
+                )}
+                {filters.day && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    {filters.day.charAt(0).toUpperCase() + filters.day.slice(1)}
+                  </span>
+                )}
+                {filters.photoStatus && filters.photoStatus !== "all" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    {filters.photoStatus === "hasPhotos"
+                      ? "Photos Uploaded"
+                      : "Needs Photos"}
+                  </span>
+                )}
+                {filters.activeOnly && filters.activeOnly !== "active" && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <Filter className="h-3 w-3" />
+                    {filters.activeOnly === "all"
+                      ? "All Divisions"
+                      : "Inactive Divisions"}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -292,8 +436,12 @@ export function PhotosTable({
                   {group.division.divisionName}
                 </h2>
                 <div className="flex flex-wrap gap-2 mt-2 text-sm text-gray-600">
-                  <Badge variant="outline">{group.division.city.cityName}</Badge>
-                  <Badge variant="outline">{group.division.location.name}</Badge>
+                  <Badge variant="outline">
+                    {group.division.city.cityName}
+                  </Badge>
+                  <Badge variant="outline">
+                    {group.division.location.name}
+                  </Badge>
                   <Badge variant="outline">{group.division.level.name}</Badge>
                   <Badge variant="outline">
                     {group.division.day.charAt(0).toUpperCase() +
@@ -338,14 +486,6 @@ export function PhotosTable({
                             year: "numeric",
                           })}
                         </p>
-                        {game.photographers && game.photographers.length > 0 && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                            <Camera className="w-3 h-3" />
-                            <span>
-                              {game.photographers.map((p: any) => p.name).join(", ")}
-                            </span>
-                          </div>
-                        )}
                       </div>
 
                       <Button asChild className="w-full" size="sm">
@@ -363,6 +503,40 @@ export function PhotosTable({
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Page {pagination.currentPage} of {pagination.totalPages}
+              <span className="ml-2">
+                ({pagination.totalGames} total games)
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!pagination.hasPrevPage}
+                onClick={() => handlePageChange(pagination.currentPage - 1)}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!pagination.hasNextPage}
+                onClick={() => handlePageChange(pagination.currentPage + 1)}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </Card>
       )}
     </div>
   );
