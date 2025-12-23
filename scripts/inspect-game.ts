@@ -4,9 +4,9 @@
 import { config } from "dotenv";
 import { resolve } from "path";
 import mongoose from "mongoose";
-import Game from "../src/models/Game.ts";
-import Team from "../src/models/Team.ts";
-import Division from "../src/models/Division.ts";
+import Game from "@/models/Game.js";
+import Team from "@/models/Team.js";
+import Division from "@/models/Division";
 
 // Load environment variables
 config({ path: resolve(process.cwd(), ".env.local") });
@@ -82,17 +82,17 @@ async function inspectGame() {
     console.log("Game Name:", gameRaw.gameName);
     console.log("Week:", gameRaw.week);
     console.log("Date:", gameRaw.date);
-    console.log("Time:", gameRaw.time);
     console.log("Published:", gameRaw.published);
     console.log("Status:", gameRaw.status);
     console.log("\n⚠️  ISSUES:");
-    if (!homeTeam) console.log("❌ Home team reference is invalid (team deleted)");
-    if (!awayTeam) console.log("❌ Away team reference is invalid (team deleted)");
+    if (!homeTeam)
+      console.log("❌ Home team reference is invalid (team deleted)");
+    if (!awayTeam)
+      console.log("❌ Away team reference is invalid (team deleted)");
     if (!division) console.log("❌ Division reference is invalid");
     if (homeTeam && awayTeam && division) {
       console.log("✅ All references are valid!");
     }
-
   } catch (error) {
     console.error("❌ Error:", error);
   } finally {
