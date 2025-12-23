@@ -1,4 +1,4 @@
-// src/app/league/prices/page.tsx
+// src/app/(admin)/league/prices/page.tsx
 
 /**
  * SOLID - Single Responsibility Principle (SRP)
@@ -15,11 +15,28 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
-interface PricesPageProps {
-  params: { cityId: string };
+// Type definitions for populated Mongoose data
+interface PopulatedCity {
+  _id: string;
+  cityName: string;
 }
 
-export default async function PricesPage({ params }: PricesPageProps) {
+interface PopulatedPrice {
+  _id: string;
+  name: string;
+  priceId: string;
+  amount: number;
+  type:
+    | "earlyBird"
+    | "regular"
+    | "installment"
+    | "regularInstallment"
+    | "firstInstallment"
+    | "free";
+  city?: PopulatedCity;
+}
+
+export default async function PricesPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
@@ -30,7 +47,7 @@ export default async function PricesPage({ params }: PricesPageProps) {
     redirect("/unauthorized");
   }
 
-  const prices = await getAllPrices();
+  const prices = (await getAllPrices()) as unknown as PopulatedPrice[];
 
   return (
     <div className="p-6 space-y-6">
