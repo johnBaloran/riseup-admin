@@ -55,7 +55,7 @@ export function UpcomingGames({ games }: UpcomingGamesProps) {
               </div> */}
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                 <span>{format(new Date(game.date), "MMM dd, yyyy")}</span>
-                <span>{game.time}</span>
+                <span>{format(new Date(game.date), "h:mm a")}</span>
                 <Badge variant="outline">Upcoming</Badge>
               </div>
             </Link>
