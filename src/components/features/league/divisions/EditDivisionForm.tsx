@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertCircle, Info, Lock } from "lucide-react";
+import { Loader2, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   updateDivisionSchema,

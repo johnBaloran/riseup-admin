@@ -113,7 +113,9 @@ export async function updatePlayerGameStats({
   }
 
   // Recalculate average stats (filter out games with 0 points)
-  const nonZeroStats = player.allStats.filter((stat: any) => stat.points !== undefined);
+  const nonZeroStats = player.allStats.filter(
+    (stat: any) => stat.points !== undefined
+  );
   player.averageStats = calculateAverageStats(nonZeroStats);
 
   // Save player
@@ -226,11 +228,13 @@ export async function updateTeamGameStats({
 
   // Check if stats already exist for this game
   const existingHomeStatsIndex = homeTeam.seasonStatistics.findIndex(
-    (stat: any) => stat.gameId?.toString() === gameId || stat.game?.toString() === gameId
+    (stat: any) =>
+      stat.gameId?.toString() === gameId || stat.game?.toString() === gameId
   );
 
   const existingAwayStatsIndex = awayTeam.seasonStatistics.findIndex(
-    (stat: any) => stat.gameId?.toString() === gameId || stat.game?.toString() === gameId
+    (stat: any) =>
+      stat.gameId?.toString() === gameId || stat.game?.toString() === gameId
   );
 
   // Update or add stats
@@ -280,7 +284,9 @@ async function calculateTeamRecord(team: any) {
     if (game.status === true) {
       const isHomeTeam = game.homeTeam.toString() === team._id.toString();
       const teamScore = isHomeTeam ? game.homeTeamScore : game.awayTeamScore;
-      const opponentScore = isHomeTeam ? game.awayTeamScore : game.homeTeamScore;
+      const opponentScore = isHomeTeam
+        ? game.awayTeamScore
+        : game.homeTeamScore;
 
       if (teamScore > opponentScore) {
         wins++;
@@ -368,7 +374,6 @@ export async function finishGame({
 
   // Mark game as complete
   game.status = true;
-  game.started = true;
   await game.save();
 
   // Fetch teams with populated games for record calculation

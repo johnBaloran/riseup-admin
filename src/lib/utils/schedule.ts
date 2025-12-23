@@ -204,6 +204,7 @@ export interface WeekInfo {
   weekNumber: number;
   weekType: GameWeekType;
   label: string; // e.g., "Week 1", "Quarterfinals", etc.
+  date?: Date; // Calculated date for this week (optional if startDate not set)
   isRegular: boolean;
   isPlayoff: boolean;
 }
@@ -221,6 +222,7 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
       weekNumber: i,
       weekType: "REGULAR",
       label: `Week ${i}`,
+      date: division.startDate ? calculateWeekDate(division.startDate, i, division.day) : undefined,
       isRegular: true,
       isPlayoff: false,
     });
@@ -235,6 +237,7 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
         weekNumber: playoffWeeks.quarterfinals,
         weekType: "QUARTERFINAL",
         label: "Quarterfinals",
+        date: division.startDate ? calculateWeekDate(division.startDate, playoffWeeks.quarterfinals, division.day) : undefined,
         isRegular: false,
         isPlayoff: true,
       });
@@ -245,6 +248,7 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
         weekNumber: playoffWeeks.semifinals,
         weekType: "SEMIFINAL",
         label: "Semifinals",
+        date: division.startDate ? calculateWeekDate(division.startDate, playoffWeeks.semifinals, division.day) : undefined,
         isRegular: false,
         isPlayoff: true,
       });
@@ -255,6 +259,7 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
         weekNumber: playoffWeeks.finals,
         weekType: "FINAL",
         label: "Finals",
+        date: division.startDate ? calculateWeekDate(division.startDate, playoffWeeks.finals, division.day) : undefined,
         isRegular: false,
         isPlayoff: true,
       });

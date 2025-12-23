@@ -184,7 +184,7 @@ export interface WeekSchedule {
   weekNumber: number;
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
   label: string;
-  date: Date;
+  date?: Date;
   isRegular: boolean;
   isPlayoff: boolean;
   games: Array<{
@@ -524,7 +524,6 @@ export async function findScheduleConflicts(divisionId: string) {
 
       // Same time and date
       if (
-        game1.time === game2.time &&
         game1.date.getTime() === game2.date.getTime()
       ) {
         const teams1 = [
@@ -542,9 +541,7 @@ export async function findScheduleConflicts(divisionId: string) {
           conflicts.push({
             type: "time-conflict",
             games: [game1._id.toString(), game2._id.toString()],
-            description: `Same team playing at ${
-              game1.time
-            } on ${game1.date.toLocaleDateString()}`,
+            description: `Same team playing on ${game1.date.toLocaleDateString()}`,
           });
         }
       }

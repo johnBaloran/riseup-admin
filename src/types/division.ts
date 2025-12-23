@@ -14,6 +14,7 @@ export interface PopulatedDivision {
   startDate?: Date;
   startTime?: string;
   endTime?: string;
+  earlyBirdDeadline?: Date;
   active: boolean;
   register: boolean;
   prices: {
