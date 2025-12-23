@@ -26,8 +26,7 @@ import { hasPermission } from "@/lib/auth/permissions";
  * Body (single game):
  * {
  *   gameName: string,
- *   date: string,
- *   time: string,
+ *   date: string (ISO 8601 format with date+time),
  *   homeTeam: string,
  *   awayTeam: string,
  *   division: string,

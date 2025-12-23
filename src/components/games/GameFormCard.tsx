@@ -28,7 +28,10 @@ import Link from "next/link";
 interface Team {
   id: string;
   name: string;
-  code: string;
+  shortName: string;
+  currentDivisionId?: string;
+  currentDivisionName?: string;
+  isInDifferentDivision?: boolean;
 }
 
 interface GameFormData {
@@ -169,7 +172,14 @@ export function GameFormCard({
             <SelectContent>
               {availableHomeTeams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>
-                  {team.name}
+                  <div className="flex items-center gap-2">
+                    <span>{team.name}</span>
+                    {team.isInDifferentDivision && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                        Now in: {team.currentDivisionName}
+                      </span>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -194,7 +204,14 @@ export function GameFormCard({
             <SelectContent>
               {availableAwayTeams.map((team) => (
                 <SelectItem key={team.id} value={team.id}>
-                  {team.name}
+                  <div className="flex items-center gap-2">
+                    <span>{team.name}</span>
+                    {team.isInDifferentDivision && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
+                        Now in: {team.currentDivisionName}
+                      </span>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
@@ -212,8 +229,14 @@ export function GameFormCard({
             value={data.time}
             onChange={(e) => onChange(index, "time", e.target.value)}
             className="text-sm w-[130px]"
-            disabled={isCompleted}
+            disabled={isCompleted || !data.date}
+            title={!data.date ? "Set a date first to enable time selection" : ""}
           />
+          {!data.date && !isCompleted && (
+            <p className="text-xs text-gray-500 mt-1">
+              Set date first
+            </p>
+          )}
         </div>
       </div>
 
@@ -224,7 +247,7 @@ export function GameFormCard({
         </p>
       )}
       {!isCompleted &&
-        (!data.time || !data.homeTeam || !data.awayTeam) &&
+        (!data.date || !data.time || !data.homeTeam || !data.awayTeam) &&
         !isDraft && (
           <p className="text-xs text-orange-600 mt-2">
             Incomplete matchup - fill all fields to publish

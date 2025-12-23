@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -220,10 +221,15 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 font-bold text-gray-600">
-                      {player.jerseyNumber || "—"}
+                      {player.jerseyNumber != null ? player.jerseyNumber : "—"}
                     </div>
                     <div>
-                      <p className="font-medium">{player.playerName}</p>
+                      <Link
+                        href={`/league/players/${player._id}`}
+                        className="font-medium text-blue-600 hover:underline"
+                      >
+                        {player.playerName}
+                      </Link>
                       <div className="flex items-center gap-2 mt-1">
                         {player._id === team.teamCaptain?._id && (
                           <Badge variant="outline">Captain</Badge>
@@ -309,7 +315,7 @@ export function RosterManager({ team, cityId }: RosterManagerProps) {
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 font-bold text-gray-600">
-                      {player.jerseyNumber || "—"}
+                      {player.jerseyNumber != null ? player.jerseyNumber : "—"}
                     </div>
                     <div>
                       <p className="font-medium">{player.playerName}</p>

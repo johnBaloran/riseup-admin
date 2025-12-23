@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Filter, Search, X } from "lucide-react";
+import { Filter, Search, X, Users, UserCheck, UserX } from "lucide-react";
 import { PlayersGrid } from "./PlayersGrid";
 import { Pagination } from "@/components/common/Pagination";
 import { debounce } from "lodash";
@@ -38,7 +38,7 @@ interface PlayersContentProps {
   locations: any[];
   divisions: any[];
   cityId: string;
-  currentTab: "active" | "inactive" | "all";
+  currentTab: "active" | "inactive" | "all" | "registration";
   currentFilters: {
     division?: string;
     location?: string;
@@ -158,23 +158,90 @@ export function PlayersContent({
       {/* Tabs */}
       <Tabs value={currentTab} onValueChange={handleTabChange}>
         <TabsList>
+          <TabsTrigger value="all">All Players</TabsTrigger>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="inactive">Inactive</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="registration">Registration Open</TabsTrigger>
         </TabsList>
       </Tabs>
 
       {/* Stats Overview */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Active Player Overview
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            {stats.total} total players • {stats.withTeam} assigned to teams •{" "}
-            {stats.freeAgents} free agents • {stats.withAccount} with user
-            accounts • {stats.withoutAccount} without user accounts
-          </p>
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100 p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="p-2 bg-blue-600 rounded-lg">
+            <Users className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              Active Players Overview
+            </h2>
+            <p className="text-sm text-blue-600">
+              Currently playing this season
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-4 w-4 text-blue-600" />
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                Total
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            <p className="text-xs text-gray-500 mt-1">Active players</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="h-4 w-4 text-green-600" />
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                On Teams
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.withTeam}</p>
+            <p className="text-xs text-gray-500 mt-1">Assigned to teams</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <UserX className="h-4 w-4 text-orange-600" />
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                Free Agents
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.freeAgents}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Unassigned</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <UserCheck className="h-4 w-4 text-blue-600" />
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                With Account
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.withAccount}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">User accounts</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center gap-2 mb-2">
+              <UserX className="h-4 w-4 text-gray-600" />
+              <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                No Account
+              </p>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">
+              {stats.withoutAccount}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Missing accounts</p>
+          </div>
         </div>
       </div>
 

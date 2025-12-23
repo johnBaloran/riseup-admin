@@ -60,6 +60,18 @@ export const updateDivisionSchema = z.object({
   startDate: z.string().optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
+  earlyBirdDeadline: z.string().optional(),
+  prices: z
+    .object({
+      earlyBird: z.string().min(1, "Early Bird price is required"),
+      regular: z.string().min(1, "Regular price is required"),
+      installment: z.string().min(1, "Early Bird installment price is required"),
+      regularInstallment: z
+        .string()
+        .min(1, "Regular installment price is required"),
+      firstInstallment: z.string().min(1, "Down payment price is required"),
+    })
+    .optional(),
   active: z.boolean().optional(),
   register: z.boolean().optional(),
 });

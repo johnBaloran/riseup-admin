@@ -39,8 +39,10 @@ interface Division {
 interface Team {
   id: string;
   name: string;
-  code: string;
   shortName: string;
+  currentDivisionId?: string;
+  currentDivisionName?: string;
+  isInDifferentDivision?: boolean;
 }
 
 interface Game {
@@ -58,7 +60,6 @@ interface Week {
   weekNumber: number;
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
   label: string;
-  date: Date;
   isRegular: boolean;
   isPlayoff: boolean;
   isComplete: boolean;
@@ -111,7 +112,13 @@ export default function DivisionSchedulePage() {
     gameName: string;
     isPublished: boolean;
     isCompleted: boolean;
-  }>({ open: false, gameId: "", gameName: "", isPublished: false, isCompleted: false });
+  }>({
+    open: false,
+    gameId: "",
+    gameName: "",
+    isPublished: false,
+    isCompleted: false,
+  });
 
   useEffect(() => {
     fetchDivisionSchedule();
@@ -132,10 +139,9 @@ export default function DivisionSchedulePage() {
 
       const data = await response.json();
 
-      // Convert date strings to Date objects
+      // Convert game date strings to Date objects
       const weeksWithDates = data.weeks.map((week: any) => ({
         ...week,
-        date: new Date(week.date),
         games: week.games.map((game: any) => ({
           ...game,
           date: new Date(game.date),
@@ -230,12 +236,13 @@ export default function DivisionSchedulePage() {
 
   const handleCreateGames = async (games: GameToSave[], weekData: Week) => {
     const gamesData = games.map((game) => {
-      const weekDate = new Date(weekData.date);
+      // Use game's date if set, otherwise use current date as default
+      const gameDate = game.date ? new Date(game.date) : new Date();
       const [hours, minutes] = game.time.split(":").map(Number);
       const localDate = new Date(
-        weekDate.getFullYear(),
-        weekDate.getMonth(),
-        weekDate.getDate(),
+        gameDate.getFullYear(),
+        gameDate.getMonth(),
+        gameDate.getDate(),
         hours,
         minutes
       );
@@ -243,10 +250,9 @@ export default function DivisionSchedulePage() {
       return {
         gameName: game.gameName,
         date: localDate.toISOString(),
-        time: game.time,
         homeTeam: game.homeTeam,
         awayTeam: game.awayTeam,
-        published: true,
+        published: true, // Always publish when saving
         week: selectedWeek,
         weekType: weekData.weekType,
       };
@@ -272,29 +278,53 @@ export default function DivisionSchedulePage() {
   };
 
   const handleUpdateGames = async (games: GameToSave[]) => {
+    // Filter out completed games - they cannot be modified
     const gamesToUpdate = games.filter((game) => !game.status);
 
     const updatePromises = gamesToUpdate.map((game) => {
       if (!game.id) return Promise.resolve(null);
 
+      // Combine date + time into a proper Date object
+      const gameDate = game.date ? new Date(game.date) : new Date();
+      const [hours, minutes] = game.time.split(":").map(Number);
+      const combinedDate = new Date(
+        gameDate.getFullYear(),
+        gameDate.getMonth(),
+        gameDate.getDate(),
+        hours,
+        minutes
+      );
+
       return fetch(`/api/v1/games/${game.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          time: game.time,
+          date: combinedDate.toISOString(),
           homeTeam: game.homeTeam,
           awayTeam: game.awayTeam,
+          published: true, // Always publish when saving
         }),
       });
     });
 
     const responses = await Promise.all(updatePromises);
 
-    responses.forEach((response) => {
+    // Collect failed updates
+    const failures: string[] = [];
+    for (let i = 0; i < responses.length; i++) {
+      const response = responses[i];
       if (response && !response.ok) {
-        console.error("Failed to update a game");
+        const game = gamesToUpdate[i];
+        failures.push(game.gameName || `Game ${i + 1}`);
       }
-    });
+    }
+
+    // If any updates failed, throw an error
+    if (failures.length > 0) {
+      throw new Error(
+        `Failed to update ${failures.length} game(s): ${failures.join(", ")}`
+      );
+    }
 
     return { updated: gamesToUpdate.length };
   };
@@ -385,6 +415,8 @@ export default function DivisionSchedulePage() {
   // Get regular season weeks count
   const regularSeasonWeeks = schedule.weeks.filter((w) => w.isRegular).length;
 
+  console.log("Division Schedule Page Render:", { schedule, selectedWeek });
+
   return (
     <div className="h-screen flex flex-col">
       {/* Top Header */}
@@ -400,18 +432,23 @@ export default function DivisionSchedulePage() {
 
         <div>
           <h1 className="text-xl sm:text-2xl font-bold">
-            {schedule.division.name}
+            <Link
+              href={`/league/divisions/${divisionId}`}
+              className="text-blue-600 hover:underline"
+            >
+              {schedule.division.name}
+            </Link>
           </h1>
           <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600 mt-2">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="truncate">
-                {schedule.division.location.name}
+                {schedule.division.location?.name}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
-              {schedule.division.day}s
+              {schedule.division.day}
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -450,17 +487,16 @@ export default function DivisionSchedulePage() {
               weekNumber={currentWeekData.weekNumber}
               weekType={currentWeekData.weekType}
               weekLabel={currentWeekData.label}
-              weekDate={currentWeekData.date}
-              locationName={schedule.division.location.name}
+              locationName={schedule.division.location?.name}
               games={currentWeekData.games.map((g) => ({
                 id: g.id,
                 gameName: g.gameName,
-                time: g.time,
                 homeTeam: g.homeTeam.id,
                 awayTeam: g.awayTeam.id,
                 published: g.published,
                 status: g.status,
                 date: g.date,
+                time: g.time,
               }))}
               teams={schedule.teams}
               teamCounts={teamCounts}

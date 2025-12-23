@@ -114,6 +114,19 @@ export const navigationItems: NavItem[] = [
     permission: "view_communications",
   },
   {
+    label: "Exports",
+    icon: "FileSpreadsheet",
+    permission: "export_players",
+    children: [
+      {
+        label: "Player Export",
+        href: "/exports/players",
+        icon: "Users",
+        permission: "export_players",
+      },
+    ],
+  },
+  {
     label: "Settings",
     icon: "Settings",
     permission: "view_dashboard",

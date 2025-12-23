@@ -203,7 +203,6 @@ export function isGamePublished(game: IGame): boolean {
 export interface WeekInfo {
   weekNumber: number;
   weekType: GameWeekType;
-  date: Date;
   label: string; // e.g., "Week 1", "Quarterfinals", etc.
   isRegular: boolean;
   isPlayoff: boolean;
@@ -218,14 +217,9 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
 
   // Regular season weeks
   for (let i = 1; i <= config.regularSeasonWeeks; i++) {
-    const date = division.startDate
-      ? calculateWeekDate(division.startDate, i, division.day)
-      : new Date();
-
     weeks.push({
       weekNumber: i,
       weekType: "REGULAR",
-      date,
       label: `Week ${i}`,
       isRegular: true,
       isPlayoff: false,
@@ -237,18 +231,9 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
     const playoffWeeks = getPlayoffWeeks(division);
 
     if (playoffWeeks.quarterfinals) {
-      const date = division.startDate
-        ? calculateWeekDate(
-            division.startDate,
-            playoffWeeks.quarterfinals,
-            division.day
-          )
-        : new Date();
-
       weeks.push({
         weekNumber: playoffWeeks.quarterfinals,
         weekType: "QUARTERFINAL",
-        date,
         label: "Quarterfinals",
         isRegular: false,
         isPlayoff: true,
@@ -256,18 +241,9 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
     }
 
     if (playoffWeeks.semifinals) {
-      const date = division.startDate
-        ? calculateWeekDate(
-            division.startDate,
-            playoffWeeks.semifinals,
-            division.day
-          )
-        : new Date();
-
       weeks.push({
         weekNumber: playoffWeeks.semifinals,
         weekType: "SEMIFINAL",
-        date,
         label: "Semifinals",
         isRegular: false,
         isPlayoff: true,
@@ -275,18 +251,9 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
     }
 
     if (playoffWeeks.finals) {
-      const date = division.startDate
-        ? calculateWeekDate(
-            division.startDate,
-            playoffWeeks.finals,
-            division.day
-          )
-        : new Date();
-
       weeks.push({
         weekNumber: playoffWeeks.finals,
         weekType: "FINAL",
-        date,
         label: "Finals",
         isRegular: false,
         isPlayoff: true,
@@ -299,18 +266,46 @@ export function generateWeekStructure(division: IDivision): WeekInfo[] {
 
 /**
  * Get current week based on today's date
+ * Accounts for the actual day of week that games are played
  */
 export function getCurrentWeek(division: IDivision): number {
   if (!division.startDate) return 1;
 
   const today = new Date();
-  const daysDiff = Math.floor(
-    (today.getTime() - division.startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  today.setHours(0, 0, 0, 0); // Reset time for comparison
 
-  const currentWeek = Math.floor(daysDiff / 7) + 1;
   const totalWeeks = getTotalWeeks(division);
 
-  // Clamp between 1 and total weeks
-  return Math.max(1, Math.min(currentWeek, totalWeeks));
+  // Find which week we're in by checking each week's date
+  for (let week = 1; week <= totalWeeks; week++) {
+    const weekDate = calculateWeekDate(division.startDate, week, division.day);
+    weekDate.setHours(0, 0, 0, 0);
+
+    // If we haven't reached this week's game day yet, we're in the previous week
+    if (today < weekDate) {
+      return Math.max(1, week - 1);
+    }
+
+    // If this is the last week and we've passed its date, we're in this week
+    if (week === totalWeeks && today >= weekDate) {
+      return week;
+    }
+
+    // Check if we're between this week and next week
+    if (week < totalWeeks) {
+      const nextWeekDate = calculateWeekDate(
+        division.startDate,
+        week + 1,
+        division.day
+      );
+      nextWeekDate.setHours(0, 0, 0, 0);
+
+      if (today >= weekDate && today < nextWeekDate) {
+        return week;
+      }
+    }
+  }
+
+  // Fallback: return week 1
+  return 1;
 }

@@ -10,7 +10,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, Trophy } from "lucide-react";
+import { Calendar, Clock, MapPin, Trophy, CalendarPlus } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { formatTime } from "@/lib/utils/time";
@@ -123,15 +123,30 @@ export function DivisionScheduleSection({
               <Calendar className="h-5 w-5" />
               Upcoming Games ({upcomingGames.length})
             </CardTitle>
+            <Button asChild>
+              <Link href={`/games/${divisionId}`}>
+                <CalendarPlus className="h-4 w-4 mr-2" />
+                Manage Schedule
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           {upcomingGames.length === 0 ? (
-            <div className="text-center py-8">
-              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">
-                No upcoming games scheduled
+            <div className="text-center py-12">
+              <Calendar className="mx-auto h-16 w-16 text-gray-400" />
+              <p className="mt-4 text-lg font-medium text-gray-900">
+                No upcoming games yet
               </p>
+              <p className="mt-1 text-sm text-gray-500">
+                Get started by creating the game schedule for this division
+              </p>
+              <Button asChild className="mt-4">
+                <Link href={`/games/${divisionId}`}>
+                  <CalendarPlus className="h-4 w-4 mr-2" />
+                  Create Schedule
+                </Link>
+              </Button>
             </div>
           ) : (
             <div className="space-y-3">

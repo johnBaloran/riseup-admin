@@ -19,14 +19,12 @@ export type GameWeekType = "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
 export interface IGame extends mongoose.Document {
   // ===== EXISTING FIELDS (unchanged) =====
   gameName: string;
-  date: Date;
-  time: string;
+  date: Date; // Full date+time (time is embedded in this field)
   homeTeam: mongoose.Types.ObjectId;
   awayTeam: mongoose.Types.ObjectId;
   homeTeamScore: number;
   awayTeamScore: number;
   status: boolean; // completed or not
-  started: boolean;
   division: mongoose.Types.ObjectId;
   players: mongoose.Types.ObjectId[];
   playerOfTheGame?: mongoose.Types.ObjectId;
@@ -56,10 +54,6 @@ const gameSchema = new Schema<IGame>(
       type: Date,
       required: [true, "Game date is required"],
     },
-    time: {
-      type: String,
-      required: [true, "Game time is required"],
-    },
     homeTeam: {
       type: Schema.Types.ObjectId,
       ref: "Team",
@@ -82,10 +76,7 @@ const gameSchema = new Schema<IGame>(
       type: Boolean,
       default: false,
     },
-    started: {
-      type: Boolean,
-      default: false,
-    },
+
     division: {
       type: Schema.Types.ObjectId,
       ref: "Division",

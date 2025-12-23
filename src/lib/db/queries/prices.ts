@@ -9,11 +9,11 @@ import { connectDB } from "../mongodb";
 import Price from "@/models/Price";
 
 /**
- * Get all prices (sorted by type, then amount)
+ * Get all prices with city populated (sorted by city, then type, then amount)
  */
 export async function getAllPrices() {
   await connectDB();
-  return Price.find().sort({ type: 1, amount: 1 }).lean();
+  return Price.find().populate("city").sort({ city: 1, type: 1, amount: 1 }).lean();
 }
 
 /**
@@ -38,6 +38,7 @@ export async function getPriceById(id: string) {
 export async function createPrice(data: {
   name: string;
   priceId: string;
+  city?: string;
   amount: number;
   type: string;
 }) {

@@ -10,13 +10,16 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getPlayerById } from "@/lib/db/queries/players";
+import { getTeamsForSwitching } from "@/lib/db/queries/teams";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { EditPlayerInfoDialog } from "@/components/features/league/players/EditPlayerInfoDialog";
+import { DeletePlayerButton } from "@/components/features/league/players/DeletePlayerButton";
+import { SwitchTeamDialog } from "@/components/features/league/players/SwitchTeamDialog";
 import Link from "next/link";
 import {
-  ArrowLeft,
-  Pencil,
   Trophy,
   MapPin,
   Mail,
@@ -33,6 +36,8 @@ import { PlayerAverageStats } from "@/components/features/league/players/PlayerA
 import { PlayerGameStatsTable } from "@/components/features/league/players/PlayerGameStatsTable";
 import { getPhotosByPlayerId } from "@/lib/db/queries/gamePhotos";
 import { PlayerPhotos } from "@/components/features/league/players/PlayerPhotos";
+import { LinkUserAccountDialog } from "@/components/features/league/players/LinkUserAccountDialog";
+import { UnlinkUserAccountButton } from "@/components/features/league/players/UnlinkUserAccountButton";
 
 interface PlayerDetailPageProps {
   params: { cityId: string; id: string };
@@ -51,84 +56,74 @@ export default async function PlayerDetailPage({
     redirect("/unauthorized");
   }
 
-  const player = await getPlayerById(params.id);
+  // Fetch all data in parallel
+  const [player, photos, teamsByDivision] = await Promise.all([
+    getPlayerById(params.id),
+    getPhotosByPlayerId(params.id),
+    getTeamsForSwitching(),
+  ]);
 
   if (!player) {
     redirect(`/league/players`);
   }
 
-  // Get all photos for this player (queries all persons linked to this player)
-  const photos = await getPhotosByPlayerId(params.id);
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/league/players`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
-        </div>
-        {hasPermission(session, "manage_players") && (
-          <Button asChild>
-            <Link href={`/league/players/${params.id}/edit`}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit Player
-            </Link>
-          </Button>
-        )}
-      </div>
-
-      {/* Title & Status */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {player.playerName}
-          </h1>
-          {player.jerseyNumber && (
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              #{player.jerseyNumber}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2 mt-2">
-          {player.paymentStatus === "paid" && (
-            <Badge
-              variant="outline"
-              className="bg-green-100 text-green-800 border-green-200"
-            >
-              Paid
-            </Badge>
-          )}
-          {player.paymentStatus === "in_progress" && (
-            <Badge
-              variant="outline"
-              className="bg-blue-100 text-blue-800 border-blue-200"
-            >
-              Installments
-            </Badge>
-          )}
-          {player.paymentStatus === "unpaid" && (
-            <Badge
-              variant="outline"
-              className="bg-red-100 text-red-800 border-red-200"
-            >
-              Unpaid
-            </Badge>
-          )}
-          {!player.team && (
-            <Badge
-              variant="outline"
-              className="bg-yellow-100 text-yellow-800 border-yellow-200"
-            >
-              Free Agent
-            </Badge>
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title={player.playerName}
+        description={
+          player.jerseyNumber != null
+            ? `#${player.jerseyNumber}`
+            : undefined
+        }
+        actions={
+          <>
+            {player.paymentStatus === "paid" && (
+              <Badge
+                variant="outline"
+                className="bg-green-100 text-green-800 border-green-200"
+              >
+                Paid
+              </Badge>
+            )}
+            {player.paymentStatus === "in_progress" && (
+              <Badge
+                variant="outline"
+                className="bg-blue-100 text-blue-800 border-blue-200"
+              >
+                Installments
+              </Badge>
+            )}
+            {player.paymentStatus === "unpaid" && (
+              <Badge
+                variant="outline"
+                className="bg-red-100 text-red-800 border-red-200"
+              >
+                Unpaid
+              </Badge>
+            )}
+            {!player.team && (
+              <Badge
+                variant="outline"
+                className="bg-yellow-100 text-yellow-800 border-yellow-200"
+              >
+                Free Agent
+              </Badge>
+            )}
+            {hasPermission(session, "manage_players") && (
+              <>
+                <EditPlayerInfoDialog player={player} />
+                <DeletePlayerButton
+                  playerId={params.id}
+                  playerName={player.playerName}
+                  hasUser={!!player.user}
+                />
+              </>
+            )}
+          </>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Player Details */}
@@ -137,51 +132,66 @@ export default async function PlayerDetailPage({
             <CardTitle>Player Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">City</p>
-                <p className="font-medium">
-                  {(player.division as any)?.city?.cityName || "N/A"}
-                </p>
+            <div className="flex items-start gap-3">
+              <Trophy className="h-5 w-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-500 mb-2">Division</p>
+                {(player.division as any)?.divisionName ? (
+                  <div className="space-y-1">
+                    <Link
+                      href={`/league/divisions/${(player.division as any)._id}`}
+                      className="font-semibold text-blue-600 hover:underline block"
+                    >
+                      {(player.division as any).divisionName}
+                    </Link>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                      {(player.division as any)?.city?.cityName && (
+                        <div className="flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          <span>{(player.division as any).city.cityName}</span>
+                        </div>
+                      )}
+                      {(player.division as any)?.location?.name && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{(player.division as any).location.name}</span>
+                        </div>
+                      )}
+                      {(player.division as any)?.level?.name && (
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          <span>{(player.division as any).level.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="font-medium text-gray-500">
+                    No division assigned
+                  </p>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Location</p>
-                <p className="font-medium">
-                  {(player.division as any)?.location?.name || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Trophy className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Division</p>
-                <p className="font-medium">
-                  {(player.division as any)?.divisionName || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Skill Level</p>
-                <p className="font-medium">
-                  Grade {(player.division as any)?.level?.grade || "N/A"} -{" "}
-                  {(player.division as any)?.level?.name || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Trophy className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Team</p>
+            <div className="flex items-start gap-3">
+              <Trophy className="h-5 w-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-sm text-gray-500">Team</p>
+                  {hasPermission(session, "manage_players") &&
+                    (player.division as any)?._id && (
+                      <SwitchTeamDialog
+                        playerId={params.id}
+                        currentTeamId={(player.team as any)?._id?.toString()}
+                        currentDivisionId={(
+                          player.division as any
+                        )._id.toString()}
+                        teamsByDivision={JSON.parse(
+                          JSON.stringify(teamsByDivision)
+                        )}
+                      />
+                    )}
+                </div>
                 <p className="font-medium">
                   {player.team ? (
                     <Link
@@ -322,6 +332,15 @@ export default async function PlayerDetailPage({
                 </div>
               </div>
             )}
+
+            {hasPermission(session, "manage_players") && (
+              <div className="pt-4 border-t">
+                <UnlinkUserAccountButton
+                  playerId={params.id}
+                  userName={(player.user as any).name}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -338,11 +357,9 @@ export default async function PlayerDetailPage({
                 No user account linked to this player
               </p>
               {hasPermission(session, "manage_players") && (
-                <Button variant="outline" size="sm" className="mt-4" asChild>
-                  <Link href={`/league/players/${params.id}/edit`}>
-                    Link User Account
-                  </Link>
-                </Button>
+                <div className="mt-4">
+                  <LinkUserAccountDialog playerId={params.id} />
+                </div>
               )}
             </div>
           </CardContent>
@@ -359,7 +376,7 @@ export default async function PlayerDetailPage({
             <div>
               <p className="text-sm text-gray-500">Jersey Number</p>
               <p className="font-medium text-lg">
-                {player.jerseyNumber
+                {player.jerseyNumber != null
                   ? `#${player.jerseyNumber}`
                   : "Not assigned"}
               </p>
@@ -382,7 +399,11 @@ export default async function PlayerDetailPage({
 
       {/* Game Statistics */}
       <PlayerAverageStats stats={player.averageStats} playerId={params.id} />
-      <PlayerGameStatsTable stats={player.allStats} />
+      <PlayerGameStatsTable
+        stats={player.allStats}
+        playerId={params.id}
+        canManage={hasPermission(session, "manage_players")}
+      />
       <PlayerPhotos photos={photos} />
     </div>
   );

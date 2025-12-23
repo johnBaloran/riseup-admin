@@ -11,13 +11,21 @@ import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getTeamById, getTeamStats } from "@/lib/db/queries/teams";
 import { getGamesByTeam } from "@/lib/db/queries/games";
+import { getDivisionsForSwitching } from "@/lib/db/queries/divisions";
+import { getTeamPlayersWithStats } from "@/lib/db/queries/players";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { RosterManager } from "@/components/features/league/teams/RosterManager";
+import { DeleteTeamButton } from "@/components/features/league/teams/DeleteTeamButton";
+import { SwitchDivisionDialog } from "@/components/features/league/teams/SwitchDivisionDialog";
+import { EditTeamInfoDialog } from "@/components/features/league/teams/EditTeamInfoDialog";
+import { TransferPlayerData } from "@/components/features/league/teams/TransferPlayerData";
+import { TeamUpcomingGames } from "@/components/features/league/teams/TeamUpcomingGames";
+import { TeamPlayerStatsSection } from "@/components/features/league/teams/TeamPlayerStatsSection";
 import Link from "next/link";
 import {
-  Pencil,
   MapPin,
   Trophy,
   Users,
@@ -46,10 +54,19 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
     redirect("/unauthorized");
   }
 
-  const [team, stats, games] = await Promise.all([
+  // Fetch all data in parallel
+  const [
+    team,
+    stats,
+    games,
+    { activeDivisions, registrationDivisions },
+    playerStats,
+  ] = await Promise.all([
     getTeamById(params.id),
     getTeamStats(params.id),
     getGamesByTeam(params.id),
+    getDivisionsForSwitching(),
+    getTeamPlayersWithStats(params.id),
   ]);
 
   if (!team) {
@@ -76,11 +93,6 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
       <PageHeader
         title={team.teamName}
         description={`${team.teamNameShort} (${team.teamCode})`}
-        showBackButton
-        backButtonFallback={{
-          href: "/league/teams",
-          label: "Back to Teams",
-        }}
         actions={
           <>
             {noCaptainWarning && (
@@ -93,12 +105,15 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
               </Badge>
             )}
             {hasPermission(session, "manage_teams") && (
-              <Button asChild>
-                <Link href={`/league/teams/${params.id}/edit`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit Team
-                </Link>
-              </Button>
+              <>
+                <EditTeamInfoDialog team={team} />
+                <DeleteTeamButton
+                  teamId={params.id}
+                  teamName={team.teamName}
+                  hasPlayers={team.players && team.players.length > 0}
+                  playerCount={team.players?.length || 0}
+                />
+              </>
             )}
           </>
         }
@@ -111,44 +126,61 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             <CardTitle>Team Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">City</p>
-                <p className="font-medium">
-                  {(team.division as any)?.city?.cityName || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Location</p>
-                <p className="font-medium">
-                  {(team.division as any)?.location?.name || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Trophy className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Division</p>
-                <p className="font-medium">
-                  {(team.division as any)?.divisionName || "N/A"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-gray-400" />
-              <div>
-                <p className="text-sm text-gray-500">Skill Level</p>
-                <p className="font-medium">
-                  Grade {(team.division as any)?.level?.grade || "N/A"} -{" "}
-                  {(team.division as any)?.level?.name || "N/A"}
-                </p>
+            <div className="flex items-start gap-3">
+              <Trophy className="h-5 w-5 text-gray-400 mt-0.5" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-sm text-gray-500">Division</p>
+                  {hasPermission(session, "manage_teams") &&
+                    (team.division as any)?._id && (
+                      <SwitchDivisionDialog
+                        teamId={params.id}
+                        currentDivisionId={(
+                          team.division as any
+                        )._id.toString()}
+                        activeDivisions={JSON.parse(
+                          JSON.stringify(activeDivisions)
+                        )}
+                        registrationDivisions={JSON.parse(
+                          JSON.stringify(registrationDivisions)
+                        )}
+                      />
+                    )}
+                </div>
+                {(team.division as any)?.divisionName ? (
+                  <div className="space-y-1">
+                    <Link
+                      href={`/league/divisions/${(team.division as any)._id}`}
+                      className="font-semibold text-blue-600 hover:underline block"
+                    >
+                      {(team.division as any).divisionName}
+                    </Link>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                      {(team.division as any)?.city?.cityName && (
+                        <div className="flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          <span>{(team.division as any).city.cityName}</span>
+                        </div>
+                      )}
+                      {(team.division as any)?.location?.name && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{(team.division as any).location.name}</span>
+                        </div>
+                      )}
+                      {(team.division as any)?.level?.name && (
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3" />
+                          <span>{(team.division as any).level.name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="font-medium text-gray-500">
+                    No division assigned
+                  </p>
+                )}
               </div>
             </div>
 
@@ -157,7 +189,14 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
               <div>
                 <p className="text-sm text-gray-500">Team Captain</p>
                 <p className="font-medium">
-                  {(team.teamCaptain as any)?.playerName || (
+                  {team.teamCaptain ? (
+                    <Link
+                      href={`/league/players/${(team.teamCaptain as any)._id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {(team.teamCaptain as any).playerName}
+                    </Link>
+                  ) : (
                     <span className="text-yellow-600">Not assigned</span>
                   )}
                 </p>
@@ -238,11 +277,6 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Total Players</p>
-              <p className="text-2xl font-bold">{team.players?.length || 0}</p>
-            </div>
-
-            <div>
               <p className="text-sm text-gray-500">Games Played</p>
               <p className="text-2xl font-bold">{team.games?.length || 0}</p>
             </div>
@@ -251,79 +285,17 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
       </div>
 
       {/* Roster */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Roster ({team.players?.length || 0} Players)</CardTitle>
-            {hasPermission(session, "manage_teams") && (
-              <Button size="sm" asChild>
-                <Link href={`/league/teams/${params.id}/roster`}>
-                  Manage Roster
-                </Link>
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!team.players || team.players.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <p className="mt-2 text-sm text-gray-500">
-                No players on this team yet
-              </p>
-              {hasPermission(session, "manage_teams") && (
-                <Button variant="outline" size="sm" className="mt-4" asChild>
-                  <Link href={`/league/teams/${params.id}/roster`}>
-                    Add Players
-                  </Link>
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {team.players.map((player: any) => (
-                <div
-                  key={player._id}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 font-bold text-gray-600">
-                      {player.jerseyNumber || "—"}
-                    </div>
-                    <div>
-                      <p className="font-medium">{player.playerName}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {player._id === team.teamCaptain?._id && (
-                          <Badge variant="outline">Captain</Badge>
-                        )}
-                        {player.user ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-green-50 text-green-700 border-green-200"
-                          >
-                            <UserCheck className="h-3 w-3 mr-1" />
-                            Has Account
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="bg-gray-50 text-gray-600 border-gray-200"
-                          >
-                            No Account
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/league/players/${player._id}`}>View</Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <RosterManager team={team} cityId={params.cityId} />
+
+      {/* Player Statistics */}
+      <TeamPlayerStatsSection
+        players={JSON.parse(JSON.stringify(playerStats))}
+      />
+
+      {/* Transfer Player Data */}
+      {hasPermission(session, "manage_teams") && (
+        <TransferPlayerData team={team} />
+      )}
 
       {/* Game History */}
       <TeamGameHistory

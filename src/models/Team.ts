@@ -79,7 +79,6 @@ const teamSchema = new Schema<ITeam>(
       type: String,
       required: [true, "Team code is required"],
       unique: true,
-      uppercase: true,
     },
     teamCaptain: {
       type: Schema.Types.ObjectId,

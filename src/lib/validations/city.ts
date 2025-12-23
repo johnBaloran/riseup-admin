@@ -14,6 +14,7 @@ import { z } from "zod";
 
 export const createCitySchema = z.object({
   cityName: z.string().min(2, "City name must be at least 2 characters"),
+  stripeAccountId: z.string().optional(),
   region: z.string().min(2, "Region is required"),
   country: z.string().min(2, "Country is required"),
   timezone: z.string().min(2, "Timezone is required"),
@@ -22,6 +23,7 @@ export const createCitySchema = z.object({
 export const updateCitySchema = z.object({
   id: z.string(),
   cityName: z.string().min(2).optional(),
+  stripeAccountId: z.string().optional(),
   region: z.string().min(2).optional(),
   country: z.string().min(2).optional(),
   timezone: z.string().min(2).optional(),

@@ -72,6 +72,7 @@ export function EditCityDialog({
     resolver: zodResolver(createCitySchema),
     defaultValues: {
       cityName: city.cityName,
+      stripeAccountId: city.stripeAccountId || "",
       region: city.region,
       country: city.country,
       timezone: city.timezone,
@@ -82,6 +83,7 @@ export function EditCityDialog({
     if (open) {
       reset({
         cityName: city.cityName,
+        stripeAccountId: city.stripeAccountId || "",
         region: city.region,
         country: city.country,
         timezone: city.timezone,
@@ -142,6 +144,24 @@ export function EditCityDialog({
                 {errors.cityName.message}
               </p>
             )}
+          </div>
+
+          <div>
+            <Label htmlFor="edit-stripeAccountId">Stripe Account ID (Optional)</Label>
+            <Input
+              {...register("stripeAccountId")}
+              id="edit-stripeAccountId"
+              placeholder="acct_xxxxx"
+              disabled={isLoading}
+            />
+            {errors.stripeAccountId && (
+              <p className="text-sm text-red-600 mt-1">
+                {errors.stripeAccountId.message}
+              </p>
+            )}
+            <p className="text-sm text-gray-500 mt-1">
+              Stripe account ID for webhook routing (e.g., acct_1Sa2AhHytqyWH4aT)
+            </p>
           </div>
 
           <div>

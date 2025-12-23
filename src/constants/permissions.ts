@@ -59,7 +59,10 @@ export type Permission =
 
   // Terminal Management
   | "manage_terminal"
-  | "view_terminal";
+  | "view_terminal"
+
+  // Exports
+  | "export_players";
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   EXECUTIVE: [
@@ -88,6 +91,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "view_communications",
     "manage_terminal",
     "view_terminal",
+    "export_players",
   ],
 
   COMMISSIONER: [

@@ -48,7 +48,7 @@ export interface IDivision extends mongoose.Document {
     free?: mongoose.Types.ObjectId;
   };
 
-  jerseyDeadline?: Date; // NEW: Jersey selection deadline
+  earlyBirdDeadline?: Date; // Early bird registration deadline
 
   // ===== NEW SEASON CONFIGURATION (optional for backward compatibility) =====
   seasonConfig?: ISeasonConfig;
@@ -173,7 +173,7 @@ const divisionSchema = new Schema<IDivision>(
         ref: "Price",
       },
     },
-    jerseyDeadline: {
+    earlyBirdDeadline: {
       type: Date,
     },
 

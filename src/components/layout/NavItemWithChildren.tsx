@@ -35,27 +35,13 @@ export function NavItemWithChildren({
     const childPath = `${href}`;
     const isActive =
       pathname === childPath || pathname.startsWith(`${childPath}/`);
-    console.log("NavItemWithChildren check:", {
-      itemLabel: item.label,
-      childLabel: child.label,
-      childHref: child.href,
-      childPath,
-      pathname,
-      isActive,
-    });
+
     return isActive;
   });
 
   // Auto-expand if a child is active
   const [isOpen, setIsOpen] = useState(isActiveParent || false);
   const Icon = (LucideIcons as any)[item.icon];
-
-  console.log("NavItemWithChildren state:", {
-    itemLabel: item.label,
-    pathname,
-    isActiveParent,
-    isOpen,
-  });
 
   // Update isOpen when pathname changes and a child becomes active
   useEffect(() => {

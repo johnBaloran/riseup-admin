@@ -12,6 +12,7 @@ const Schema = mongoose.Schema;
 export interface IPrice extends mongoose.Document {
   name: string;
   priceId: string;
+  city?: mongoose.Types.ObjectId;
   amount: number;
   type:
     | "earlyBird"
@@ -34,6 +35,10 @@ const priceSchema = new Schema<IPrice>(
       type: String,
       required: [true, "Stripe price ID is required"],
       unique: true,
+    },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: "City",
     },
     amount: {
       type: Number,
@@ -60,6 +65,7 @@ const priceSchema = new Schema<IPrice>(
 // Indexes
 priceSchema.index({ priceId: 1 });
 priceSchema.index({ type: 1 });
+priceSchema.index({ city: 1 });
 
 export default (mongoose.models.Price as mongoose.Model<IPrice>) ||
   mongoose.model<IPrice>("Price", priceSchema);

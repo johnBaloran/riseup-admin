@@ -84,7 +84,7 @@ export async function getGamesByDivision({
   return Game.find(filter)
     .populate("homeTeam", "teamName teamCode teamNameShort")
     .populate("awayTeam", "teamName teamCode teamNameShort")
-    .sort({ date: 1, time: 1 })
+    .sort({ date: 1 })
     .lean();
 }
 
@@ -105,7 +105,7 @@ export async function getGamesByWeek(divisionId: string, weekNumber: number) {
   })
     .populate("homeTeam", "teamName teamCode teamNameShort")
     .populate("awayTeam", "teamName teamCode teamNameShort")
-    .sort({ time: 1 })
+    .sort({ date: 1 })
     .lean();
 
   // If no games found with week field, fall back to date-based search
@@ -128,7 +128,7 @@ export async function getGamesByWeek(divisionId: string, weekNumber: number) {
     })
       .populate("homeTeam", "teamName teamCode teamNameShort")
       .populate("awayTeam", "teamName teamCode teamNameShort")
-      .sort({ time: 1 })
+      .sort({ date: 1 })
       .lean();
   }
 
@@ -147,7 +147,7 @@ export async function getGamesByDivisions(divisionIds: string[]) {
     .populate("homeTeam", "teamName teamCode")
     .populate("awayTeam", "teamName teamCode")
     .populate("division", "divisionName")
-    .sort({ date: 1, time: 1 })
+    .sort({ date: 1 })
     .lean();
 }
 
@@ -170,7 +170,7 @@ export async function getGamesByDateRange(
   })
     .populate("homeTeam", "teamName teamCode teamNameShort")
     .populate("awayTeam", "teamName teamCode teamNameShort")
-    .sort({ date: 1, time: 1 })
+    .sort({ date: 1 })
     .lean();
 }
 
@@ -187,7 +187,7 @@ export async function getUpcomingGames(divisionId: string, limit: number = 5) {
   })
     .populate("homeTeam", "teamName teamCode")
     .populate("awayTeam", "teamName teamCode")
-    .sort({ date: 1, time: 1 })
+    .sort({ date: 1 })
     .limit(limit)
     .lean();
 }
@@ -216,7 +216,6 @@ export async function getGamesByTeam(teamId: string) {
 export async function createGame(data: {
   gameName?: string;
   date: string;
-  time: string;
   homeTeam: string;
   awayTeam: string;
   division: string;
@@ -288,7 +287,6 @@ export async function createGames(
   games: Array<{
     gameName?: string;
     date: string;
-    time: string;
     homeTeam: string;
     awayTeam: string;
     division: string;
@@ -321,7 +319,6 @@ export async function updateGame(
   data: {
     gameName?: string;
     date?: string;
-    time?: string;
     homeTeam?: string;
     awayTeam?: string;
     homeTeamScore?: number;
@@ -562,7 +559,6 @@ async function adjustTeamRecords(game: IGame, action: "REVERSE" | "APPLY") {
 export async function hasTeamConflict(
   teamId: string,
   date: Date,
-  time: string,
   excludeGameId?: string
 ): Promise<boolean> {
   await connectDB();
@@ -570,7 +566,6 @@ export async function hasTeamConflict(
   const query: any = {
     $or: [{ homeTeam: teamId }, { awayTeam: teamId }],
     date,
-    time,
   };
 
   if (excludeGameId) {

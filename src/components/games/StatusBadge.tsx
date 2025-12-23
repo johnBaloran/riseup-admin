@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 type StatusType =
   | "complete"
   | "current"
+  | "incomplete"
   | "not-started"
   | "in-progress"
   | "needs-attention";
@@ -36,6 +37,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       label: "Current",
       variant: "default" as const,
       className: "bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-100",
+    },
+    incomplete: {
+      label: "Incomplete",
+      variant: "default" as const,
+      className: "bg-red-100 text-red-700 border-red-200 hover:bg-red-100",
     },
     "not-started": {
       label: "Not Started",

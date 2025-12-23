@@ -24,3 +24,21 @@ export function formatDate(
     return "Invalid Date";
   }
 }
+
+/**
+ * Extract time in HH:MM format from a date
+ * @param date - The date to extract time from
+ * @returns Time string in HH:MM format (24-hour)
+ */
+export function extractTime(date: Date | string | number): string {
+  if (!date) return "";
+  try {
+    const d = new Date(date);
+    const hours = d.getHours().toString().padStart(2, "0");
+    const minutes = d.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
+  } catch (error) {
+    console.error("Error extracting time:", error);
+    return "";
+  }
+}

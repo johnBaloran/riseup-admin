@@ -10,7 +10,12 @@
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Tag } from "lucide-react";
+import { DollarSign, Tag, MapPin } from "lucide-react";
+
+interface City {
+  _id: string;
+  cityName: string;
+}
 
 interface Price {
   _id: string;
@@ -24,6 +29,7 @@ interface Price {
     | "regularInstallment"
     | "firstInstallment"
     | "free";
+  city?: City;
 }
 
 interface PricesGridProps {
@@ -31,15 +37,23 @@ interface PricesGridProps {
 }
 
 export function PricesGrid({ prices }: PricesGridProps) {
-  const groupedPrices = useMemo(() => {
-    return {
-      earlyBird: prices.filter((p) => p.type === "earlyBird"),
-      regular: prices.filter((p) => p.type === "regular"),
-      installment: prices.filter((p) => p.type === "installment"),
-      regularInstallment: prices.filter((p) => p.type === "regularInstallment"),
-      firstInstallment: prices.filter((p) => p.type === "firstInstallment"),
-      free: prices.filter((p) => p.type === "free"),
-    };
+  const groupedByCity = useMemo(() => {
+    const cityGroups: { [cityName: string]: Price[] } = {};
+    const legacy: Price[] = [];
+
+    prices.forEach((price) => {
+      if (price.city) {
+        const cityName = price.city.cityName;
+        if (!cityGroups[cityName]) {
+          cityGroups[cityName] = [];
+        }
+        cityGroups[cityName].push(price);
+      } else {
+        legacy.push(price);
+      }
+    });
+
+    return { cityGroups, legacy };
   }, [prices]);
 
   const getTypeBadge = (type: string) => {
@@ -86,12 +100,18 @@ export function PricesGrid({ prices }: PricesGridProps) {
     );
   }
 
-  const renderPriceSection = (title: string, prices: Price[]) => {
+  const renderCitySection = (cityName: string, prices: Price[], isLegacy = false) => {
     if (prices.length === 0) return null;
 
     return (
-      <div key={title} className="space-y-3">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <div key={cityName} className="space-y-4">
+        <div className="flex items-center gap-2">
+          {!isLegacy && <MapPin className="h-5 w-5 text-gray-600" />}
+          <h2 className="text-xl font-bold text-gray-900">{cityName}</h2>
+          <Badge variant="outline" className="ml-2">
+            {prices.length} {prices.length === 1 ? "price" : "prices"}
+          </Badge>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {prices.map((price) => {
             const badge = getTypeBadge(price.type);
@@ -124,18 +144,18 @@ export function PricesGrid({ prices }: PricesGridProps) {
     );
   };
 
+  const cityNames = Object.keys(groupedByCity.cityGroups).sort();
+
   return (
     <div className="space-y-8">
-      {renderPriceSection("Single Payment", [
-        ...groupedPrices.earlyBird,
-        ...groupedPrices.regular,
-      ])}
-      {renderPriceSection("Installment Payments", [
-        ...groupedPrices.firstInstallment,
-        ...groupedPrices.installment,
-        ...groupedPrices.regularInstallment,
-      ])}
-      {renderPriceSection("Free", groupedPrices.free)}
+      {cityNames.map((cityName) =>
+        renderCitySection(cityName, groupedByCity.cityGroups[cityName])
+      )}
+      {groupedByCity.legacy.length > 0 && (
+        <div className="border-t pt-8">
+          {renderCitySection("Legacy Prices (No City)", groupedByCity.legacy, true)}
+        </div>
+      )}
     </div>
   );
 }

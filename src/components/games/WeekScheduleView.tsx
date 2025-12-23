@@ -10,17 +10,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { GameFormCard } from "./GameFormCard";
 import { TeamScheduleIndicator } from "./TeamScheduleIndicator";
 import { EmptyWeekView } from "./EmptyWeekView";
-import { formatWeekDate } from "@/lib/utils/schedule";
+import { extractTime } from "@/lib/utils/date";
 
 interface Team {
   id: string;
   name: string;
-  code: string;
+  shortName: string;
+  currentDivisionId?: string;
+  currentDivisionName?: string;
+  isInDifferentDivision?: boolean;
 }
 
 interface TeamScheduleCount {
@@ -45,7 +50,6 @@ interface WeekScheduleViewProps {
   weekNumber: number;
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
   weekLabel: string;
-  weekDate: Date;
   locationName: string;
   games: Game[];
   teams: Team[];
@@ -64,7 +68,6 @@ export function WeekScheduleView({
   weekNumber,
   weekType,
   weekLabel,
-  weekDate,
   locationName,
   games: initialGames,
   teams,
@@ -75,10 +78,23 @@ export function WeekScheduleView({
 }: WeekScheduleViewProps) {
   const [games, setGames] = useState<Game[]>(initialGames);
   const [isSaving, setIsSaving] = useState(false);
+  const [bulkDate, setBulkDate] = useState<string>("");
 
   // Sync games state when week changes
   useEffect(() => {
-    setGames(initialGames);
+    // Extract time from date for each game (for UI display/editing)
+    const gamesWithTime = initialGames.map((game) => ({
+      ...game,
+      time: game.date ? extractTime(game.date) : "",
+    }));
+
+    setGames(gamesWithTime);
+
+    // Set bulk date to first game's date if available
+    if (initialGames.length > 0 && initialGames[0].date) {
+      const firstDate = new Date(initialGames[0].date);
+      setBulkDate(firstDate.toISOString().split("T")[0]);
+    }
   }, [initialGames]);
 
   const isPlayoff = weekType !== "REGULAR";
@@ -91,7 +107,7 @@ export function WeekScheduleView({
       time: "",
       homeTeam: "",
       awayTeam: "",
-      published: false,
+      published: true, // Will be published when saved
       status: false,
     };
     setGames([...games, newGame]);
@@ -104,7 +120,63 @@ export function WeekScheduleView({
     value: string
   ) => {
     const updated = [...games];
-    updated[index] = { ...updated[index], [field]: value };
+    const game = updated[index];
+
+    // If time is being updated, also update the date to reflect new time
+    if (field === "time") {
+      // Time can only be updated if date exists (enforced by UI)
+      if (!game.date) {
+        console.warn("Time cannot be set without a date");
+        return;
+      }
+      const [hours, minutes] = value.split(":").map(Number);
+      const gameDate = new Date(game.date);
+      const newDate = new Date(
+        gameDate.getFullYear(),
+        gameDate.getMonth(),
+        gameDate.getDate(),
+        hours,
+        minutes
+      );
+      updated[index] = { ...game, time: value, date: newDate };
+    } else {
+      updated[index] = { ...game, [field]: value };
+    }
+
+    setGames(updated);
+  };
+
+  // Apply bulk date to all games (preserving each game's time)
+  const handleApplyBulkDate = () => {
+    if (!bulkDate) return;
+
+    const updated = games.map((game) => {
+      // Skip completed games - they cannot be modified
+      if (game.status === true) {
+        return game;
+      }
+
+      // Parse the new date
+      const newDate = new Date(bulkDate);
+
+      // Extract time from game's time field or current date
+      const time = game.time || extractTime(game.date || new Date());
+      const [hours, minutes] = time.split(":").map(Number);
+
+      // Combine new date with existing time
+      const combinedDate = new Date(
+        newDate.getFullYear(),
+        newDate.getMonth(),
+        newDate.getDate(),
+        hours,
+        minutes
+      );
+
+      return {
+        ...game,
+        date: combinedDate,
+      };
+    });
     setGames(updated);
   };
 
@@ -182,7 +254,7 @@ export function WeekScheduleView({
       <div className="flex-1 overflow-y-auto">
         {/* Header */}
         <div className="border-b bg-white sticky top-0 z-10">
-          <div className="px-4 sm:px-6 py-3 sm:py-4">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg sm:text-2xl font-bold">
@@ -198,7 +270,7 @@ export function WeekScheduleView({
                   )}
                 </h2>
                 <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  {formatWeekDate(weekDate)} • {locationName}
+                  {locationName}
                 </p>
               </div>
 
@@ -217,6 +289,36 @@ export function WeekScheduleView({
                 <span className="sm:hidden">Add</span>
               </Button>
             </div>
+
+            {/* Bulk Date Setter */}
+            {hasGames && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex-1 w-full sm:w-auto">
+                  <Label htmlFor="bulk-date" className="text-xs text-gray-600">
+                    Set Date for All Games
+                  </Label>
+                  <div className="relative mt-1">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="bulk-date"
+                      type="date"
+                      value={bulkDate}
+                      onChange={(e) => setBulkDate(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleApplyBulkDate}
+                  disabled={!bulkDate}
+                  size="sm"
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                >
+                  Apply to All
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 

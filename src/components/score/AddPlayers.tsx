@@ -163,7 +163,7 @@ export default function AddPlayers({
   };
 
   const handleAddNewPlayer = async () => {
-    if (!newPlayerData.playerName || !newPlayerData.jerseyNumber) {
+    if (!newPlayerData.playerName || newPlayerData.jerseyNumber === "") {
       alert("Please fill in player name and jersey number");
       return;
     }

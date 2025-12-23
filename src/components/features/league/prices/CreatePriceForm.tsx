@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,13 +25,19 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createPriceSchema, CreatePriceInput } from "@/lib/validations/price";
 
+interface City {
+  _id: string;
+  cityName: string;
+}
+
 interface CreatePriceFormProps {
-  cityId: string;
+  cityId?: string;
 }
 
 export function CreatePriceForm({ cityId }: CreatePriceFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [cities, setCities] = useState<City[]>([]);
 
   const {
     register,
@@ -44,6 +50,24 @@ export function CreatePriceForm({ cityId }: CreatePriceFormProps) {
   });
 
   const selectedType = watch("type");
+  const selectedCity = watch("city");
+
+  // Fetch cities on mount
+  useEffect(() => {
+    const fetchCities = async () => {
+      try {
+        const response = await fetch("/api/v1/cities");
+        if (response.ok) {
+          const data = await response.json();
+          setCities(data.data || []);
+        }
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+      }
+    };
+
+    fetchCities();
+  }, []);
 
   const onSubmit = async (data: CreatePriceInput) => {
     setIsLoading(true);
@@ -97,6 +121,35 @@ export function CreatePriceForm({ cityId }: CreatePriceFormProps) {
         </div>
 
         <div>
+          <Label htmlFor="city">City (Optional)</Label>
+          <Select
+            value={selectedCity}
+            onValueChange={(value) =>
+              setValue("city", value, { shouldValidate: true })
+            }
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select city (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {cities.map((city) => (
+                <SelectItem key={city._id} value={city._id}>
+                  {city.cityName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.city && (
+            <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Associate this price with a specific city for multi-city Stripe
+            account routing
+          </p>
+        </div>
+
+        <div>
           <Label htmlFor="priceId">Stripe Price ID *</Label>
           <Input
             {...register("priceId")}
@@ -115,7 +168,7 @@ export function CreatePriceForm({ cityId }: CreatePriceFormProps) {
         </div>
 
         <div>
-          <Label htmlFor="amount">Amount (USD) *</Label>
+          <Label htmlFor="amount">Amount</Label>
           <Input
             {...register("amount", { valueAsNumber: true })}
             id="amount"

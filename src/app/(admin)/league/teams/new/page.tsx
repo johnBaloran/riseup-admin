@@ -56,11 +56,6 @@ export default async function CreateTeamPage({
       <PageHeader
         title="Create Team"
         description="Create a new team manually. Players and captain can be assigned after creation."
-        showBackButton
-        backButtonFallback={{
-          href: "/league/teams",
-          label: "Back to Teams",
-        }}
       />
 
       <div className="max-w-2xl">

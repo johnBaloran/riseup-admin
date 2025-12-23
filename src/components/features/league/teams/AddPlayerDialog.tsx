@@ -52,7 +52,7 @@ export function AddPlayerDialog({
               >
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 font-bold text-gray-600">
-                    {player.jerseyNumber || "—"}
+                    {player.jerseyNumber != null ? player.jerseyNumber : "—"}
                   </div>
                   <div>
                     <p className="font-medium">{player.playerName}</p>

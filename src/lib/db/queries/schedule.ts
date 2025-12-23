@@ -19,6 +19,7 @@ import {
   getCurrentWeek,
   getSeasonConfig,
 } from "@/lib/utils/schedule";
+import { formatTimeRange } from "@/lib/utils/time";
 
 // ===== SCHEDULE OVERVIEW =====
 
@@ -54,15 +55,25 @@ export interface DivisionScheduleStatus {
 export async function getScheduleOverview({
   locationId,
   cityId,
+  tab,
 }: {
   locationId?: string;
   cityId?: string;
+  tab?: "active" | "registration";
 } = {}) {
   await connectDB();
 
-  const filter: any = {
-    $or: [{ active: true }, { register: true }],
-  };
+  const filter: any = {};
+
+  // Filter by tab (active or registration)
+  if (tab === "active") {
+    filter.active = true;
+  } else if (tab === "registration") {
+    filter.register = true;
+  } else {
+    // Default: show both active and registration divisions
+    filter.$or = [{ active: true }, { register: true }];
+  }
 
   if (locationId) filter.location = locationId;
   if (cityId) filter.city = cityId;
@@ -105,7 +116,7 @@ export async function getScheduleOverview({
     })
       .populate("homeTeam", "teamName teamCode")
       .populate("awayTeam", "teamName teamCode")
-      .sort({ time: 1 })
+      .sort({ date: 1 })
       .lean();
 
     const location = division.location as any;
@@ -124,7 +135,7 @@ export async function getScheduleOverview({
         name: city.cityName,
       },
       day: division.day,
-      timeRange: `${division.startTime} - ${division.endTime}`,
+      timeRange: formatTimeRange(division.startTime, division.endTime),
       teamCount: division.teams.length,
       totalWeeks,
       scheduledWeeks,
@@ -179,7 +190,6 @@ export interface WeekSchedule {
   games: Array<{
     id: string;
     gameName: string;
-    time: string;
     homeTeam: {
       id?: string;
       name?: string;
@@ -196,6 +206,7 @@ export interface WeekSchedule {
     calculatedDate?: Date;
   }>;
   isComplete: boolean;
+  isIncomplete: boolean;
   isCurrent: boolean;
 }
 
@@ -208,31 +219,121 @@ export async function getDivisionSchedule(divisionId: string) {
   const division = await Division.findById(divisionId)
     .populate("location", "name address")
     .populate("city", "cityName region")
-    .populate("teams", "teamName teamCode teamNameShort")
     .lean();
 
   if (!division) {
     throw new Error("Division not found");
   }
 
-  const weekStructure = generateWeekStructure(division);
-  const currentWeek = getCurrentWeek(division);
-  const totalWeeks = getTotalWeeks(division);
-
-  // Get all games for division
-  const games = await Game.find({ division: divisionId })
-    .populate("homeTeam", "teamName teamCode teamNameShort")
-    .populate("awayTeam", "teamName teamCode teamNameShort")
-    .sort({ week: 1, time: 1 })
+  // Query teams directly by division instead of using division.teams array
+  const divisionTeams = await Team.find({ division: divisionId })
+    .select("teamName teamCode teamNameShort division")
     .lean();
 
-  // Group games by week
+  const weekStructure = generateWeekStructure(division);
+  const totalWeeks = getTotalWeeks(division);
+
+  // Get all games for division with nested team.division populate
+  const games = await Game.find({ division: divisionId })
+    .populate({
+      path: "homeTeam",
+      select: "teamName teamNameShort division",
+      populate: {
+        path: "division",
+        select: "divisionName",
+      },
+    })
+    .populate({
+      path: "awayTeam",
+      select: "teamName teamNameShort division",
+      populate: {
+        path: "division",
+        select: "divisionName",
+      },
+    })
+    .sort({ week: 1, date: 1 })
+    .lean();
+
+  // Build teams list from division teams AND teams in games
+  // This ensures all division teams are available even if not yet scheduled
+  const uniqueTeamsMap = new Map<string, any>();
+
+  // First, add all teams queried directly by division
+  divisionTeams.forEach((team: any) => {
+    uniqueTeamsMap.set(team._id.toString(), {
+      _id: team._id,
+      teamName: team.teamName,
+      teamNameShort: team.teamNameShort,
+      teamCode: team.teamCode,
+      division: { _id: divisionId, divisionName: division.divisionName },
+    });
+  });
+
+  // Then, add/update teams from games (may have more recent division info)
+  games.forEach((game) => {
+    if (game.homeTeam) {
+      const team = game.homeTeam as any;
+      uniqueTeamsMap.set(team._id.toString(), team);
+    }
+    if (game.awayTeam) {
+      const team = game.awayTeam as any;
+      uniqueTeamsMap.set(team._id.toString(), team);
+    }
+  });
+
+  const allTeams = Array.from(uniqueTeamsMap.values());
+
+  // Group games by week (filter out games with missing team references)
   const gamesByWeek: Record<number, any[]> = {};
   games.forEach((game) => {
+    // Skip games with missing team references
+    if (!game.homeTeam || !game.awayTeam) {
+      console.warn(
+        `Game ${game._id} has missing team reference - skipping from schedule`
+      );
+      return;
+    }
+
     const week = game.week || 0;
     if (!gamesByWeek[week]) gamesByWeek[week] = [];
     gamesByWeek[week].push(game);
   });
+
+  // Determine current week based on actual game dates
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let currentWeek = 1; // Default to week 1
+
+  // Find the current week by checking game dates
+  for (let weekNum = 1; weekNum <= totalWeeks; weekNum++) {
+    const weekGames = gamesByWeek[weekNum] || [];
+
+    if (weekGames.length > 0) {
+      // Get the earliest game date in this week
+      const earliestGameDate = new Date(
+        Math.min(...weekGames.map((g) => new Date(g.date).getTime()))
+      );
+      earliestGameDate.setHours(0, 0, 0, 0);
+
+      // If this week's earliest game is today or in the future, this is the current week
+      if (earliestGameDate >= today) {
+        currentWeek = weekNum;
+        break;
+      }
+
+      // If we've passed this week's games, tentatively set current to this week
+      // (it will be overridden if we find a future week)
+      if (earliestGameDate < today) {
+        currentWeek = weekNum;
+      }
+    }
+  }
+
+  // If no games exist, fall back to calculation
+  if (games.length === 0) {
+    currentWeek = getCurrentWeek(division);
+  }
 
   // Build week schedule
   const weekSchedules: WeekSchedule[] = weekStructure.map((week) => {
@@ -246,25 +347,28 @@ export async function getDivisionSchedule(divisionId: string) {
       isRegular: week.weekType === "REGULAR",
       isPlayoff: week.weekType !== "REGULAR",
       games: weekGames.map((game) => ({
-        id: game._id.toString(),
-        gameName: game.gameName,
-        time: game.time,
-        homeTeam: {
-          id: (game.homeTeam as any)?._id.toString(),
-          name: (game.homeTeam as any)?.teamName,
-          code: (game.homeTeam as any)?.teamCode,
-        },
-        awayTeam: {
-          id: (game.awayTeam as any)?._id.toString(),
-          name: (game.awayTeam as any)?.teamName,
-          code: (game.awayTeam as any)?.teamCode,
-        },
-        published: game.published ?? true,
-        status: game.status,
-        date: game.date,
-        calculatedDate: game.calculatedDate,
-      })),
+          id: game._id.toString(),
+          gameName: game.gameName,
+          homeTeam: {
+            id: (game.homeTeam as any)._id.toString(),
+            name: (game.homeTeam as any).teamName,
+            code: (game.homeTeam as any).teamCode,
+          },
+          awayTeam: {
+            id: (game.awayTeam as any)._id.toString(),
+            name: (game.awayTeam as any).teamName,
+            code: (game.awayTeam as any).teamCode,
+          },
+          published: game.published ?? true,
+          status: game.status,
+          date: game.date,
+          calculatedDate: game.calculatedDate,
+        })),
       isComplete: weekGames.length > 0 && weekGames.every((g) => g.status),
+      isIncomplete:
+        weekGames.length > 0 &&
+        !weekGames.every((g) => g.status) &&
+        week.weekNumber < currentWeek,
       isCurrent: week.weekNumber === currentWeek,
     };
   });
@@ -276,14 +380,17 @@ export async function getDivisionSchedule(divisionId: string) {
       location: division.location,
       city: division.city,
       day: division.day,
-      timeRange: `${division.startTime} - ${division.endTime}`,
-      teamCount: division.teams.length,
+      timeRange: formatTimeRange(division.startTime, division.endTime),
+      teamCount: divisionTeams.length,
     },
-    teams: (division.teams as any[]).map((team) => ({
+    teams: allTeams.map((team) => ({
       id: team._id.toString(),
       name: team.teamName,
-      code: team.teamCode,
       shortName: team.teamNameShort,
+      currentDivisionId: team.division?._id?.toString(),
+      currentDivisionName: team.division?.divisionName,
+      isInDifferentDivision:
+        team.division?._id?.toString() !== divisionId.toString(),
     })),
     weeks: weekSchedules,
     currentWeek,
@@ -309,16 +416,10 @@ export async function getTeamScheduleCounts(
 ): Promise<TeamScheduleCount[]> {
   await connectDB();
 
-  const division = await Division.findById(divisionId).populate(
-    "teams",
-    "teamCode teamName"
-  );
-
-  if (!division) {
-    throw new Error("Division not found");
-  }
-
-  const teams = division.teams as any[];
+  // Query teams directly by division instead of using division.teams array
+  const teams = await Team.find({ division: divisionId })
+    .select("teamCode teamName")
+    .lean();
 
   const counts: TeamScheduleCount[] = [];
 

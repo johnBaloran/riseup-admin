@@ -125,7 +125,7 @@ export async function getPlayers({
   freeAgentsOnly?: boolean;
   hasUserAccount?: boolean;
   search?: string;
-  activeFilter?: "active" | "inactive" | "all";
+  activeFilter?: "active" | "inactive" | "all" | "registration";
   unlinked?: boolean;
 }) {
   await connectDB();
@@ -134,10 +134,12 @@ export async function getPlayers({
   const divisionFilter: any = {};
 
   if (activeFilter === "active") {
-    divisionFilter.$or = [{ active: true }, { register: true }];
+    divisionFilter.active = true;
   } else if (activeFilter === "inactive") {
     divisionFilter.active = false;
     divisionFilter.register = false;
+  } else if (activeFilter === "registration") {
+    divisionFilter.register = true;
   }
   // If "all", no active/register filter
 
@@ -403,6 +405,26 @@ export async function updatePlayer(
     }
   }
 
+  // Handle user changes
+  if (data.user !== undefined) {
+    const User = (await import("@/models/User")).default;
+    const oldUser = player.user;
+
+    // Remove from old user's basketball array if exists
+    if (oldUser) {
+      await User.findByIdAndUpdate(oldUser, {
+        $pull: { basketball: player._id },
+      });
+    }
+
+    // Add to new user's basketball array if specified
+    if (data.user) {
+      await User.findByIdAndUpdate(data.user, {
+        $addToSet: { basketball: player._id },
+      });
+    }
+  }
+
   // Update player
   Object.assign(player, data);
   await player.save();
@@ -422,6 +444,13 @@ export async function deletePlayer(id: string) {
     throw new Error("Player not found");
   }
 
+  // Check if player has a linked user account
+  if (player.user) {
+    throw new Error(
+      "Cannot delete player with linked user account. Unlink the user first."
+    );
+  }
+
   // Check if player has payment records
   const PaymentMethod = (await import("@/models/PaymentMethod")).default;
   const hasPayments = await PaymentMethod.exists({ player: id });
@@ -436,14 +465,6 @@ export async function deletePlayer(id: string) {
   if (player.team) {
     await Team.findByIdAndUpdate(player.team, {
       $pull: { players: player._id },
-    });
-  }
-
-  // Remove from user if linked
-  if (player.user) {
-    const User = (await import("@/models/User")).default;
-    await User.findByIdAndUpdate(player.user, {
-      $pull: { basketball: player._id },
     });
   }
 
@@ -497,4 +518,32 @@ export async function removePlayerFromTeam(playerId: string, teamId: string) {
   if (team?.teamCaptain?.toString() === playerId) {
     await Team.findByIdAndUpdate(teamId, { teamCaptain: null });
   }
+}
+
+/**
+ * Get players with stats for a team
+ */
+export async function getTeamPlayersWithStats(teamId: string) {
+  await connectDB();
+
+  const players = await Player.find({ team: teamId })
+    .select("playerName jerseyNumber averageStats allStats")
+    .lean();
+
+  return players.map((player) => ({
+    _id: player._id.toString(),
+    playerName: player.playerName,
+    jerseyNumber: player.jerseyNumber,
+    averageStats: player.averageStats || {
+      points: 0,
+      rebounds: 0,
+      assists: 0,
+      blocks: 0,
+      steals: 0,
+      threesMade: 0,
+      twosMade: 0,
+      freeThrowsMade: 0,
+    },
+    gamesPlayed: player.allStats?.length || 0,
+  }));
 }

@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     const queryParams = {
       locationId: searchParams.get("locationId") || undefined,
       cityId: searchParams.get("cityId") || undefined,
+      tab: (searchParams.get("tab") as "active" | "registration") || undefined,
     };
 
     const validatedParams = scheduleOverviewQuerySchema.parse(queryParams);

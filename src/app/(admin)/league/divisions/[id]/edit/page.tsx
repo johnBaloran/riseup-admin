@@ -63,7 +63,7 @@ export default async function EditDivisionPage({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Edit Division</h1>
         <p className="text-gray-600 mt-1">
-          Update division settings (pricing cannot be changed)
+          Update division settings and pricing
         </p>
       </div>
 

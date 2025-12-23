@@ -23,6 +23,7 @@ import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { DivisionFreeAgents } from "@/components/features/league/DivisionFreeAgents";
 import { DivisionDetailContent } from "@/components/features/league/divisions/DivisionDetailContent";
+import { DivisionStandingsSection } from "@/components/features/league/divisions/DivisionStandingsSection";
 import { DivisionTeamsSection } from "@/components/features/league/divisions/DivisionTeamsSection";
 import { DivisionScheduleSection } from "@/components/features/league/divisions/DivisionScheduleSection";
 
@@ -109,11 +110,6 @@ export default async function DivisionDetailPage({
       <PageHeader
         title={division.divisionName}
         description={division.description}
-        showBackButton
-        backButtonFallback={{
-          href: "/league/divisions",
-          label: "Back to Divisions",
-        }}
         actions={
           <>
             {getStatusBadge()}
@@ -139,14 +135,17 @@ export default async function DivisionDetailPage({
         division={serializedDivision}
       />
 
+      {/* Free Agents Section */}
+      <DivisionFreeAgents players={JSON.parse(JSON.stringify(freeAgents))} />
+
+      {/* Standings */}
+      <DivisionStandingsSection teams={JSON.parse(JSON.stringify(teams))} />
+
       {/* Schedule Section */}
       <DivisionScheduleSection
         games={JSON.parse(JSON.stringify(games))}
         divisionId={params.id}
       />
-
-      {/* Free Agents Section */}
-      <DivisionFreeAgents players={JSON.parse(JSON.stringify(freeAgents))} />
     </div>
   );
 }

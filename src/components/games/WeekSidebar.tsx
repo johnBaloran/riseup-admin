@@ -12,17 +12,16 @@
 import { ChevronDown, Trophy } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { formatWeekDate } from "@/lib/utils/schedule";
 import { StatusBadge } from "./StatusBadge";
 
 interface Week {
   weekNumber: number;
   weekType: "REGULAR" | "QUARTERFINAL" | "SEMIFINAL" | "FINAL";
   label: string;
-  date: Date;
   isRegular: boolean;
   isPlayoff: boolean;
   isComplete?: boolean;
+  isIncomplete?: boolean;
   isCurrent?: boolean;
 }
 
@@ -143,14 +142,16 @@ function WeekItem({
         isSelected ? "bg-blue-50 border-blue-600" : "border-transparent"
       )}
     >
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{week.label}</span>
         {week.isCurrent && <StatusBadge status="current" />}
-        {week.isComplete && !week.isCurrent && (
+        {week.isIncomplete && !week.isCurrent && (
+          <StatusBadge status="incomplete" />
+        )}
+        {week.isComplete && !week.isCurrent && !week.isIncomplete && (
           <StatusBadge status="complete" />
         )}
       </div>
-      <span className="text-xs text-gray-500">{formatWeekDate(week.date)}</span>
     </button>
   );
 }
@@ -179,13 +180,12 @@ function PlayoffWeekItem({
         isSelected ? "bg-orange-50 border-orange-600" : "border-transparent"
       )}
     >
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{week.label}</span>
         <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
           {weekLabels[week.weekType]}
         </span>
       </div>
-      <span className="text-xs text-gray-500">{formatWeekDate(week.date)}</span>
     </button>
   );
 }

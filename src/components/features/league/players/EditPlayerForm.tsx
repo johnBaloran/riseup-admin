@@ -84,7 +84,7 @@ export function EditPlayerForm({
           ? player.division._id.toString()
           : player.division,
       team: player.team?._id?.toString() || null,
-      jerseyNumber: player.jerseyNumber || null,
+      jerseyNumber: player.jerseyNumber ?? null,
       jerseySize: player.jerseySize || null,
       jerseyName: player.jerseyName || null,
       instagram: player.instagram || null,

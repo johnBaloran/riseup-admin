@@ -40,16 +40,8 @@ const baseGameSchema = z.object({
       const date = new Date(dateString);
       return !isNaN(date.getTime());
     },
-    { message: "Invalid date format" }
+    { message: "Invalid date format (date includes time)" }
   ),
-
-  time: z
-    .string()
-    .min(1, "Time is required")
-    .regex(
-      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-      "Time must be in HH:MM format (24-hour)"
-    ),
 
   homeTeam: z.string().min(1, "Home team is required"),
 
@@ -122,16 +114,7 @@ export const updateGameSchema = z
           const date = new Date(dateString);
           return !isNaN(date.getTime());
         },
-        { message: "Invalid date format" }
-      )
-      .optional(),
-
-    time: z
-      .string()
-      .min(1, "Time is required")
-      .regex(
-        /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
-        "Time must be in HH:MM format (24-hour)"
+        { message: "Invalid date format (date includes time)" }
       )
       .optional(),
 
@@ -254,6 +237,7 @@ export const getGamesQuerySchema = z.object({
 export const scheduleOverviewQuerySchema = z.object({
   cityId: z.string().optional(),
   locationId: z.string().optional(),
+  tab: z.enum(["active", "registration"]).optional(),
 });
 
 // ===== TYPE EXPORTS =====
@@ -273,11 +257,11 @@ export type ScheduleOverviewQuery = z.infer<typeof scheduleOverviewQuerySchema>;
  * Used in business logic layer
  */
 export function validateTimeConflict(
-  game1: { time: string; homeTeam: string; awayTeam: string },
-  game2: { time: string; homeTeam: string; awayTeam: string }
+  game1: { date: Date; homeTeam: string; awayTeam: string },
+  game2: { date: Date; homeTeam: string; awayTeam: string }
 ): boolean {
-  // Same time
-  if (game1.time !== game2.time) return false;
+  // Same date/time
+  if (game1.date.getTime() !== game2.date.getTime()) return false;
 
   // Check if any team is playing in both games
   const game1Teams = [game1.homeTeam, game1.awayTeam];

@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/games/StatusBadge";
@@ -67,16 +68,18 @@ export default function GamesPage() {
   const router = useRouter();
   const [data, setData] = useState<ScheduleOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"active" | "registration">("active");
   const [locationFilter, setLocationFilter] = useState<string>("all");
 
   useEffect(() => {
     fetchScheduleOverview();
-  }, [locationFilter]);
+  }, [tab, locationFilter]);
 
   const fetchScheduleOverview = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      params.append("tab", tab);
       if (locationFilter && locationFilter !== "all") {
         params.append("locationId", locationFilter);
       }
@@ -137,6 +140,14 @@ export default function GamesPage() {
           />
         </div>
       )}
+
+      {/* Tabs */}
+      <Tabs value={tab} onValueChange={(value) => setTab(value as "active" | "registration")}>
+        <TabsList>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="registration">Registration Open</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Filter */}
       <div className="flex items-center gap-4">

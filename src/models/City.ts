@@ -11,6 +11,7 @@ const Schema = mongoose.Schema;
 
 export interface ICity extends mongoose.Document {
   cityName: string;
+  stripeAccountId?: string;
   region: string;
   country: string;
   timezone: string;
@@ -25,6 +26,10 @@ const citySchema = new Schema<ICity>(
     cityName: {
       type: String,
       required: [true, "City name is required"],
+      trim: true,
+    },
+    stripeAccountId: {
+      type: String,
       trim: true,
     },
     region: {

@@ -13,6 +13,7 @@ export const createPriceSchema = z.object({
     .string()
     .min(5, "Stripe price ID is required")
     .startsWith("price_", "Must be a valid Stripe price ID"),
+  city: z.string().optional(),
   amount: z.number().min(0, "Amount must be 0 or greater"),
   type: z.enum([
     "earlyBird",

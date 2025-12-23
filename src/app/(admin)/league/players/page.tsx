@@ -47,7 +47,7 @@ export default async function PlayersPage({
   }
 
   const page = parseInt(searchParams.page || "1");
-  const tab = (searchParams.tab || "active") as "active" | "inactive" | "all";
+  const tab = (searchParams.tab || "all") as "active" | "inactive" | "all" | "registration";
   const freeAgentsOnly = searchParams.freeAgents === "true";
   const hasUserAccount = searchParams.hasUser
     ? searchParams.hasUser === "true"
@@ -76,11 +76,6 @@ export default async function PlayersPage({
       <PageHeader
         title="Players"
         description="Manage player profiles and registrations"
-        showBackButton
-        backButtonFallback={{
-          href: "/league/divisions",
-          label: "Back to Divisions",
-        }}
         actions={
           hasPermission(session, "manage_players") && (
             <Button asChild>

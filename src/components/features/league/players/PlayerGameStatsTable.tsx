@@ -16,6 +16,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/date";
+import { EditGameStatDialog } from "./EditGameStatDialog";
+import { DeleteGameStatButton } from "./DeleteGameStatButton";
 
 interface GameStat {
   game: {
@@ -29,12 +31,20 @@ interface GameStat {
   steals: number;
   blocks: number;
   threesMade: number;
+  twosMade: number;
+  freeThrowsMade: number;
 }
 
 interface PlayerGameStatsTableProps {
   stats: GameStat[];
+  playerId: string;
+  canManage?: boolean;
 }
-export function PlayerGameStatsTable({ stats }: PlayerGameStatsTableProps) {
+export function PlayerGameStatsTable({
+  stats,
+  playerId,
+  canManage = false,
+}: PlayerGameStatsTableProps) {
   console.log("PlayerGameStatsTable stats:", stats);
   if (!stats || stats.length === 0) {
     return (
@@ -65,20 +75,25 @@ export function PlayerGameStatsTable({ stats }: PlayerGameStatsTableProps) {
               <TableHead className="text-right">Steals</TableHead>
               <TableHead className="text-right">Blocks</TableHead>
               <TableHead className="text-right">3PM</TableHead>
+              <TableHead className="text-right">2PM</TableHead>
+              <TableHead className="text-right">FTM</TableHead>
+              {canManage && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {stats.map((stat) => (
-              <TableRow key={stat.game._id}>
+              <TableRow key={stat.game?._id}>
                 <TableCell>
                   <Link
-                    href={`/games/${stat.game._id}`}
+                    href={`/games/${stat.game?._id}`}
                     className="text-blue-600 hover:underline"
                   >
-                    {stat.game.gameName}
+                    {stat.game?.gameName}
                   </Link>
                   <p className="text-xs text-gray-500">
-                    {formatDate(stat.game.date, "MMM d, yyyy")}
+                    {formatDate(stat.game?.date, "MMM d, yyyy")}
                   </p>
                 </TableCell>
                 <TableCell className="text-right font-medium">
@@ -89,6 +104,27 @@ export function PlayerGameStatsTable({ stats }: PlayerGameStatsTableProps) {
                 <TableCell className="text-right">{stat.steals}</TableCell>
                 <TableCell className="text-right">{stat.blocks}</TableCell>
                 <TableCell className="text-right">{stat.threesMade}</TableCell>
+                <TableCell className="text-right">{stat.twosMade}</TableCell>
+                <TableCell className="text-right">
+                  {stat.freeThrowsMade}
+                </TableCell>
+                {canManage && (
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <EditGameStatDialog
+                        playerId={playerId}
+                        gameId={stat.game?._id}
+                        gameName={stat.game?.gameName}
+                        stat={stat}
+                      />
+                      <DeleteGameStatButton
+                        playerId={playerId}
+                        gameId={stat.game?._id}
+                        gameName={stat.game?.gameName}
+                      />
+                    </div>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

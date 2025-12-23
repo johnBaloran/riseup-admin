@@ -198,6 +198,7 @@ export async function updateDivision(
     startDate?: string;
     startTime?: string;
     endTime?: string;
+    earlyBirdDeadline?: string;
     active?: boolean;
     register?: boolean;
   }
@@ -207,6 +208,9 @@ export async function updateDivision(
   const updateData: any = { ...data };
   if (data.startDate) {
     updateData.startDate = new Date(data.startDate);
+  }
+  if (data.earlyBirdDeadline) {
+    updateData.earlyBirdDeadline = new Date(data.earlyBirdDeadline);
   }
 
   return Division.findByIdAndUpdate(id, updateData, { new: true }).lean();
@@ -323,5 +327,35 @@ export async function getDivisionFreeAgentCounts(divisionId: string): Promise<{
     withTeam,
     withoutTeam,
     total: withTeam + withoutTeam,
+  };
+}
+
+/**
+ * Get divisions available for team switching
+ * Returns both active divisions and divisions with registration open
+ */
+export async function getDivisionsForSwitching() {
+  await connectDB();
+
+  const [activeDivisions, registrationDivisions] = await Promise.all([
+    Division.find({ active: true })
+      .populate("city", "cityName")
+      .populate("location", "name")
+      .populate("level", "name grade")
+      .select("divisionName city location level startDate day startTime endTime active register")
+      .sort({ startDate: -1 })
+      .lean(),
+    Division.find({ register: true })
+      .populate("city", "cityName")
+      .populate("location", "name")
+      .populate("level", "name grade")
+      .select("divisionName city location level startDate day startTime endTime active register")
+      .sort({ startDate: -1 })
+      .lean(),
+  ]);
+
+  return {
+    activeDivisions,
+    registrationDivisions,
   };
 }

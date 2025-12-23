@@ -30,7 +30,7 @@ export async function getTeams({
   locationId?: string;
   search?: string;
   viewMode?: "card" | "list";
-  activeFilter?: "active" | "inactive" | "all";
+  activeFilter?: "active" | "inactive" | "all" | "registration";
   noCaptain?: boolean;
   noPlayers?: boolean;
 }) {
@@ -47,10 +47,12 @@ export async function getTeams({
   } else {
     // Only apply active filter when no specific division is requested
     if (activeFilter === "active") {
-      divisionFilter.$or = [{ active: true }, { register: true }];
+      divisionFilter.active = true;
     } else if (activeFilter === "inactive") {
       divisionFilter.active = false;
       divisionFilter.register = false;
+    } else if (activeFilter === "registration") {
+      divisionFilter.register = true;
     }
     // If "all", no active/register filter
   }
@@ -156,7 +158,7 @@ export async function createTeam(data: {
 
   const team = await Team.create({
     ...data,
-    teamCode: data.teamCode.toUpperCase(),
+    teamCode: data.teamCode,
     createdManually: true,
     wins: 0,
     losses: 0,
@@ -205,7 +207,7 @@ export async function updateTeam(
 
   const updateData: any = { ...data };
   if (data.teamCode) {
-    updateData.teamCode = data.teamCode.toUpperCase();
+    updateData.teamCode = data.teamCode;
   }
 
   // Fetch team for division and captain change handling
@@ -303,7 +305,7 @@ export async function teamCodeExistsInDivision(
   await connectDB();
 
   const query: any = {
-    teamCode: teamCode.toUpperCase(),
+    teamCode: teamCode,
     division: divisionId,
   };
 
@@ -331,4 +333,46 @@ export async function getTeamStats(teamId: string) {
     pointDifference: team.pointDifference,
     record: `${team.wins}-${team.losses}`,
   };
+}
+
+/**
+ * Get teams grouped by division for player switching
+ * Returns teams from divisions that are either active or have registration open
+ */
+export async function getTeamsForSwitching() {
+  await connectDB();
+
+  // Get divisions that are either active or have registration open
+  const divisions = await Division.find({
+    $or: [{ active: true }, { register: true }],
+  })
+    .populate("city", "cityName")
+    .populate("location", "name")
+    .populate("level", "name grade")
+    .select(
+      "divisionName city location level startDate day startTime endTime active register"
+    )
+    .sort({ startDate: -1 })
+    .lean();
+
+  const divisionIds = divisions.map((d: any) => d._id);
+
+  // Get all teams from these divisions
+  const teams = await Team.find({
+    division: { $in: divisionIds },
+  })
+    .populate("division", "divisionName")
+    .select("teamName teamNameShort teamCode division")
+    .sort({ teamName: 1 })
+    .lean();
+
+  // Group teams by division
+  const teamsByDivision = divisions.map((division: any) => ({
+    division: division,
+    teams: teams.filter(
+      (team: any) => team.division._id.toString() === division._id.toString()
+    ),
+  }));
+
+  return teamsByDivision;
 }

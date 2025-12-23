@@ -46,10 +46,10 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
   }
 
   const page = parseInt(searchParams.page || "1");
-  const tab = (searchParams.tab || "active") as "active" | "inactive" | "all";
+  const tab = (searchParams.tab || "all") as "active" | "inactive" | "all" | "registration";
   const viewMode = (searchParams.view || "card") as any;
 
-  const [result, divisions, locations] = await Promise.all([
+  const [result, allTeamsResult, divisions, locations] = await Promise.all([
     getTeams({
       page,
       divisionId: searchParams.division,
@@ -60,6 +60,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
       noCaptain: searchParams.noCaptain === "true",
       noPlayers: searchParams.noPlayers === "true",
     }),
+    getTeams({ limit: 999999, activeFilter: "active" }), // Get all active teams for stats
     getDivisions({
       activeFilter: "active",
     }),
@@ -76,11 +77,6 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
       <PageHeader
         title="Teams"
         description="Manage teams, rosters, and assignments"
-        showBackButton
-        backButtonFallback={{
-          href: "/league/divisions",
-          label: "Back to Divisions",
-        }}
         actions={
           <Button asChild>
             <Link href={createTeamUrl}>
@@ -93,6 +89,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
 
       <TeamsContent
         teams={result.teams as any}
+        allTeams={allTeamsResult.teams as any}
         pagination={result.pagination}
         divisions={divisions.divisions as any}
         locations={locations as any}

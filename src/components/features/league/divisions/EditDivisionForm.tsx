@@ -55,6 +55,7 @@ export function EditDivisionForm({
     division.startDate ? format(new Date(division.startDate), "yyyy-MM-dd") : ""
   );
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [prices, setPrices] = useState<any[]>([]);
 
   const {
     register,
@@ -89,6 +90,31 @@ export function EditDivisionForm({
         : undefined,
       startTime: division.startTime,
       endTime: division.endTime,
+      earlyBirdDeadline: division.earlyBirdDeadline
+        ? format(new Date(division.earlyBirdDeadline), "yyyy-MM-dd")
+        : undefined,
+      prices: {
+        earlyBird:
+          typeof division.prices?.earlyBird === "object"
+            ? division.prices.earlyBird._id
+            : division.prices?.earlyBird || "",
+        regular:
+          typeof division.prices?.regular === "object"
+            ? division.prices.regular._id
+            : division.prices?.regular || "",
+        installment:
+          typeof division.prices?.installment === "object"
+            ? division.prices.installment._id
+            : division.prices?.installment || "",
+        regularInstallment:
+          typeof division.prices?.regularInstallment === "object"
+            ? division.prices.regularInstallment._id
+            : division.prices?.regularInstallment || "",
+        firstInstallment:
+          typeof division.prices?.firstInstallment === "object"
+            ? division.prices.firstInstallment._id
+            : division.prices?.firstInstallment || "",
+      },
       active: division.active,
       register: division.register,
     },
@@ -99,6 +125,7 @@ export function EditDivisionForm({
   const selectedDay = watch("day");
   const active = watch("active");
   const registerOpen = watch("register");
+  const selectedPrices = watch("prices");
 
   // Filter locations by selected city
   const availableLocations = useMemo(() => {
@@ -106,22 +133,80 @@ export function EditDivisionForm({
     return city?.locations || [];
   }, [cities, selectedCity]);
 
-  // Calculate early bird end date
+  // Fetch prices for this city
+  useEffect(() => {
+    const fetchPrices = async () => {
+      try {
+        const response = await fetch("/api/v1/league/prices");
+        if (response.ok) {
+          const data = await response.json();
+          // Filter prices to only show ones for this division's city or legacy (no city)
+          const filteredPrices = (data.data || []).filter(
+            (price: any) =>
+              !price.city || price.city._id === selectedCity
+          );
+          setPrices(filteredPrices);
+        }
+      } catch (error) {
+        console.error("Error fetching prices:", error);
+      }
+    };
+
+    fetchPrices();
+  }, [selectedCity]);
+
+  // Group prices by type for easier selection
+  const pricesByType = useMemo(() => {
+    return {
+      earlyBird: prices.filter((p) => p.type === "earlyBird"),
+      regular: prices.filter((p) => p.type === "regular"),
+      installment: prices.filter((p) => p.type === "installment"),
+      regularInstallment: prices.filter((p) => p.type === "regularInstallment"),
+      firstInstallment: prices.filter((p) => p.type === "firstInstallment"),
+      free: prices.filter((p) => p.type === "free"),
+    };
+  }, [prices]);
+
+  const earlyBirdDeadlineValue = watch("earlyBirdDeadline");
+
+  // Calculate early bird end date - use earlyBirdDeadline if set, otherwise calculate from startDate
   const earlyBirdEndDate = useMemo(() => {
+    if (earlyBirdDeadlineValue) {
+      // Parse as local date to avoid timezone shift in preview
+      const [year, month, day] = earlyBirdDeadlineValue.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
     if (!selectedStartDate) return null;
-    const startDate = new Date(selectedStartDate);
+    // Parse as local date to avoid timezone shift in preview
+    const [year, month, day] = selectedStartDate.split("-").map(Number);
+    const startDate = new Date(year, month - 1, day);
     return subDays(startDate, 42);
-  }, [selectedStartDate]);
+  }, [selectedStartDate, earlyBirdDeadlineValue]);
 
   const onSubmit = async (data: UpdateDivisionInput) => {
     setIsLoading(true);
     setConflictWarning(null);
 
     try {
+      // Convert date strings to ISO format (like games do) to avoid timezone issues
+      const payload = { ...data };
+      if (payload.startDate) {
+        const [year, month, day] = payload.startDate.split("-").map(Number);
+        const localDate = new Date(year, month - 1, day);
+        localDate.setHours(0, 0, 0, 0);
+        payload.startDate = localDate.toISOString();
+      }
+      if (payload.earlyBirdDeadline) {
+        const [year, month, day] = payload.earlyBirdDeadline.split("-").map(Number);
+        const localDate = new Date(year, month - 1, day);
+        localDate.setHours(0, 0, 0, 0);
+        payload.earlyBirdDeadline = localDate.toISOString();
+      }
+
       const response = await fetch(`/api/v1/divisions`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
 
       const result = await response.json();
@@ -136,7 +221,7 @@ export function EditDivisionForm({
       }
 
       toast.success("Division updated successfully!");
-      router.push(`/league/divisions`);
+      router.push(`/league/divisions/${data.id}`);
       router.refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to update division");
@@ -354,81 +439,210 @@ export function EditDivisionForm({
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="earlyBirdDeadline">
+              Early Bird Deadline (Optional)
+            </Label>
+            <Input
+              {...register("earlyBirdDeadline")}
+              id="earlyBirdDeadline"
+              type="date"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If not set, defaults to 42 days before start date
+            </p>
+          </div>
+
           {earlyBirdEndDate && (
             <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-blue-800">
-                Early bird pricing ends 42 days (6 weeks) before start date on{" "}
-                <strong>{format(earlyBirdEndDate, "MMM dd, yyyy")}</strong>
+                {earlyBirdDeadlineValue ? (
+                  <>
+                    Early bird pricing ends on{" "}
+                    <strong>{format(earlyBirdEndDate, "MMM dd, yyyy")}</strong>
+                  </>
+                ) : (
+                  <>
+                    Early bird pricing ends 42 days (6 weeks) before start date
+                    on <strong>{format(earlyBirdEndDate, "MMM dd, yyyy")}</strong>
+                  </>
+                )}
               </p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Pricing (Locked) */}
+      {/* Pricing */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            Pricing (Locked)
-          </CardTitle>
+          <CardTitle>Pricing</CardTitle>
           <p className="text-sm text-gray-600">
-            Pricing cannot be changed after division creation
+            Select payment options for this division
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <span className="text-xs text-gray-500">Early Bird</span>
-                <p className="font-medium">
-                  ${division.prices?.earlyBird?.amount?.toFixed(2) || "0.00"} -{" "}
-                  {division.prices?.earlyBird?.name || "N/A"}
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="earlyBird">Early Bird *</Label>
+              <Select
+                value={selectedPrices?.earlyBird}
+                onValueChange={(value) =>
+                  setValue("prices.earlyBird", value, { shouldValidate: true })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select early bird price" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pricesByType.earlyBird.map((price: any) => (
+                    <SelectItem key={price._id} value={price._id}>
+                      {price.name} - ${price.amount.toFixed(2)}
+                      {price.city ? ` (${price.city.cityName})` : " (Legacy)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.prices?.earlyBird && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.prices.earlyBird.message}
                 </p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500">Regular</span>
-                <p className="font-medium">
-                  ${division.prices?.regular?.amount?.toFixed(2) || "0.00"} -{" "}
-                  {division.prices?.regular?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500">Down Payment</span>
-                <p className="font-medium">
-                  $
-                  {division.prices?.firstInstallment?.amount?.toFixed(2) ||
-                    "0.00"}{" "}
-                  - {division.prices?.firstInstallment?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500">
-                  Weekly (Early Bird)
-                </span>
-                <p className="font-medium">
-                  ${division.prices?.installment?.amount?.toFixed(2) || "0.00"}
-                  /week - {division.prices?.installment?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500">Weekly (Regular)</span>
-                <p className="font-medium">
-                  $
-                  {division.prices?.regularInstallment?.amount?.toFixed(2) ||
-                    "0.00"}
-                  /week - {division.prices?.regularInstallment?.name || "N/A"}
-                </p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500">Free</span>
-                <p className="font-medium">
-                  ${division.prices?.free?.amount?.toFixed(2) || "0.00"} -{" "}
-                  {division.prices?.free?.name || "N/A"}
-                </p>
-              </div>
+              )}
             </div>
+
+            <div>
+              <Label htmlFor="regular">Regular *</Label>
+              <Select
+                value={selectedPrices?.regular}
+                onValueChange={(value) =>
+                  setValue("prices.regular", value, { shouldValidate: true })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select regular price" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pricesByType.regular.map((price: any) => (
+                    <SelectItem key={price._id} value={price._id}>
+                      {price.name} - ${price.amount.toFixed(2)}
+                      {price.city ? ` (${price.city.cityName})` : " (Legacy)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.prices?.regular && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.prices.regular.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="firstInstallment">Down Payment *</Label>
+              <Select
+                value={selectedPrices?.firstInstallment}
+                onValueChange={(value) =>
+                  setValue("prices.firstInstallment", value, {
+                    shouldValidate: true,
+                  })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select down payment price" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pricesByType.firstInstallment.map((price: any) => (
+                    <SelectItem key={price._id} value={price._id}>
+                      {price.name} - ${price.amount.toFixed(2)}
+                      {price.city ? ` (${price.city.cityName})` : " (Legacy)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.prices?.firstInstallment && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.prices.firstInstallment.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="installment">Weekly Installment (Early Bird) *</Label>
+              <Select
+                value={selectedPrices?.installment}
+                onValueChange={(value) =>
+                  setValue("prices.installment", value, {
+                    shouldValidate: true,
+                  })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select installment price" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pricesByType.installment.map((price: any) => (
+                    <SelectItem key={price._id} value={price._id}>
+                      {price.name} - ${price.amount.toFixed(2)}/week
+                      {price.city ? ` (${price.city.cityName})` : " (Legacy)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.prices?.installment && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.prices.installment.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="regularInstallment">
+                Weekly Installment (Regular) *
+              </Label>
+              <Select
+                value={selectedPrices?.regularInstallment}
+                onValueChange={(value) =>
+                  setValue("prices.regularInstallment", value, {
+                    shouldValidate: true,
+                  })
+                }
+                disabled={isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select regular installment price" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pricesByType.regularInstallment.map((price: any) => (
+                    <SelectItem key={price._id} value={price._id}>
+                      {price.name} - ${price.amount.toFixed(2)}/week
+                      {price.city ? ` (${price.city.cityName})` : " (Legacy)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.prices?.regularInstallment && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.prices.regularInstallment.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              <Info className="inline h-4 w-4 mr-1" />
+              Prices are filtered to only show prices for{" "}
+              <strong>
+                {cities.find((c) => c._id === selectedCity)?.cityName}
+              </strong>{" "}
+              and legacy prices (without a city).
+            </p>
           </div>
         </CardContent>
       </Card>
