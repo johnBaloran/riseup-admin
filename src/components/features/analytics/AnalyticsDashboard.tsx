@@ -141,8 +141,6 @@ export function AnalyticsDashboard({
               <p className="text-sm text-gray-600 mt-1">
                 {analytics.stats.totalCount} total payments •{" "}
                 {analytics.citiesBreakdown.length} cities •{" "}
-                {analytics.stats.linkage.withUser} with user accounts (
-                {analytics.stats.linkage.linkageRate.toFixed(1)}%)
               </p>
             </div>
           </div>

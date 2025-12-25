@@ -100,7 +100,16 @@ export default withAuth(
   }
 );
 
-// Protect all admin routes
+// Protect all admin routes except /api/cron (for automated jobs)
 export const config = {
-  matcher: ["/:path*", "/api/v1/:path*"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/cron (automated cron jobs)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api/cron|_next/static|_next/image|favicon.ico).*)",
+  ],
 };
