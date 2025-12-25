@@ -104,7 +104,8 @@ export function RevenueChart({
                 borderRadius: "6px",
                 padding: "12px",
               }}
-              formatter={(value: number, name: string, props: any) => {
+              formatter={(value: number | undefined, name: string | undefined, props: any) => {
+                if (value === undefined || name === undefined) return ["", ""];
                 const formattedValue = formatCurrency(value);
                 if (name === "Previous Period" && props.payload.previousDate) {
                   return [formattedValue, `${name} (${props.payload.previousDate})`];
