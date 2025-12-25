@@ -16,6 +16,13 @@ interface CityBreakdownProps {
     count: number;
     paid: number;
   }>;
+  previousCities?: Array<{
+    cityId: string;
+    cityName: string;
+    count: number;
+    paid: number;
+  }>;
+  compareEnabled: boolean;
 }
 
 export function CityBreakdown({ cities }: CityBreakdownProps) {

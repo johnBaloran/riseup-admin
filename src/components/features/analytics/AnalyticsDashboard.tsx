@@ -24,7 +24,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MetricCards } from "./MetricCards";
+import { RevenueChart } from "./RevenueChart";
 import { PaymentTypeBreakdown } from "./PaymentTypeBreakdown";
 import { CityBreakdown } from "./CityBreakdown";
 import { PaymentMethodList } from "./PaymentMethodList";
@@ -37,6 +39,7 @@ interface AnalyticsDashboardProps {
     cityId?: string;
     startDate?: string;
     endDate?: string;
+    compareEnabled?: boolean;
   };
 }
 
@@ -49,6 +52,25 @@ export function AnalyticsDashboard({
   const searchParams = useSearchParams();
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
+
+  // Initialize activeDateRange from URL params
+  const getInitialDateRange = () => {
+    if (!currentFilters.startDate || !currentFilters.endDate) return "today";
+
+    const start = new Date(currentFilters.startDate + "T00:00:00");
+    const end = new Date(currentFilters.endDate + "T00:00:00");
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return "today";
+    if (diffDays === 6) return "7days";
+    if (diffDays === 27) return "28days";
+    if (diffDays === 59) return "60days";
+    if (diffDays === 89) return "90days";
+    return "custom";
+  };
+
+  const [activeDateRange, setActiveDateRange] = useState(getInitialDateRange());
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -70,56 +92,80 @@ export function AnalyticsDashboard({
 
   const hasActiveFilters = currentFilters.cityId;
 
-  const getActiveDateRange = () => {
-    if (!currentFilters.startDate || !currentFilters.endDate) return "today";
-
-    const start = new Date(currentFilters.startDate);
-    const end = new Date(currentFilters.endDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "today";
-    if (diffDays === 7) return "7days";
-    if (diffDays === 28) return "28days";
-    if (diffDays === 60) return "60days";
-    if (diffDays === 90) return "90days";
-    return "custom";
+  // Helper to get EST date string (YYYY-MM-DD)
+  const getESTDateString = (date: Date) => {
+    // Use toLocaleString to get proper EST date
+    const estString = date.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    // Convert from MM/DD/YYYY to YYYY-MM-DD
+    const [month, day, year] = estString.split("/");
+    return `${year}-${month}-${day}`;
   };
 
-  const activeDateRange = getActiveDateRange();
+  // Get current date/time in EST
+  const getESTDate = () => {
+    const now = new Date();
+    // Get EST date string and create new Date object
+    const estString = now.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+    });
+    return new Date(estString);
+  };
 
   const handleDateRangeClick = (range: string) => {
-    const endDate = new Date();
-    endDate.setHours(23, 59, 59, 999);
-    let startDate = new Date();
+    setActiveDateRange(range);
+
+    // Get current EST date
+    const now = getESTDate();
+    let startDate = new Date(now);
+    const endDate = new Date(now);
+
+    console.log("DEBUG - handleDateRangeClick:", {
+      range,
+      now,
+      estDateString: getESTDateString(now),
+      nowISO: now.toISOString(),
+    });
 
     if (range === "today") {
+      // Today only in EST
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     } else if (range === "7days") {
-      startDate.setDate(startDate.getDate() - 7);
+      // Last 7 days including today
+      startDate.setDate(startDate.getDate() - 6);
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     } else if (range === "28days") {
-      startDate.setDate(startDate.getDate() - 28);
+      // Last 28 days including today
+      startDate.setDate(startDate.getDate() - 27);
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     } else if (range === "60days") {
-      startDate.setDate(startDate.getDate() - 60);
+      // Last 60 days including today
+      startDate.setDate(startDate.getDate() - 59);
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     } else if (range === "90days") {
-      startDate.setDate(startDate.getDate() - 90);
+      // Last 90 days including today
+      startDate.setDate(startDate.getDate() - 89);
       startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     }
 
     updateFilters({
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
+      startDate: getESTDateString(startDate),
+      endDate: getESTDateString(endDate),
     });
   };
 
   const handleCustomDateRange = () => {
     if (customStartDate && customEndDate) {
+      setActiveDateRange("custom");
       updateFilters({
         startDate: customStartDate,
         endDate: customEndDate,
@@ -179,37 +225,47 @@ export function AnalyticsDashboard({
             </label>
             <div className="flex gap-2 flex-wrap">
               <Button
-                variant={activeDateRange === "today" ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateRangeClick("today")}
+                style={activeDateRange === "today" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                className={activeDateRange === "today" ? "hover:!bg-gray-800" : ""}
               >
                 Today
               </Button>
               <Button
-                variant={activeDateRange === "7days" ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateRangeClick("7days")}
+                style={activeDateRange === "7days" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                className={activeDateRange === "7days" ? "hover:!bg-gray-800" : ""}
               >
                 7 Days
               </Button>
               <Button
-                variant={activeDateRange === "28days" ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateRangeClick("28days")}
+                style={activeDateRange === "28days" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                className={activeDateRange === "28days" ? "hover:!bg-gray-800" : ""}
               >
                 28 Days
               </Button>
               <Button
-                variant={activeDateRange === "60days" ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateRangeClick("60days")}
+                style={activeDateRange === "60days" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                className={activeDateRange === "60days" ? "hover:!bg-gray-800" : ""}
               >
                 60 Days
               </Button>
               <Button
-                variant={activeDateRange === "90days" ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => handleDateRangeClick("90days")}
+                style={activeDateRange === "90days" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                className={activeDateRange === "90days" ? "hover:!bg-gray-800" : ""}
               >
                 90 Days
               </Button>
@@ -218,8 +274,10 @@ export function AnalyticsDashboard({
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={activeDateRange === "custom" ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
+                    style={activeDateRange === "custom" ? { backgroundColor: "#111827", color: "white", borderColor: "#111827" } : {}}
+                    className={activeDateRange === "custom" ? "hover:!bg-gray-800" : ""}
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     Custom
@@ -270,18 +328,52 @@ export function AnalyticsDashboard({
               )}
             </div>
           </div>
+
+          {/* Comparison Toggle */}
+          <div className="flex items-center space-x-2 pt-4 border-t">
+            <Checkbox
+              id="compare"
+              checked={currentFilters.compareEnabled || false}
+              onCheckedChange={(checked) => {
+                updateFilters({
+                  compare: checked ? "true" : undefined,
+                });
+              }}
+            />
+            <label
+              htmlFor="compare"
+              className="text-sm font-medium text-gray-700 cursor-pointer"
+            >
+              Compare to previous period
+            </label>
+          </div>
         </div>
       </div>
 
       {/* Metric Cards */}
-      <MetricCards stats={analytics.stats} />
+      <MetricCards
+        stats={analytics.stats}
+        previousStats={analytics.previousStats}
+        compareEnabled={currentFilters.compareEnabled || false}
+      />
+
+      {/* Revenue Chart */}
+      <RevenueChart
+        dailyTrend={analytics.dailyTrend}
+        previousDailyTrend={analytics.previousDailyTrend}
+        compareEnabled={currentFilters.compareEnabled || false}
+      />
 
       {/* Payment Type Breakdown */}
       <PaymentTypeBreakdown stats={analytics.stats} />
 
       {/* City Breakdown */}
       {analytics.citiesBreakdown.length > 1 && (
-        <CityBreakdown cities={analytics.citiesBreakdown} />
+        <CityBreakdown
+          cities={analytics.citiesBreakdown}
+          previousCities={analytics.previousCitiesBreakdown}
+          compareEnabled={currentFilters.compareEnabled || false}
+        />
       )}
 
       {/* Payment Method List */}

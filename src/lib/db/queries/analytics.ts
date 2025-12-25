@@ -14,6 +14,7 @@ export interface AnalyticsFilters {
   cityId?: string;
   startDate?: Date;
   endDate?: Date;
+  compareEnabled?: boolean;
 }
 
 export interface PaymentAnalytics {
@@ -55,6 +56,25 @@ export interface PaymentAnalytics {
   }>;
 
   dailyTrend: Array<{
+    date: string;
+    count: number;
+    paid: number;
+  }>;
+
+  // Previous period data (when comparison is enabled)
+  previousStats?: {
+    totalCount: number;
+    totalPaid: number;
+  };
+
+  previousCitiesBreakdown?: Array<{
+    cityId: string;
+    cityName: string;
+    count: number;
+    paid: number;
+  }>;
+
+  previousDailyTrend?: Array<{
     date: string;
     count: number;
     paid: number;
@@ -118,11 +138,62 @@ export async function getPaymentAnalytics(
   const citiesBreakdown = calculateCitiesBreakdown(paymentMethods);
   const dailyTrend = calculateDailyTrend(paymentMethods);
 
+  // Fetch previous period data if comparison is enabled
+  let previousStats, previousCitiesBreakdown, previousDailyTrend;
+
+  if (filters.compareEnabled && filters.startDate && filters.endDate) {
+    // Calculate previous period dates
+    const currentPeriodDuration =
+      filters.endDate.getTime() - filters.startDate.getTime();
+    const previousEndDate = new Date(filters.startDate.getTime() - 1); // Day before current start
+    const previousStartDate = new Date(
+      previousEndDate.getTime() - currentPeriodDuration
+    );
+
+    // Build query for previous period
+    const previousQuery: any = {};
+    if (filters.cityId) {
+      const divisionIds = await Division.find({
+        city: filters.cityId,
+      }).distinct("_id");
+      previousQuery.division = { $in: divisionIds };
+    }
+    previousQuery.createdAt = {
+      $gte: previousStartDate,
+      $lte: previousEndDate,
+    };
+
+    // Fetch previous period payment methods
+    const previousPaymentMethods = await PaymentMethod.find(previousQuery)
+      .populate({
+        path: "division",
+        populate: {
+          path: "city",
+          select: "cityName stripeAccountId",
+        },
+      })
+      .lean();
+
+    // Calculate previous period stats
+    previousStats = {
+      totalCount: previousPaymentMethods.length,
+      totalPaid: previousPaymentMethods.reduce(
+        (sum, pm) => sum + (pm.amountPaid || 0),
+        0
+      ),
+    };
+    previousCitiesBreakdown = calculateCitiesBreakdown(previousPaymentMethods);
+    previousDailyTrend = calculateDailyTrend(previousPaymentMethods);
+  }
+
   return {
     paymentMethods,
     stats,
     citiesBreakdown,
     dailyTrend,
+    previousStats,
+    previousCitiesBreakdown,
+    previousDailyTrend,
   };
 }
 
