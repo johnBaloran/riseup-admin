@@ -1,0 +1,3509 @@
+
+
+----- lib/db/queries/payments.ts -----
+
+// src/lib/db/queries/payments.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Payment data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Player from "@/models/Player";
+import PaymentMethod from "@/models/PaymentMethod";
+import Division from "@/models/Division";
+import Location from "@/models/Location";
+import Team from "@/models/Team";
+
+/**
+ * Get payment status for a player
+ */
+export async function getPlayerPaymentStatus(playerId: string) {
+  await connectDB();
+
+  const player = await Player.findById(playerId)
+    .populate("paymentMethods")
+    .lean();
+
+  if (!player || !player.paymentMethods || player.paymentMethods.length === 0) {
+    return { status: "unpaid", paymentMethod: null };
+  }
+
+  const paymentMethod = player.paymentMethods[0] as any;
+
+  if (paymentMethod.status === "COMPLETED") {
+    return { status: "paid", paymentMethod };
+  }
+
+  if (paymentMethod.paymentType === "INSTALLMENTS") {
+    const subscriptionPayments =
+      paymentMethod.installments?.subscriptionPayments || [];
+    const failedCount = subscriptionPayments.filter(
+      (p: any) => p.status === "failed"
+    ).length;
+
+    if (failedCount === 0) return { status: "on-track", paymentMethod };
+    if (failedCount >= 3) return { status: "critical", paymentMethod };
+    return { status: "has-issues", paymentMethod };
+  }
+
+  return { status: "unpaid", paymentMethod };
+}
+
+/**
+ * Get all players with payment status for dashboard
+ * Uses aggregation pipeline for efficient DB-level filtering and pagination
+ */
+export async function getPlayersWithPaymentStatus({
+  page = 1,
+  limit = 12,
+  locationId,
+  divisionId,
+  teamId,
+  paymentStatusFilter = "all",
+  search,
+}: {
+  page?: number;
+  limit?: number;
+  locationId?: string;
+  divisionId?: string;
+  teamId?: string;
+  paymentStatusFilter?: string;
+  search?: string;
+}) {
+  await connectDB();
+
+  // Build filter for active divisions only
+  const divisionFilter: any = { $or: [{ active: true }, { register: true }] };
+  if (locationId) divisionFilter.location = locationId;
+  if (divisionId) divisionFilter._id = divisionId;
+
+  const divisions = await Division.find(divisionFilter).select("_id");
+  const divisionIds = divisions.map((d) => d._id);
+
+  if (!divisionIds.length) {
+    return {
+      players: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
+  }
+
+  // Build base match filter
+  const matchFilter: any = { division: { $in: divisionIds } };
+  if (teamId) matchFilter.team = teamId;
+
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    const matchingTeams = await Team.find({
+      teamName: { $regex: searchRegex },
+    }).select("_id");
+
+    matchFilter.$or = [
+      { playerName: { $regex: searchRegex } },
+      { team: { $in: matchingTeams.map((t) => t._id) } },
+    ];
+  }
+
+  // Build aggregation pipeline
+  const pipeline: any[] = [
+    { $match: matchFilter },
+    {
+      $lookup: {
+        from: "paymentmethods",
+        localField: "_id",
+        foreignField: "player",
+        as: "paymentMethods",
+      },
+    },
+    {
+      $addFields: {
+        paymentMethod: { $arrayElemAt: ["$paymentMethods", 0] },
+      },
+    },
+    {
+      $addFields: {
+        paymentStatus: {
+          $cond: {
+            if: { $eq: [{ $size: "$paymentMethods" }, 0] },
+            then: "unpaid",
+            else: {
+              $cond: {
+                if: { $eq: ["$paymentMethod.status", "COMPLETED"] },
+                then: "paid",
+                else: {
+                  $cond: {
+                    if: { $eq: ["$paymentMethod.paymentType", "INSTALLMENTS"] },
+                    then: {
+                      $let: {
+                        vars: {
+                          failedCount: {
+                            $size: {
+                              $filter: {
+                                input: {
+                                  $ifNull: [
+                                    "$paymentMethod.installments.subscriptionPayments",
+                                    [],
+                                  ],
+                                },
+                                cond: { $eq: ["$$this.status", "failed"] },
+                              },
+                            },
+                          },
+                        },
+                        in: {
+                          $cond: {
+                            if: { $eq: ["$$failedCount", 0] },
+                            then: "on-track",
+                            else: {
+                              $cond: {
+                                if: { $gte: ["$$failedCount", 3] },
+                                then: "critical",
+                                else: "has-issues",
+                              },
+                            },
+                          },
+                        },
+                      },
+                    },
+                    else: "unpaid",
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  ];
+
+  // Add payment status filter if needed
+  if (paymentStatusFilter !== "all") {
+    pipeline.push({ $match: { paymentStatus: paymentStatusFilter } });
+  }
+
+  // Get total count before pagination
+  const countPipeline = [...pipeline, { $count: "total" }];
+  const countResult = await Player.aggregate(countPipeline);
+  const total = countResult[0]?.total || 0;
+
+  // Add sorting and pagination
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    { $skip: (page - 1) * limit },
+    { $limit: limit }
+  );
+
+  // Execute aggregation
+  const players = await Player.aggregate(pipeline);
+
+  // Populate references
+  await Player.populate(players, [
+    {
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName" },
+      ],
+    },
+    { path: "team", select: "teamName" },
+    { path: "user", select: "name email phoneNumber" },
+  ]);
+
+  return {
+    players,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+
+----- lib/db/queries/players.ts -----
+
+// src/lib/db/queries/players.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player data access functions ONLY
+ */
+// src/lib/db/queries/players.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Player from "@/models/Player";
+import Team from "@/models/Team";
+import Division from "@/models/Division";
+import Location from "@/models/Location";
+
+/**
+ * Calculate player payment status with installment details
+ */
+async function getPlayerPaymentStatus(playerId: string, divisionId: string) {
+  await connectDB();
+
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+
+  const payment = await PaymentMethod.findOne({
+    player: playerId,
+    division: divisionId,
+  }).lean();
+
+  if (!payment) {
+    return {
+      status: "unpaid",
+      type: null,
+      installmentProgress: null,
+    };
+  }
+
+  if (payment.status === "COMPLETED") {
+    return {
+      status: "paid",
+      type: payment.paymentType,
+      installmentProgress: null,
+    };
+  }
+
+  if (
+    payment.paymentType === "INSTALLMENTS" &&
+    payment.status === "IN_PROGRESS"
+  ) {
+    // Build installment progress (7 weeks)
+    const totalWeeks = 7;
+    const progress = Array(totalWeeks)
+      .fill("pending")
+      .map((_, index) => {
+        const weekNumber = index + 1;
+        const weekPayment = payment.installments?.subscriptionPayments?.find(
+          (p: any) => p.paymentNumber === weekNumber
+        );
+
+        if (!weekPayment)
+          return { week: weekNumber, status: "pending" as const };
+
+        return {
+          week: weekNumber,
+          status:
+            weekPayment.status === "succeeded"
+              ? ("succeeded" as const)
+              : ("failed" as const),
+          amountPaid: weekPayment.amountPaid,
+          dueDate: weekPayment.dueDate,
+        };
+      });
+
+    return {
+      status: "in_progress",
+      type: "INSTALLMENTS",
+      installmentProgress: progress,
+      remainingBalance: payment.installments?.remainingBalance,
+      nextPaymentDate: payment.installments?.nextPaymentDate,
+    };
+  }
+
+  return {
+    status: "unpaid",
+    type: payment.paymentType,
+    installmentProgress: null,
+  };
+}
+
+/**
+ * Get players with filters and payment status
+ */
+export async function getPlayers({
+  page = 1,
+  limit = 12,
+  divisionId,
+  teamId,
+  locationId,
+  freeAgentsOnly = false,
+  hasUserAccount,
+  search,
+  activeFilter = "active",
+}: {
+  page?: number;
+  limit?: number;
+  divisionId?: string;
+  locationId?: string;
+  teamId?: string;
+  freeAgentsOnly?: boolean;
+  hasUserAccount?: boolean;
+  search?: string;
+  activeFilter?: "active" | "inactive" | "all";
+}) {
+  await connectDB();
+
+  // --- Step 1: Get valid divisions based on active filter ---
+  const divisionFilter: any = {};
+
+  if (activeFilter === "active") {
+    divisionFilter.$or = [{ active: true }, { register: true }];
+  } else if (activeFilter === "inactive") {
+    divisionFilter.active = false;
+    divisionFilter.register = false;
+  }
+  // If "all", no active/register filter
+
+  if (divisionId) divisionFilter._id = divisionId;
+  if (locationId) divisionFilter.location = locationId;
+
+  const validDivisions = await Division.find(divisionFilter).select("_id");
+  const validDivisionIds = validDivisions.map((d) => d._id);
+
+  if (!validDivisionIds.length) {
+    // No divisions match, return empty result
+    return {
+      players: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
+  }
+
+  // --- Step 2: Build player filter ---
+  const filter: any = {
+    division: { $in: validDivisionIds },
+  };
+
+  if (teamId) filter.team = teamId;
+
+  if (freeAgentsOnly) filter.freeAgent = true; // filter by freeAgent boolean, includes both with and without teams
+
+  if (hasUserAccount !== undefined) {
+    filter.user = hasUserAccount
+      ? { $exists: true, $ne: null }
+      : { $in: [null] };
+  }
+
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+
+    // find divisions that match search
+    const matchingDivisions = await Division.find({
+      divisionName: { $regex: searchRegex },
+    }).select("_id");
+
+    // find teams that match search
+    const matchingTeams = await Team.find({
+      teamName: { $regex: searchRegex },
+    }).select("_id");
+
+    // find locations that match search
+    const matchingLocations = await Location.find({
+      name: { $regex: searchRegex },
+    }).select("_id");
+
+    filter.$or = [
+      { playerName: { $regex: searchRegex } },
+      { "user.email": { $regex: searchRegex } },
+      { team: { $in: matchingTeams.map((t) => t._id) } },
+      { division: { $in: matchingDivisions.map((d) => d._id) } },
+      {
+        division: {
+          $in: matchingDivisions
+            .filter((d) =>
+              matchingLocations.some((l) => l._id.equals(d.location))
+            )
+            .map((d) => d._id),
+        },
+      },
+    ];
+  }
+
+  const skip = (page - 1) * limit;
+
+  // --- Step 3: Query players with pagination ---
+  const [players, total] = await Promise.all([
+    Player.find(filter)
+      .populate("team", "teamName teamCode")
+      .populate({
+        path: "division",
+        select: "divisionName location city",
+        populate: [
+          { path: "location", select: "name" },
+          { path: "city", select: "cityName" },
+        ],
+      })
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Player.countDocuments(filter),
+  ]);
+
+  // --- Step 4: Return result with pagination ---
+  return {
+    players,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+/**
+ * Get free agents in a division
+ */
+export async function getFreeAgentsByDivision(divisionId: string) {
+  await connectDB();
+
+  return Player.find({
+    division: divisionId,
+    $or: [{ team: { $exists: false } }, { team: null }],
+  })
+    .select("playerName jerseyNumber user")
+    .lean();
+}
+
+/**
+ * Get all free agents in a division with their current team status
+ */
+export async function getDivisionFreeAgents(divisionId: string) {
+  await connectDB();
+
+  const players = await Player.find({
+    division: divisionId,
+    freeAgent: true,
+  })
+    .select("playerName team user instagram jerseyNumber createdAt freeAgent")
+    .populate("team", "teamName teamCode")
+    .populate("user", "name email phoneNumber")
+    .sort({ playerName: 1 })
+    .lean();
+
+  return players;
+}
+
+/**
+ * Get player by ID
+ */
+export async function getPlayerById(id: string) {
+  await connectDB();
+
+  const player = await Player.findById(id)
+    .populate("team", "teamName teamCode")
+    .populate({
+      path: "division",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName region" },
+        { path: "level", select: "name grade" },
+      ],
+    })
+    .populate("user", "name email phoneNumber instagram")
+    .lean();
+
+  if (!player) return null;
+
+  // Get payment status
+  const divisionId = (player.division as any)?._id || player.division;
+  const paymentInfo = await getPlayerPaymentStatus(id, divisionId.toString());
+
+  return {
+    ...player,
+    paymentStatus: paymentInfo.status,
+    paymentType: paymentInfo.type,
+    installmentProgress: paymentInfo.installmentProgress,
+    remainingBalance: paymentInfo.remainingBalance,
+    nextPaymentDate: paymentInfo.nextPaymentDate,
+  };
+}
+
+/**
+ * Create new player
+ */
+export async function createPlayer(data: {
+  playerName: string;
+  division: string;
+  team?: string;
+  jerseyNumber?: number | null;
+  jerseySize?: string;
+  jerseyName?: string;
+  instagram?: string;
+  user?: string;
+}) {
+  await connectDB();
+
+  // Filter out null values before creating
+  const cleanData: any = {
+    playerName: data.playerName,
+    division: data.division,
+  };
+
+  if (data.team) cleanData.team = data.team;
+  if (data.jerseyNumber !== null && data.jerseyNumber !== undefined) {
+    cleanData.jerseyNumber = data.jerseyNumber;
+  }
+  if (data.jerseySize) cleanData.jerseySize = data.jerseySize;
+  if (data.jerseyName) cleanData.jerseyName = data.jerseyName;
+  if (data.instagram) cleanData.instagram = data.instagram;
+  if (data.user) cleanData.user = data.user;
+
+  const player = await Player.create(data);
+
+  // If team specified, add player to team's players array
+  if (data.team) {
+    await Team.findByIdAndUpdate(data.team, {
+      $addToSet: { players: player._id },
+    });
+  }
+
+  return player.toObject();
+}
+
+/**
+ * Update player
+ */
+export async function updatePlayer(
+  id: string,
+  data: {
+    playerName?: string;
+    division?: string;
+    team?: string | null;
+    jerseyNumber?: number | null;
+    jerseySize?: string | null;
+    jerseyName?: string | null;
+    instagram?: string | null;
+    user?: string | null;
+  }
+) {
+  await connectDB();
+
+  const player = await Player.findById(id);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Handle team changes
+  if (data.team !== undefined) {
+    const oldTeam = player.team;
+
+    // Remove from old team if exists
+    if (oldTeam) {
+      await Team.findByIdAndUpdate(oldTeam, {
+        $pull: { players: player._id },
+      });
+    }
+
+    // Add to new team if specified
+    if (data.team) {
+      await Team.findByIdAndUpdate(data.team, {
+        $addToSet: { players: player._id },
+      });
+    }
+  }
+
+  // Update player
+  Object.assign(player, data);
+  await player.save();
+
+  return player.toObject();
+}
+
+/**
+ * Delete player
+ */
+export async function deletePlayer(id: string) {
+  await connectDB();
+
+  const player = await Player.findById(id);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Check if player has payment records
+  const PaymentMethod = (await import("@/models/PaymentMethod")).default;
+  const hasPayments = await PaymentMethod.exists({ player: id });
+
+  if (hasPayments) {
+    throw new Error(
+      "Cannot delete player with payment records. Archive instead."
+    );
+  }
+
+  // Remove from team if assigned
+  if (player.team) {
+    await Team.findByIdAndUpdate(player.team, {
+      $pull: { players: player._id },
+    });
+  }
+
+  // Remove from user if linked
+  if (player.user) {
+    const User = (await import("@/models/User")).default;
+    await User.findByIdAndUpdate(player.user, {
+      $pull: { basketball: player._id },
+    });
+  }
+
+  await Player.findByIdAndDelete(id);
+}
+
+/**
+ * Add player to team
+ */
+export async function addPlayerToTeam(playerId: string, teamId: string) {
+  await connectDB();
+
+  const player = await Player.findById(playerId);
+
+  if (!player) {
+    throw new Error("Player not found");
+  }
+
+  // Remove from old team if exists
+  if (player.team) {
+    await Team.findByIdAndUpdate(player.team, {
+      $pull: { players: playerId },
+    });
+  }
+
+  // Update player's team
+  await Player.findByIdAndUpdate(playerId, { team: teamId });
+
+  // Add player to team's players array
+  await Team.findByIdAndUpdate(teamId, {
+    $addToSet: { players: playerId },
+  });
+}
+
+/**
+ * Remove player from team (make free agent)
+ */
+export async function removePlayerFromTeam(playerId: string, teamId: string) {
+  await connectDB();
+
+  // Remove team from player
+  await Player.findByIdAndUpdate(playerId, { team: null });
+
+  // Remove player from team's players array
+  await Team.findByIdAndUpdate(teamId, {
+    $pull: { players: playerId },
+  });
+
+  // If player was captain, remove captain assignment
+  const team = await Team.findById(teamId);
+  if (team?.teamCaptain?.toString() === playerId) {
+    await Team.findByIdAndUpdate(teamId, { teamCaptain: null });
+  }
+}
+
+
+----- lib/db/queries/prices.ts -----
+
+// src/lib/db/queries/prices.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Price from "@/models/Price";
+
+/**
+ * Get all prices (sorted by type, then amount)
+ */
+export async function getAllPrices() {
+  await connectDB();
+  return Price.find().sort({ type: 1, amount: 1 }).lean();
+}
+
+/**
+ * Get prices by type
+ */
+export async function getPricesByType(type: string) {
+  await connectDB();
+  return Price.find({ type }).sort({ amount: 1 }).lean();
+}
+
+/**
+ * Get price by ID
+ */
+export async function getPriceById(id: string) {
+  await connectDB();
+  return Price.findById(id).lean();
+}
+
+/**
+ * Create new price
+ */
+export async function createPrice(data: {
+  name: string;
+  priceId: string;
+  amount: number;
+  type: string;
+}) {
+  await connectDB();
+
+  const price = await Price.create(data);
+
+  return price.toObject();
+}
+
+/**
+ * Check if Stripe price ID exists
+ */
+export async function stripePriceIdExists(priceId: string): Promise<boolean> {
+  await connectDB();
+
+  const count = await Price.countDocuments({ priceId });
+  return count > 0;
+}
+
+/**
+ * Get division count using this price
+ */
+export async function getPriceDivisionCount(priceId: string): Promise<number> {
+  await connectDB();
+
+  const Division = (await import("@/models/Division")).default;
+
+  const count = await Division.countDocuments({
+    $or: [
+      { "prices.earlyBird": priceId },
+      { "prices.regular": priceId },
+      { "prices.installment": priceId },
+      { "prices.firstInstallment": priceId },
+      { "prices.free": priceId },
+    ],
+  });
+
+  return count;
+}
+
+
+----- lib/db/queries/teams.ts -----
+
+// src/lib/db/queries/teams.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Team from "@/models/Team";
+import Division from "@/models/Division";
+import Player from "@/models/Player";
+
+/**
+ * Get teams with pagination and filters
+ */
+export async function getTeams({
+  page = 1,
+  limit = 12,
+  divisionId,
+  locationId,
+  search,
+  viewMode = "card",
+  activeFilter = "active",
+  noCaptain = false,
+  noPlayers = false,
+}: {
+  page?: number;
+  limit?: number;
+  divisionId?: string;
+  locationId?: string;
+  search?: string;
+  viewMode?: "card" | "list";
+  activeFilter?: "active" | "inactive" | "all";
+  noCaptain?: boolean;
+  noPlayers?: boolean;
+}) {
+  await connectDB();
+
+  const skip = (page - 1) * limit;
+
+  // --- Step 1: Get valid divisions based on active filter ---
+  const divisionFilter: any = {};
+
+  // If a specific divisionId is provided, bypass active filter
+  if (divisionId) {
+    divisionFilter._id = divisionId;
+  } else {
+    // Only apply active filter when no specific division is requested
+    if (activeFilter === "active") {
+      divisionFilter.$or = [{ active: true }, { register: true }];
+    } else if (activeFilter === "inactive") {
+      divisionFilter.active = false;
+      divisionFilter.register = false;
+    }
+    // If "all", no active/register filter
+  }
+
+  if (locationId) divisionFilter.location = locationId;
+
+  const validDivisions = await Division.find(divisionFilter).select("_id");
+  const validDivisionIds = validDivisions.map((d) => d._id);
+
+  if (!validDivisionIds.length) {
+    // No divisions match, return empty result
+    return {
+      teams: [],
+      pagination: { total: 0, page, limit, totalPages: 0 },
+    };
+  }
+
+  // --- Step 2: Build team filter ---
+  const filter: any = {
+    division: { $in: validDivisionIds },
+  };
+
+  if (search) {
+    filter.$or = [
+      { teamName: { $regex: search, $options: "i" } },
+      { teamCode: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (noCaptain) {
+    filter.teamCaptain = { $in: [null] };
+    filter.players = { $exists: true, $ne: [] }; // has players but no captain
+  }
+
+  if (noPlayers) {
+    // Override players filter if noPlayers is set
+    filter.players = { $size: 0 };
+  }
+
+  // --- Step 3: Query teams with pagination ---
+  const [teams, total] = await Promise.all([
+    Team.find(filter)
+      .populate({
+        path: "division",
+        select: "divisionName startDate",
+        populate: [
+          { path: "location", select: "name" },
+          { path: "city", select: "cityName region" },
+        ],
+      })
+      .populate("teamCaptain", "playerName")
+      .populate("players", "playerName jerseyNumber")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Team.countDocuments(filter),
+  ]);
+
+  // --- Step 4: Return result with pagination ---
+  return {
+    teams,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+/**
+ * Get team by ID
+ */
+export async function getTeamById(id: string) {
+  await connectDB();
+  return Team.findById(id)
+    .populate({
+      path: "division",
+      select: "divisionName startDate",
+      populate: [
+        { path: "location", select: "name" },
+        { path: "city", select: "cityName region" },
+        { path: "level", select: "name grade" },
+      ],
+    })
+    .populate("teamCaptain", "playerName jerseyNumber user")
+    .populate("players", "playerName jerseyNumber user")
+    .populate("games")
+    .lean();
+}
+
+/**
+ * Create new team
+ */
+export async function createTeam(data: {
+  teamName: string;
+  teamNameShort: string;
+  teamCode: string;
+  division: string;
+}) {
+  await connectDB();
+
+  const team = await Team.create({
+    ...data,
+    teamCode: data.teamCode.toUpperCase(),
+    createdManually: true,
+    wins: 0,
+    losses: 0,
+    pointDifference: 0,
+    players: [],
+    games: [],
+  });
+
+  // Add team to division's teams array
+  await Division.findByIdAndUpdate(data.division, {
+    $addToSet: { teams: team._id },
+  });
+
+  return team.toObject();
+}
+
+/**
+ * Update team
+ */
+export async function updateTeam(
+  id: string,
+  data: {
+    teamName?: string;
+    teamNameShort?: string;
+    teamCode?: string;
+    division?: string;
+    teamCaptain?: string | null;
+    primaryColor?: string;
+    secondaryColor?: string;
+    tertiaryColor?: string;
+    jerseyEdition?: string;
+    isCustomJersey?: boolean;
+  }
+) {
+  await connectDB();
+
+  const updateData: any = { ...data };
+  if (data.teamCode) {
+    updateData.teamCode = data.teamCode.toUpperCase();
+  }
+
+  // Fetch team for division and captain change handling
+  const team = await Team.findById(id);
+  if (!team) {
+    throw new Error("Team not found");
+  }
+
+  // If division is being changed, update division arrays and player divisions
+  if (data.division) {
+    const oldDivisionId = team.division.toString();
+    const newDivisionId = data.division;
+
+    // Only update if division actually changed
+    if (oldDivisionId !== newDivisionId) {
+      // Remove team from old division's teams array
+      await Division.findByIdAndUpdate(oldDivisionId, {
+        $pull: { teams: team._id },
+      });
+
+      // Add team to new division's teams array
+      await Division.findByIdAndUpdate(newDivisionId, {
+        $addToSet: { teams: team._id },
+      });
+
+      // Update all players in this team to the new division
+      await Player.updateMany(
+        { _id: { $in: team.players } },
+        { $set: { division: newDivisionId } }
+      );
+    }
+  }
+
+  // If team captain is being changed, update player teamCaptain flags
+  if (data.teamCaptain !== undefined) {
+    const oldCaptainId = team.teamCaptain?.toString();
+    const newCaptainId = data.teamCaptain;
+
+    // Remove captain flag from old captain (if exists)
+    if (oldCaptainId && oldCaptainId !== newCaptainId) {
+      await Player.findByIdAndUpdate(oldCaptainId, {
+        $set: { teamCaptain: false },
+      });
+    }
+
+    // Set captain flag for new captain (if not null)
+    if (newCaptainId) {
+      await Player.findByIdAndUpdate(newCaptainId, {
+        $set: { teamCaptain: true },
+      });
+    }
+  }
+
+  return Team.findByIdAndUpdate(id, updateData, { new: true }).lean();
+}
+
+/**
+ * Delete team
+ */
+export async function deleteTeam(id: string) {
+  await connectDB();
+
+  const team = await Team.findById(id);
+
+  if (!team) {
+    throw new Error("Team not found");
+  }
+
+  if (team.players.length > 0) {
+    throw new Error(
+      "Cannot delete team with players. Remove all players first."
+    );
+  }
+
+  if (team.games.length > 0) {
+    throw new Error("Cannot delete team with game history.");
+  }
+
+  // Remove team from division's teams array
+  await Division.findByIdAndUpdate(team.division, {
+    $pull: { teams: team._id },
+  });
+
+  await Team.findByIdAndDelete(id);
+}
+
+/**
+ * Check if team code exists in division
+ */
+export async function teamCodeExistsInDivision(
+  teamCode: string,
+  divisionId: string,
+  excludeTeamId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = {
+    teamCode: teamCode.toUpperCase(),
+    division: divisionId,
+  };
+
+  if (excludeTeamId) {
+    query._id = { $ne: excludeTeamId };
+  }
+
+  const count = await Team.countDocuments(query);
+  return count > 0;
+}
+
+/**
+ * Get team stats
+ */
+export async function getTeamStats(teamId: string) {
+  await connectDB();
+
+  const team = await Team.findById(teamId).lean();
+
+  if (!team) return null;
+
+  return {
+    wins: team.wins,
+    losses: team.losses,
+    pointDifference: team.pointDifference,
+    record: `${team.wins}-${team.losses}`,
+  };
+}
+
+
+----- lib/services/stripe-customer-service.ts -----
+
+// src/lib/services/stripe-customer-service.ts
+
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-09-30.clover",
+});
+
+export interface CardInfo {
+  hasCard: boolean;
+  brand?: string;
+  last4?: string;
+  expMonth?: number;
+  expYear?: number;
+  isExpired: boolean;
+  isValid: boolean;
+  paymentMethodId?: string;
+}
+
+/**
+ * Get customer's payment method info
+ * Tries multiple methods to find a card:
+ * 1. Default payment method
+ * 2. Invoice settings default
+ * 3. List all payment methods
+ */
+export async function getCustomerCardInfo(
+  customerId: string
+): Promise<CardInfo> {
+  try {
+    console.log("🔍 Getting card info for customer:", customerId);
+
+    // Validate customerId
+    if (!customerId || !customerId.startsWith("cus_")) {
+      console.error("❌ Invalid customer ID format:", customerId);
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    // Get customer
+    const customer = await stripe.customers.retrieve(customerId, {
+      expand: ["invoice_settings.default_payment_method"],
+    });
+
+    if (customer.deleted) {
+      console.log("❌ Customer is deleted");
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    console.log("✅ Customer retrieved:", {
+      id: customer.id,
+      hasDefaultPaymentMethod:
+        !!customer.invoice_settings?.default_payment_method,
+      defaultSource: customer.default_source,
+    });
+
+    // METHOD 1: Try invoice_settings.default_payment_method
+    let paymentMethod: Stripe.PaymentMethod | null = null;
+    const defaultPaymentMethod =
+      customer.invoice_settings?.default_payment_method;
+
+    if (defaultPaymentMethod) {
+      if (typeof defaultPaymentMethod === "string") {
+        console.log(
+          "📝 Fetching payment method from invoice settings:",
+          defaultPaymentMethod
+        );
+        paymentMethod = await stripe.paymentMethods.retrieve(
+          defaultPaymentMethod
+        );
+      } else {
+        paymentMethod = defaultPaymentMethod;
+      }
+    }
+
+    // METHOD 2: Try listing all payment methods if no default found
+    if (!paymentMethod) {
+      console.log(
+        "📝 No default payment method, listing all payment methods..."
+      );
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: "card",
+        limit: 100,
+      });
+
+      console.log("✅ Found payment methods:", paymentMethods.data.length);
+
+      if (paymentMethods.data.length > 0) {
+        // Use the most recently created one
+        paymentMethod = paymentMethods.data[0];
+        console.log("✅ Using payment method:", paymentMethod.id);
+      }
+    }
+
+    // METHOD 3: Check default_source (legacy)
+    if (!paymentMethod && customer.default_source) {
+      console.log("📝 Checking default_source (legacy)...");
+      if (typeof customer.default_source === "string") {
+        // This could be a card or bank account
+        // For now, we'll skip this as it's legacy
+        console.log("⚠️ default_source is a string (legacy), skipping");
+      }
+    }
+
+    // No payment method found
+    if (!paymentMethod) {
+      console.log("❌ No payment method found for customer");
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    console.log("✅ Payment method found:", {
+      id: paymentMethod.id,
+      type: paymentMethod.type,
+    });
+
+    // Check if it's a card type
+    if (paymentMethod.type !== "card" || !paymentMethod.card) {
+      console.log("❌ Payment method is not a card:", paymentMethod.type);
+      return { hasCard: false, isExpired: false, isValid: false };
+    }
+
+    const card = paymentMethod.card;
+
+    // Check if card is expired
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    const isExpired =
+      card.exp_year < currentYear ||
+      (card.exp_year === currentYear && card.exp_month < currentMonth);
+
+    console.log("✅ Card found:", {
+      brand: card.brand,
+      last4: card.last4,
+      expMonth: card.exp_month,
+      expYear: card.exp_year,
+      isExpired,
+    });
+
+    return {
+      hasCard: true,
+      brand: card.brand,
+      last4: card.last4,
+      expMonth: card.exp_month,
+      expYear: card.exp_year,
+      isExpired,
+      isValid: !isExpired,
+      paymentMethodId: paymentMethod.id,
+    };
+  } catch (error: any) {
+    console.error("❌ Error getting customer card info:", {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      customerId,
+    });
+    return { hasCard: false, isExpired: false, isValid: false };
+  }
+}
+
+/**
+ * Charge customer's card
+ */
+export async function chargeCustomerCard({
+  customerId,
+  amount,
+  description,
+  metadata,
+}: {
+  customerId: string;
+  amount: number;
+  description: string;
+  metadata: Record<string, string>;
+}): Promise<Stripe.PaymentIntent> {
+  console.log("💳 Attempting to charge card:", {
+    customerId,
+    amount,
+    description,
+  });
+
+  try {
+    // Validate inputs
+    if (!customerId || !customerId.startsWith("cus_")) {
+      throw new Error("Invalid customer ID format");
+    }
+
+    if (!amount || amount <= 0) {
+      throw new Error("Invalid amount");
+    }
+
+    // Get customer to verify they exist
+    const customer = await stripe.customers.retrieve(customerId);
+
+    if (customer.deleted) {
+      throw new Error("Customer account has been deleted");
+    }
+
+    console.log("✅ Customer found:", customer.id);
+
+    // Find a payment method
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+      type: "card",
+      limit: 1,
+    });
+
+    if (paymentMethods.data.length === 0) {
+      throw new Error("No payment method found for customer");
+    }
+
+    const paymentMethodId = paymentMethods.data[0].id;
+    console.log("✅ Using payment method:", paymentMethodId);
+
+    // Create payment intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: "usd",
+      customer: customerId,
+      payment_method: paymentMethodId,
+      off_session: true,
+      confirm: true,
+      description,
+      metadata,
+    });
+
+    console.log("✅ Payment intent created:", {
+      id: paymentIntent.id,
+      status: paymentIntent.status,
+      amount: paymentIntent.amount,
+    });
+
+    if (paymentIntent.status === "requires_action") {
+      throw new Error("Payment requires additional authentication");
+    }
+
+    if (paymentIntent.status === "requires_payment_method") {
+      throw new Error("Payment method declined");
+    }
+
+    return paymentIntent;
+  } catch (error: any) {
+    console.error("❌ Error charging customer card:", {
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      decline_code: error.decline_code,
+      customerId,
+    });
+
+    // Provide user-friendly error messages
+    if (error.type === "StripeCardError") {
+      const declineCode = error.decline_code || "generic_decline";
+      const friendlyMessages: Record<string, string> = {
+        insufficient_funds: "Card declined: Insufficient funds",
+        card_declined: "Card was declined by your bank",
+        expired_card: "Card has expired",
+        incorrect_cvc: "Incorrect CVC code",
+        processing_error: "Processing error occurred",
+        generic_decline: "Card was declined",
+      };
+      throw new Error(friendlyMessages[declineCode] || error.message);
+    } else if (error.type === "StripeInvalidRequestError") {
+      throw new Error(`Invalid request: ${error.message}`);
+    } else if (error.type === "StripeAuthenticationError") {
+      throw new Error("Stripe authentication failed. Check your API keys.");
+    } else if (error.type === "StripeRateLimitError") {
+      throw new Error("Too many requests. Please try again in a moment.");
+    } else {
+      throw new Error(error.message || "Failed to charge card");
+    }
+  }
+}
+
+
+----- lib/utils/time.ts -----
+
+// src/lib/utils/time.ts
+
+/**
+ * Convert military time (HH:mm) to 12-hour format (h:mm AM/PM)
+ */
+export function formatTime(militaryTime?: string): string {
+  if (!militaryTime) return "";
+
+  const [hours, minutes] = militaryTime.split(":").map(Number);
+
+  if (isNaN(hours) || isNaN(minutes)) return militaryTime;
+
+  const period = hours >= 12 ? "PM" : "AM";
+  const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+
+  return `${displayHours}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
+/**
+ * Format time range for display
+ */
+export function formatTimeRange(startTime?: string, endTime?: string): string {
+  if (!startTime || !endTime) return "";
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+}
+
+
+----- lib/utils.ts -----
+
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+
+----- lib/validations/city.ts -----
+
+// src/lib/validations/city.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City validation schemas ONLY
+ */
+
+/**
+ * DRY Principle
+ * Shared between API routes and form components
+ */
+
+import { z } from "zod";
+
+export const createCitySchema = z.object({
+  cityName: z.string().min(2, "City name must be at least 2 characters"),
+  region: z.string().min(2, "Region is required"),
+  country: z.string().min(2, "Country is required"),
+  timezone: z.string().min(2, "Timezone is required"),
+});
+
+export const updateCitySchema = z.object({
+  id: z.string(),
+  cityName: z.string().min(2).optional(),
+  region: z.string().min(2).optional(),
+  country: z.string().min(2).optional(),
+  timezone: z.string().min(2).optional(),
+  active: z.boolean().optional(),
+});
+
+export type CreateCityInput = z.infer<typeof createCitySchema>;
+export type UpdateCityInput = z.infer<typeof updateCitySchema>;
+
+
+----- lib/validations/division.ts -----
+
+// src/lib/validations/division.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createDivisionSchema = z.object({
+  divisionName: z
+    .string()
+    .min(2, "Division name must be at least 2 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  city: z.string().min(1, "City is required"),
+  location: z.string().min(1, "Location is required"),
+  level: z.string().min(1, "Level is required"),
+  day: z.enum([
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ]),
+  startDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  prices: z.object({
+    earlyBird: z.string().min(1, "Early Bird price is required"),
+    regular: z.string().min(1, "Regular price is required"),
+    installment: z.string().min(1, "Early Bird installment price is required"),
+    regularInstallment: z
+      .string()
+      .min(1, "Regular installment price is required"),
+    firstInstallment: z.string().min(1, "Down payment price is required"),
+  }),
+  active: z.boolean(),
+  register: z.boolean(),
+});
+
+export const updateDivisionSchema = z.object({
+  id: z.string(),
+  divisionName: z.string().min(2).optional(),
+  description: z.string().min(10).optional(),
+  location: z.string().optional(),
+  level: z.string().optional(),
+  day: z
+    .enum([
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ])
+    .optional(),
+  startDate: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  active: z.boolean().optional(),
+  register: z.boolean().optional(),
+});
+
+export type CreateDivisionInput = z.infer<typeof createDivisionSchema>;
+export type UpdateDivisionInput = z.infer<typeof updateDivisionSchema>;
+
+
+----- lib/validations/level.ts -----
+
+// src/lib/validations/level.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createLevelSchema = z.object({
+  name: z.string().min(2, "Level name must be at least 2 characters"),
+  grade: z.number().min(1, "Grade must be at least 1"),
+  active: z.boolean().optional(),
+});
+
+export const updateLevelSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2).optional(),
+  grade: z.number().min(1).optional(),
+  active: z.boolean().optional(),
+});
+
+export type CreateLevelInput = z.infer<typeof createLevelSchema>;
+export type UpdateLevelInput = z.infer<typeof updateLevelSchema>;
+
+
+----- lib/validations/location.ts -----
+
+// src/lib/validations/location.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createLocationSchema = z.object({
+  name: z.string().min(2, "Location name must be at least 2 characters"),
+  address: z.string().min(5, "Address is required"),
+  city: z.string().min(1, "City is required"),
+  coordinates: z
+    .object({
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    })
+    .optional(),
+});
+
+export const updateLocationSchema = z.object({
+  id: z.string(),
+  name: z.string().min(2).optional(),
+  address: z.string().min(5).optional(),
+  city: z.string().optional(),
+  coordinates: z
+    .object({
+      latitude: z.number().optional(),
+      longitude: z.number().optional(),
+    })
+    .optional(),
+});
+
+export type CreateLocationInput = z.infer<typeof createLocationSchema>;
+export type UpdateLocationInput = z.infer<typeof updateLocationSchema>;
+
+
+----- lib/validations/player.ts -----
+
+// src/lib/validations/player.ts - Update jersey sizes
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createPlayerSchema = z.object({
+  playerName: z.string().min(2, "Player name must be at least 2 characters"),
+  division: z.string().min(1, "Division is required"),
+  team: z.string().optional(),
+  jerseyNumber: z
+    .number()
+    .min(0, "Jersey number must be 0 or greater")
+    .max(99, "Jersey number must be 99 or less")
+    .optional()
+    .nullable(),
+  jerseySize: z
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
+    .optional(),
+  jerseyName: z
+    .string()
+    .max(15, "Jersey name must be 15 characters or less")
+    .optional(),
+  instagram: z.string().optional(),
+  user: z.string().optional(),
+});
+
+export const updatePlayerSchema = z.object({
+  id: z.string(),
+  playerName: z.string().min(2).optional(),
+  division: z.string().optional(),
+  team: z.string().nullable().optional(),
+  jerseyNumber: z.number().min(0).max(99).nullable().optional(),
+  jerseySize: z
+    .enum(["S", "M", "L", "XL", "2XL"]) // Updated to match actual sizes
+    .optional()
+    .nullable(),
+  jerseyName: z.string().max(15).optional().nullable(),
+  instagram: z.string().optional().nullable(),
+  user: z.string().nullable().optional(),
+});
+
+export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
+export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
+
+
+----- lib/validations/price.ts -----
+
+// src/lib/validations/price.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createPriceSchema = z.object({
+  name: z.string().min(2, "Price name must be at least 2 characters"),
+  priceId: z
+    .string()
+    .min(5, "Stripe price ID is required")
+    .startsWith("price_", "Must be a valid Stripe price ID"),
+  amount: z.number().min(0, "Amount must be 0 or greater"),
+  type: z.enum([
+    "earlyBird",
+    "regular",
+    "installment",
+    "regularInstallment",
+    "firstInstallment",
+    "free",
+  ]),
+});
+
+export type CreatePriceInput = z.infer<typeof createPriceSchema>;
+
+
+----- lib/validations/team.ts -----
+
+// src/lib/validations/team.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team validation schemas ONLY
+ */
+
+import { z } from "zod";
+
+export const createTeamSchema = z.object({
+  teamName: z.string().min(2, "Team name must be at least 2 characters"),
+  teamNameShort: z.string().min(2, "Short name must be at least 2 characters"),
+  teamCode: z.string().min(2, "Team code must be at least 2 characters"),
+  city: z.string().min(1, "City is required"),
+  location: z.string().min(1, "Location is required"),
+  division: z.string().min(1, "Division is required"),
+});
+
+export const updateTeamSchema = z.object({
+  id: z.string(),
+  teamName: z.string().min(2).optional(),
+  teamNameShort: z.string().min(2).optional(),
+  teamCode: z.string().min(2).optional(),
+  division: z.string().optional(),
+  teamCaptain: z.string().nullable().optional(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  tertiaryColor: z.string().optional(),
+  jerseyEdition: z.string().optional(),
+  isCustomJersey: z.boolean().optional(),
+});
+
+export type CreateTeamInput = z.infer<typeof createTeamSchema>;
+export type UpdateTeamInput = z.infer<typeof updateTeamSchema>;
+
+
+----- middleware.ts -----
+
+// src/middleware.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Route protection ONLY
+ */
+
+/**
+ * Security
+ * Protects all admin routes from unauthorized access
+ */
+
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
+
+    // Check if admin is active
+    if (token && !token.isActive) {
+      return NextResponse.redirect(new URL("/login?error=inactive", req.url));
+    }
+
+    // Admin management routes - EXECUTIVE only
+    if (path.includes("/settings/admins") && token?.role !== "EXECUTIVE") {
+      return NextResponse.redirect(new URL("/unauthorized", req.url));
+    }
+
+    return NextResponse.next();
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/login",
+    },
+  }
+);
+
+// Protect all admin routes
+export const config = {
+  matcher: ["/admin/:path*", "/api/v1/:path*"],
+};
+
+
+----- models/Admin.ts -----
+
+// src/models/Admin.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This model defines ONLY the Admin data structure and schema
+ * No business logic, no queries - just the data model
+ */
+
+/**
+ * Security
+ * - Password hashing with bcrypt
+ * - Password never returned in queries
+ */
+
+import mongoose, { Document, Model } from "mongoose";
+import bcrypt from "bcryptjs";
+
+const Schema = mongoose.Schema;
+
+// Type definitions
+export type AdminRole =
+  | "EXECUTIVE"
+  | "COMMISSIONER"
+  | "SCOREKEEPER"
+  | "PHOTOGRAPHER";
+
+// TypeScript interface
+export interface IAdmin extends Document {
+  name: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+  role: AdminRole;
+  assignedLocations: mongoose.Types.ObjectId[];
+  allLocations: boolean;
+  isActive: boolean;
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+// Schema definition
+const adminSchema = new Schema<IAdmin>(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      select: false, // Never include password in queries by default
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: ["EXECUTIVE", "COMMISSIONER", "SCOREKEEPER", "PHOTOGRAPHER"],
+      required: [true, "Role is required"],
+    },
+    assignedLocations: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
+    allLocations: {
+      type: Boolean,
+      default: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true, // Adds createdAt and updatedAt
+  }
+);
+
+// Indexes for performance
+adminSchema.index({ email: 1 });
+adminSchema.index({ role: 1 });
+adminSchema.index({ isActive: 1 });
+
+// Hash password before saving
+adminSchema.pre("save", async function (next) {
+  // Only hash if password is modified
+  if (!this.isModified("password")) return next();
+
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+// Instance method to compare passwords
+adminSchema.methods.comparePassword = async function (
+  candidatePassword: string
+): Promise<boolean> {
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+// Middleware to set allLocations based on role
+adminSchema.pre("save", function (next) {
+  if (this.role === "EXECUTIVE" || this.role === "COMMISSIONER") {
+    this.allLocations = true;
+  }
+  next();
+});
+
+// Export model
+export default (mongoose.models.Admin as Model<IAdmin>) ||
+  mongoose.model<IAdmin>("Admin", adminSchema);
+
+
+----- models/ChatChannel.ts -----
+
+// src/models/ChatChannel.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * ChatChannel model - chat channel data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export type ChatChannelType =
+  | "division"
+  | "team"
+  | "game"
+  | "direct"
+  | "support";
+
+export interface IChatChannel extends mongoose.Document {
+  channelName: string;
+  channelType: ChatChannelType;
+  referenceId?: mongoose.Types.ObjectId;
+  participants: Array<{
+    userId: mongoose.Types.ObjectId;
+    userName: string;
+    joinedAt: Date;
+  }>;
+  isActive: boolean;
+  lastMessageAt: Date;
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const chatChannelSchema = new Schema<IChatChannel>(
+  {
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+      unique: true,
+    },
+    channelType: {
+      type: String,
+      enum: ["division", "team", "game", "direct", "support"],
+      required: [true, "Channel type is required"],
+    },
+    referenceId: {
+      type: Schema.Types.ObjectId,
+    },
+    participants: [
+      {
+        userId: {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+        },
+        userName: {
+          type: String,
+          required: true,
+        },
+        joinedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    lastMessageAt: {
+      type: Date,
+      default: Date.now,
+    },
+    messageCount: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+chatChannelSchema.index({ channelName: 1 });
+chatChannelSchema.index({ channelType: 1 });
+chatChannelSchema.index({ "participants.userId": 1 });
+chatChannelSchema.index({ isActive: 1, lastMessageAt: -1 });
+
+export default (mongoose.models.ChatChannel as mongoose.Model<IChatChannel>) ||
+  mongoose.model<IChatChannel>("ChatChannel", chatChannelSchema);
+
+
+----- models/ChatMessage.ts -----
+
+// src/models/ChatMessage.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * ChatMessage model - chat message data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IChatMessage extends mongoose.Document {
+  channelId: mongoose.Types.ObjectId;
+  channelName: string;
+  userId: mongoose.Types.ObjectId;
+  userName: string;
+  userEmail: string;
+  content: string;
+  message: string;
+  messageType: "text" | "system" | "announcement";
+  metadata: Record<string, any>;
+  edited: boolean;
+  editedAt?: Date;
+  reactions: Array<{
+    userId: string;
+    userName: string;
+    emoji: string;
+    timestamp: Date;
+  }>;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const chatMessageSchema = new Schema<IChatMessage>(
+  {
+    channelId: {
+      type: Schema.Types.ObjectId,
+      ref: "ChatChannel",
+    },
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    userName: {
+      type: String,
+      required: [true, "User name is required"],
+    },
+    userEmail: {
+      type: String,
+      required: [true, "User email is required"],
+    },
+    content: {
+      type: String,
+      required: [true, "Content is required"],
+    },
+    message: {
+      type: String,
+      required: [true, "Message is required"],
+    },
+    messageType: {
+      type: String,
+      enum: ["text", "system", "announcement"],
+      default: "text",
+    },
+    metadata: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    edited: {
+      type: Boolean,
+      default: false,
+    },
+    editedAt: Date,
+    reactions: [
+      {
+        userId: String,
+        userName: String,
+        emoji: String,
+        timestamp: Date,
+      },
+    ],
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+chatMessageSchema.index({ channelName: 1, createdAt: -1 });
+chatMessageSchema.index({ userId: 1, createdAt: -1 });
+
+export default (mongoose.models.ChatMessage as mongoose.Model<IChatMessage>) ||
+  mongoose.model<IChatMessage>("ChatMessage", chatMessageSchema);
+
+
+----- models/City.ts -----
+
+// src/models/City.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City model - ONLY city data structure
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ICity extends mongoose.Document {
+  cityName: string;
+  region: string;
+  country: string;
+  timezone: string;
+  active: boolean;
+  locations: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const citySchema = new Schema<ICity>(
+  {
+    cityName: {
+      type: String,
+      required: [true, "City name is required"],
+      trim: true,
+    },
+    region: {
+      type: String,
+      required: [true, "Region is required"],
+      trim: true,
+    },
+    country: {
+      type: String,
+      required: [true, "Country is required"],
+      trim: true,
+    },
+    timezone: {
+      type: String,
+      required: [true, "Timezone is required"],
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+    locations: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+citySchema.index({ cityName: 1, region: 1, country: 1 }, { unique: true });
+citySchema.index({ active: 1 });
+
+export default (mongoose.models.City as mongoose.Model<ICity>) ||
+  mongoose.model<ICity>("City", citySchema);
+
+
+----- models/Division.ts -----
+
+// src/models/Division.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division model - division data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IDivision extends mongoose.Document {
+  divisionName: string;
+  city: mongoose.Types.ObjectId;
+  location: mongoose.Types.ObjectId;
+  level: mongoose.Types.ObjectId;
+  day: string;
+  startDate: Date;
+  startTime: string;
+  endTime: string;
+  active: boolean;
+  register: boolean;
+  description: string;
+  teams: mongoose.Types.ObjectId[];
+  games: mongoose.Types.ObjectId[];
+  earlyBirdOpen: boolean;
+  prices: {
+    earlyBird?: mongoose.Types.ObjectId;
+    regular?: mongoose.Types.ObjectId;
+    installment?: mongoose.Types.ObjectId;
+    firstInstallment?: mongoose.Types.ObjectId;
+    free?: mongoose.Types.ObjectId;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const divisionSchema = new Schema<IDivision>(
+  {
+    divisionName: {
+      type: String,
+      required: [true, "Division name is required"],
+      trim: true,
+    },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: "City",
+      required: [true, "City is required"],
+    },
+    location: {
+      type: Schema.Types.ObjectId,
+      ref: "Location",
+      required: [true, "Location is required"],
+    },
+    level: {
+      type: Schema.Types.ObjectId,
+      ref: "Level",
+      required: [true, "Level is required"],
+    },
+    day: {
+      type: String,
+      required: [true, "Day is required"],
+    },
+    startDate: {
+      type: Date,
+    },
+    startTime: {
+      type: String,
+    },
+    endTime: {
+      type: String,
+    },
+    active: {
+      type: Boolean,
+      default: false,
+    },
+    register: {
+      type: Boolean,
+      default: false,
+    },
+    description: {
+      type: String,
+      required: [true, "Description is required"],
+    },
+    teams: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Team",
+      },
+    ],
+    games: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+
+    prices: {
+      earlyBird: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      regular: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      installment: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      regularInstallment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      firstInstallment: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+      free: {
+        type: Schema.Types.ObjectId,
+        ref: "Price",
+      },
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+divisionSchema.index({ city: 1, location: 1 });
+divisionSchema.index({ active: 1 });
+divisionSchema.index({ register: 1 });
+divisionSchema.index({ level: 1 });
+
+export default (mongoose.models.Division as mongoose.Model<IDivision>) ||
+  mongoose.model<IDivision>("Division", divisionSchema);
+
+
+----- models/Game.ts -----
+
+// src/models/Game.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Game model - game data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IGame extends mongoose.Document {
+  gameName: string;
+  date: Date;
+  time: string;
+  homeTeam: mongoose.Types.ObjectId;
+  awayTeam: mongoose.Types.ObjectId;
+  homeTeamScore: number;
+  awayTeamScore: number;
+  status: boolean;
+  started: boolean;
+  division: mongoose.Types.ObjectId;
+  players: mongoose.Types.ObjectId[];
+  playerOfTheGame?: mongoose.Types.ObjectId;
+  youtubeLink?: string;
+  isPlayoffGame: boolean;
+  gamePhotosCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const gameSchema = new Schema<IGame>(
+  {
+    gameName: {
+      type: String,
+      required: [true, "Game name is required"],
+    },
+    date: {
+      type: Date,
+      required: [true, "Game date is required"],
+    },
+    time: {
+      type: String,
+      required: [true, "Game time is required"],
+    },
+    homeTeam: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Home team is required"],
+    },
+    awayTeam: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Away team is required"],
+    },
+    homeTeamScore: {
+      type: Number,
+      default: 0,
+    },
+    awayTeamScore: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: Boolean,
+      default: false,
+    },
+    started: {
+      type: Boolean,
+      default: false,
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+
+    players: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    playerOfTheGame: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+    },
+    youtubeLink: String,
+    isPlayoffGame: {
+      type: Boolean,
+      default: false,
+    },
+    gamePhotosCount: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+gameSchema.index({ division: 1, date: -1 });
+gameSchema.index({ date: -1 });
+gameSchema.index({ status: 1 });
+gameSchema.index({ gamePhotosCount: 1 });
+
+export default (mongoose.models.Game as mongoose.Model<IGame>) ||
+  mongoose.model<IGame>("Game", gameSchema);
+
+
+----- models/GamePhoto.ts -----
+
+// src/models/GamePhoto.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * GamePhoto model - game photo data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IGamePhoto extends mongoose.Document {
+  url: string;
+  publicId: string;
+  thumbnail: string;
+  game: mongoose.Types.ObjectId;
+  tags: string[];
+  isHighlight: boolean;
+  uploadedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const gamePhotoSchema = new Schema<IGamePhoto>(
+  {
+    url: {
+      type: String,
+      required: [true, "Photo URL is required"],
+    },
+    publicId: {
+      type: String,
+      required: [true, "Cloudinary public ID is required"],
+      unique: true,
+    },
+    thumbnail: {
+      type: String,
+      required: [true, "Thumbnail URL is required"],
+    },
+    game: {
+      type: Schema.Types.ObjectId,
+      ref: "Game",
+      required: [true, "Game is required"],
+    },
+    tags: [String],
+    isHighlight: {
+      type: Boolean,
+      default: false,
+    },
+    uploadedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+gamePhotoSchema.index({ game: 1, uploadedAt: -1 });
+gamePhotoSchema.index({ publicId: 1 }, { unique: true });
+gamePhotoSchema.index({ isHighlight: 1 });
+
+export default (mongoose.models.GamePhoto as mongoose.Model<IGamePhoto>) ||
+  mongoose.model<IGamePhoto>("GamePhoto", gamePhotoSchema);
+
+
+----- models/JerseyOrder.ts -----
+
+// src/models/JerseyOrder.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * JerseyOrder model - jersey order tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IJerseyOrder extends mongoose.Document {
+  team: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  type: "MANUFACTURER_ORDER" | "IN_STOCK";
+  players: Array<{
+    playerId: mongoose.Types.ObjectId;
+    jerseyNumber?: number;
+    jerseySize?: string;
+    jerseyName?: string;
+  }>;
+  adminStatus:
+    | "INCOMPLETE"
+    | "PENDING_REVIEW"
+    | "READY_TO_ORDER"
+    | "ORDERED"
+    | "COMPLETED";
+  manufacturerStatus:
+    | "PENDING"
+    | "IN_PRODUCTION"
+    | "QUALITY_CHECK"
+    | "COMPLETED"
+    | "SHIPPED";
+  inStockStatus: "PENDING" | "ASSIGNED" | "DELIVERED";
+  adminNotes?: string;
+  manufacturerNotes?: string;
+  dateOrdered?: Date;
+  dateProductionCompleted?: Date;
+  dateAssigned?: Date;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const jerseyOrderSchema = new Schema<IJerseyOrder>(
+  {
+    team: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+      required: [true, "Team is required"],
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    type: {
+      type: String,
+      enum: ["MANUFACTURER_ORDER", "IN_STOCK"],
+      required: [true, "Order type is required"],
+    },
+    players: [
+      {
+        playerId: {
+          type: Schema.Types.ObjectId,
+          ref: "Player",
+        },
+        jerseyNumber: Number,
+        jerseySize: String,
+        jerseyName: String,
+      },
+    ],
+    adminStatus: {
+      type: String,
+      enum: [
+        "INCOMPLETE",
+        "PENDING_REVIEW",
+        "READY_TO_ORDER",
+        "ORDERED",
+        "COMPLETED",
+      ],
+      default: "INCOMPLETE",
+    },
+    manufacturerStatus: {
+      type: String,
+      enum: [
+        "PENDING",
+        "IN_PRODUCTION",
+        "QUALITY_CHECK",
+        "COMPLETED",
+        "SHIPPED",
+      ],
+      default: "PENDING",
+    },
+    inStockStatus: {
+      type: String,
+      enum: ["PENDING", "ASSIGNED", "DELIVERED"],
+      default: "PENDING",
+    },
+    adminNotes: String,
+    manufacturerNotes: String,
+    dateOrdered: Date,
+    dateProductionCompleted: Date,
+    dateAssigned: Date,
+    lastUpdated: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+jerseyOrderSchema.index({ team: 1 });
+jerseyOrderSchema.index({ division: 1 });
+jerseyOrderSchema.index({ type: 1 });
+jerseyOrderSchema.index({ adminStatus: 1 });
+jerseyOrderSchema.index({ manufacturerStatus: 1 });
+jerseyOrderSchema.index({ "players.playerId": 1 });
+
+export default (mongoose.models.JerseyOrder as mongoose.Model<IJerseyOrder>) ||
+  mongoose.model<IJerseyOrder>("JerseyOrder", jerseyOrderSchema);
+
+
+----- models/Level.ts -----
+
+// src/models/Level.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level model - skill tier data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ILevel extends mongoose.Document {
+  name: string;
+  grade: number;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const levelSchema = new Schema<ILevel>(
+  {
+    name: {
+      type: String,
+      required: [true, "Level name is required"],
+      unique: true,
+      trim: true,
+    },
+    grade: {
+      type: Number,
+      required: [true, "Grade is required"],
+      min: [1, "Grade must be at least 1"],
+    },
+    active: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+levelSchema.index({ grade: 1 });
+levelSchema.index({ name: 1 });
+
+export default (mongoose.models.Level as mongoose.Model<ILevel>) ||
+  mongoose.model<ILevel>("Level", levelSchema);
+
+
+----- models/Location.ts -----
+
+// src/models/Location.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location model - ONLY location data structure
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ILocation extends mongoose.Document {
+  name: string;
+  address: string;
+  city: mongoose.Types.ObjectId;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const locationSchema = new Schema<ILocation>(
+  {
+    name: {
+      type: String,
+      required: [true, "Location name is required"],
+      trim: true,
+    },
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+      trim: true,
+    },
+    city: {
+      type: Schema.Types.ObjectId,
+      ref: "City",
+      required: [true, "City is required"],
+    },
+    coordinates: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+locationSchema.index({ city: 1 });
+locationSchema.index({ isActive: 1 });
+locationSchema.index({ "coordinates.latitude": 1, "coordinates.longitude": 1 });
+
+export default (mongoose.models.Location as mongoose.Model<ILocation>) ||
+  mongoose.model<ILocation>("Location", locationSchema);
+
+
+----- models/MessageForward.ts -----
+
+// src/models/MessageForward.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * MessageForward model - message forwarding tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IMessageForward extends mongoose.Document {
+  userId: mongoose.Types.ObjectId;
+  channelName: string;
+  messageContent: string;
+  sentBy: string;
+  channels: ("sms" | "email")[];
+  results: {
+    sms?: "sent" | "failed" | "skipped";
+    email?: "sent" | "failed" | "skipped";
+  };
+  errorMessages?: {
+    sms?: string;
+    email?: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const messageForwardSchema = new Schema<IMessageForward>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "User ID is required"],
+    },
+    channelName: {
+      type: String,
+      required: [true, "Channel name is required"],
+    },
+    messageContent: {
+      type: String,
+      required: [true, "Message content is required"],
+    },
+    sentBy: {
+      type: String,
+      default: "Support Team",
+    },
+    channels: [
+      {
+        type: String,
+        enum: ["sms", "email"],
+        required: true,
+      },
+    ],
+    results: {
+      sms: {
+        type: String,
+        enum: ["sent", "failed", "skipped"],
+      },
+      email: {
+        type: String,
+        enum: ["sent", "failed", "skipped"],
+      },
+    },
+    errorMessages: {
+      sms: String,
+      email: String,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes for rate limiting
+messageForwardSchema.index({ userId: 1, createdAt: -1 });
+messageForwardSchema.index({ channelName: 1, createdAt: -1 });
+
+export default (mongoose.models
+  .MessageForward as mongoose.Model<IMessageForward>) ||
+  mongoose.model<IMessageForward>("MessageForward", messageForwardSchema);
+
+
+----- models/PaymentMethod.ts -----
+
+// src/models/PaymentMethod.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * PaymentMethod model - payment tracking data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IPaymentMethod extends mongoose.Document {
+  player: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS";
+  pricingTier: "EARLY_BIRD" | "REGULAR";
+  originalPrice: number;
+  amountPaid: number;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  installments?: {
+    subscriptionId: string;
+    totalAmountDue: number;
+    remainingBalance: number;
+    nextPaymentDate?: Date;
+    subscriptionPayments: Array<{
+      invoiceId: string;
+      status: "succeeded" | "failed" | "pending";
+      amountPaid: number;
+      attemptCount: number;
+      lastAttempt?: Date;
+      paymentLink: string;
+      paymentNumber: number;
+      dueDate?: Date;
+    }>;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const paymentMethodSchema = new Schema<IPaymentMethod>(
+  {
+    player: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+      required: [true, "Player is required"],
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    paymentType: {
+      type: String,
+      enum: ["FULL_PAYMENT", "INSTALLMENTS"],
+      required: [true, "Payment type is required"],
+    },
+    pricingTier: {
+      type: String,
+      enum: ["EARLY_BIRD", "REGULAR"],
+      required: [true, "Pricing tier is required"],
+    },
+    originalPrice: {
+      type: Number,
+      required: [true, "Original price is required"],
+    },
+    amountPaid: {
+      type: Number,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["PENDING", "IN_PROGRESS", "COMPLETED"],
+      default: "PENDING",
+    },
+    installments: {
+      subscriptionId: String,
+      totalAmountDue: Number,
+      remainingBalance: Number,
+      nextPaymentDate: Date,
+      subscriptionPayments: [
+        {
+          invoiceId: String,
+          status: {
+            type: String,
+            enum: ["succeeded", "failed", "pending"],
+          },
+          amountPaid: Number,
+          attemptCount: Number,
+          lastAttempt: Date,
+          paymentLink: String,
+          paymentNumber: Number,
+          dueDate: Date,
+        },
+      ],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+paymentMethodSchema.index({ player: 1, division: 1 });
+paymentMethodSchema.index({ division: 1, status: 1 });
+paymentMethodSchema.index({ status: 1 });
+
+// Middleware: Auto-calculate remaining balance when installment payments update
+paymentMethodSchema.pre("save", function (next) {
+  if (
+    this.paymentType === "INSTALLMENTS" &&
+    this.installments?.subscriptionPayments
+  ) {
+    const totalPaid = this.installments.subscriptionPayments
+      .filter((payment) => payment.status === "succeeded")
+      .reduce((sum, payment) => sum + (payment.amountPaid || 0), 0);
+
+    if (this.installments.totalAmountDue) {
+      this.installments.remainingBalance =
+        this.installments.totalAmountDue - totalPaid;
+    }
+    this.amountPaid = totalPaid;
+
+    // Auto-complete if all payments succeeded
+    const allPaid = this.installments.subscriptionPayments.every(
+      (p) => p.status === "succeeded"
+    );
+    if (allPaid && this.installments.remainingBalance === 0) {
+      this.status = "COMPLETED";
+    }
+  }
+  next();
+});
+
+export default (mongoose.models
+  .PaymentMethod as mongoose.Model<IPaymentMethod>) ||
+  mongoose.model<IPaymentMethod>("PaymentMethod", paymentMethodSchema);
+
+
+----- models/Player.ts -----
+
+// src/models/Player.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Player model - player profile data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+// src/models/Player.ts - Add paymentMethods to interface
+
+export interface IPlayer extends mongoose.Document {
+  createdAt: Date;
+  freeAgent: boolean;
+  agreeToRefundPolicy: boolean;
+  agreeToTerms: boolean;
+  receiveNews: boolean;
+  customerId?: string;
+  subscriptionPayments: Array<any>;
+  playerName: string;
+  playerImage?: {
+    id: string;
+    image: string;
+  };
+  instagram?: string;
+  jerseyNumber?: number;
+  jerseyNumberTwo?: number;
+  jerseyNumberThree?: number;
+  jerseySize?: string;
+  jerseyName?: string;
+  team?: mongoose.Types.ObjectId;
+  teamCaptain: boolean;
+  paymentStatus: {
+    hasPaid?: boolean;
+    reminderCount?: number;
+    teamCreatedDate?: Date;
+    lastAttempt?: Date;
+    email?: string;
+    phoneNumber?: string;
+  };
+  paymentMethods: mongoose.Types.ObjectId[]; // ADD THIS LINE
+  user?: mongoose.Types.ObjectId;
+  division?: mongoose.Types.ObjectId;
+  averageStats?: any;
+  allStats: Array<any>;
+}
+
+const playerSchema = new Schema<IPlayer>(
+  {
+    playerName: {
+      type: String,
+      required: [true, "Player name is required"],
+      trim: true,
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    team: {
+      type: Schema.Types.ObjectId,
+      ref: "Team",
+    },
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+    },
+    paymentStatus: {
+      hasPaid: Boolean,
+      reminderCount: Number,
+      teamCreatedDate: Date,
+      lastAttempt: Date,
+      email: String,
+      phoneNumber: String,
+    },
+  
+    paymentMethods: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "PaymentMethod",
+      },
+    ],
+    jerseyNumber: Number,
+    jerseySize: String,
+    jerseyName: String,
+    instagram: String,
+    teamCaptain: {
+      type: Boolean,
+      default: false,
+    },
+    freeAgent: {
+      type: Boolean,
+      default: false,
+    },
+    agreeToRefundPolicy: {
+      type: Boolean,
+      default: false,
+    },
+    agreeToTerms: {
+      type: Boolean,
+      default: false,
+    },
+    receiveNews: {
+      type: Boolean,
+      default: false,
+    },
+    customerId: String,
+    playerImage: {
+      id: String,
+      image: String,
+    },
+    averageStats: {
+      points: { type: Number, default: 0 },
+      rebounds: { type: Number, default: 0 },
+      assists: { type: Number, default: 0 },
+      blocks: { type: Number, default: 0 },
+      steals: { type: Number, default: 0 },
+      threesMade: { type: Number, default: 0 },
+      twosMade: { type: Number, default: 0 },
+      freeThrowsMade: { type: Number, default: 0 },
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+playerSchema.index({ playerName: "text" });
+playerSchema.index({ user: 1 });
+playerSchema.index({ team: 1 });
+playerSchema.index({ division: 1 });
+playerSchema.index({ freeAgent: 1 });
+
+export default (mongoose.models.Player as mongoose.Model<IPlayer>) ||
+  mongoose.model<IPlayer>("Player", playerSchema);
+
+
+----- models/Price.ts -----
+
+// src/models/Price.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Price model - pricing data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IPrice extends mongoose.Document {
+  name: string;
+  priceId: string;
+  amount: number;
+  type:
+    | "earlyBird"
+    | "regular"
+    | "installment"
+    | "regularInstallment"
+    | "firstInstallment"
+    | "free";
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const priceSchema = new Schema<IPrice>(
+  {
+    name: {
+      type: String,
+      required: [true, "Price name is required"],
+    },
+    priceId: {
+      type: String,
+      required: [true, "Stripe price ID is required"],
+      unique: true,
+    },
+    amount: {
+      type: Number,
+      required: [true, "Amount is required"],
+    },
+    type: {
+      type: String,
+      enum: [
+        "earlyBird",
+        "regular",
+        "installment",
+        "regularInstallment",
+        "firstInstallment",
+        "free",
+      ],
+      required: [true, "Price type is required"],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+priceSchema.index({ priceId: 1 });
+priceSchema.index({ type: 1 });
+
+export default (mongoose.models.Price as mongoose.Model<IPrice>) ||
+  mongoose.model<IPrice>("Price", priceSchema);
+
+
+----- models/Team.ts -----
+
+// src/models/Team.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Team model - team data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface ITeam extends mongoose.Document {
+  teamName: string;
+  teamNameShort: string;
+  teamCode: string;
+  teamCaptain?: mongoose.Types.ObjectId;
+  division: mongoose.Types.ObjectId;
+  players: mongoose.Types.ObjectId[];
+  games: mongoose.Types.ObjectId[];
+  primaryColor?: string;
+  secondaryColor?: string;
+  tertiaryColor?: string;
+  wins: number;
+  losses: number;
+  pointDifference: number;
+  createdManually: boolean;
+  isCustomJersey: boolean;
+  jerseyEdition?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const teamSchema = new Schema<ITeam>(
+  {
+    teamName: {
+      type: String,
+      required: [true, "Team name is required"],
+      trim: true,
+    },
+    teamNameShort: {
+      type: String,
+      required: [true, "Short team name is required"],
+      trim: true,
+    },
+    teamCode: {
+      type: String,
+      required: [true, "Team code is required"],
+      unique: true,
+      uppercase: true,
+    },
+    teamCaptain: {
+      type: Schema.Types.ObjectId,
+      ref: "Player",
+    },
+
+    division: {
+      type: Schema.Types.ObjectId,
+      ref: "Division",
+      required: [true, "Division is required"],
+    },
+    players: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    games: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Game",
+      },
+    ],
+    primaryColor: String,
+    secondaryColor: String,
+    tertiaryColor: String,
+    wins: {
+      type: Number,
+      default: 0,
+    },
+    losses: {
+      type: Number,
+      default: 0,
+    },
+    pointDifference: {
+      type: Number,
+      default: 0,
+    },
+
+    createdManually: {
+      type: Boolean,
+      default: false,
+    },
+    isCustomJersey: {
+      type: Boolean,
+      default: false,
+    },
+    jerseyEdition: String,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+teamSchema.index({ division: 1 });
+teamSchema.index({ teamCode: 1 });
+teamSchema.index({ players: 1 });
+
+export default (mongoose.models.Team as mongoose.Model<ITeam>) ||
+  mongoose.model<ITeam>("Team", teamSchema);
+
+
+----- models/User.ts -----
+
+// src/models/User.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * User model - customer account data structure ONLY
+ */
+
+import mongoose from "mongoose";
+
+const Schema = mongoose.Schema;
+
+export interface IUser extends mongoose.Document {
+  name: string;
+  email: string;
+  phoneNumber?: string;
+  instagram?: string;
+  password?: string;
+  type: string;
+  stripeCustomerId?: string;
+  jerseyInformation?: {
+    jerseySize?: string;
+    jerseyName?: string;
+    jerseyNumber?: string;
+  };
+  basketball: mongoose.Types.ObjectId[];
+  resetToken?: string;
+  resetTokenExpiry?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUser>(
+  {
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    phoneNumber: String,
+    instagram: String,
+    password: String,
+    type: {
+      type: String,
+      required: [true, "User type is required"],
+    },
+    stripeCustomerId: {
+      type: String,
+      sparse: true,
+    },
+    jerseyInformation: {
+      jerseySize: String,
+      jerseyName: String,
+      jerseyNumber: String,
+    },
+    basketball: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Player",
+      },
+    ],
+    resetToken: String,
+    resetTokenExpiry: Date,
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes
+userSchema.index({ email: 1 });
+userSchema.index({ stripeCustomerId: 1 });
+
+export default (mongoose.models.User as mongoose.Model<IUser>) ||
+  mongoose.model<IUser>("User", userSchema);
+
+
+----- types/auth.ts -----
+
+// src/types/auth.ts
+
+/**
+ * SOLID - Interface Segregation Principle (ISP)
+ * Define focused auth-related types only
+ */
+
+import { AdminRole } from "@/models/Admin";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: AdminRole;
+  allLocations: boolean;
+  assignedLocations: string[];
+  isActive: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+
+----- types/city.ts -----
+
+// src/types/city.ts
+import { ICity } from "@/models/City";
+
+export interface LeanCity extends Omit<ICity, "_id"> {
+  _id: string;
+}
+
+
+----- types/division.ts -----
+
+// src/types/division.ts
+import { ILocation } from "@/models/Location";
+import { ILevel } from "@/models/Level";
+import { IDivision } from "@/models/Division";
+
+export interface PopulatedDivision {
+  _id: string;
+  divisionName: string;
+  description: string;
+  city: string | { _id: string; cityName: string; region: string };
+  location: { _id: string; name: string };
+  level: { _id: string; name: string; grade: number };
+  day: string;
+  startDate?: Date;
+  startTime?: string;
+  endTime?: string;
+  active: boolean;
+  register: boolean;
+  prices: {
+    earlyBird?: { _id: string; amount: number; name: string };
+    regular?: { _id: string; amount: number; name: string };
+    installment?: { _id: string; amount: number; name: string };
+    regularInstallment?: { _id: string; amount: number; name: string };
+    firstInstallment?: { _id: string; amount: number; name: string };
+    free?: { _id: string; amount: number; name: string };
+  };
+}
+
+
+----- types/level.ts -----
+
+// src/types/level.ts
+import { ILevel } from "@/models/Level";
+
+export interface LeanLevel extends Omit<ILevel, "_id"> {
+  _id: string;
+}
+
+
+----- types/location.ts -----
+
+// src/types/location.ts
+import { ILocation } from "@/models/Location";
+
+export interface LeanLocation extends Omit<ILocation, "_id"> {
+  _id: string;
+}
+
+
+----- types/team.ts -----
+
+// src/types/team.ts
+
+/**
+ * Team with populated references
+ */
+import { ITeam } from "@/models/Team";
+import { IPlayer } from "@/models/Player";
+import { IDivision } from "@/models/Division";
+
+export interface PopulatedTeam
+  extends Omit<ITeam, "division" | "teamCaptain" | "players" | "_id"> {
+  _id: string;
+  division: {
+    _id: string;
+    divisionName: string;
+    location: { name: string };
+    city: { cityName: string };
+  };
+  teamCaptain?: {
+    _id: string;
+    playerName: string;
+  };
+  players: Array<{
+    _id: string;
+    playerName: string;
+    jerseyNumber?: number;
+  }>;
+}
+
+export interface LeanTeam extends Omit<ITeam, "_id"> {
+  _id: string;
+}

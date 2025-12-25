@@ -1,0 +1,3931 @@
+
+
+----- components/layout/UserMenu.tsx -----
+
+// src/components/layout/UserMenu.tsx
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * User profile dropdown ONLY
+ */
+
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { ChevronDown, User, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+export function UserMenu() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  if (!user) return null;
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/login" });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="hidden sm:block text-left">
+            <p className="text-sm font-medium">{user.name}</p>
+            <p className="text-xs text-gray-500">{user.role}</p>
+          </div>
+          <ChevronDown className="w-4 h-4 text-gray-400" />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div>
+            <p className="font-medium">{user.name}</p>
+            <p className="text-xs text-gray-500 font-normal">{user.email}</p>
+          </div>
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem
+          onClick={() => router.push("/admin/settings/profile")}
+        >
+          <User className="w-4 h-4 mr-2" />
+          Profile Settings
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+
+----- components/providers/SessionProvider.tsx -----
+
+// src/components/providers/SessionProvider.tsx
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Wraps NextAuth SessionProvider ONLY
+ */
+
+/**
+ * Design Pattern - Provider Pattern
+ * Makes auth session available to all client components
+ */
+
+"use client";
+
+import { SessionProvider as NextAuthSessionProvider } from "next-auth/react";
+
+interface SessionProviderProps {
+  children: React.ReactNode;
+}
+
+export function SessionProvider({ children }: SessionProviderProps) {
+  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
+}
+
+
+----- components/ui/alert-dialog.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
+
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
+
+const AlertDialog = AlertDialogPrimitive.Root
+
+const AlertDialogTrigger = AlertDialogPrimitive.Trigger
+
+const AlertDialogPortal = AlertDialogPrimitive.Portal
+
+const AlertDialogOverlay = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Overlay
+    className={cn(
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+    ref={ref}
+  />
+))
+AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName
+
+const AlertDialogContent = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPortal>
+    <AlertDialogOverlay />
+    <AlertDialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    />
+  </AlertDialogPortal>
+))
+AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
+
+const AlertDialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-2 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
+)
+AlertDialogHeader.displayName = "AlertDialogHeader"
+
+const AlertDialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
+)
+AlertDialogFooter.displayName = "AlertDialogFooter"
+
+const AlertDialogTitle = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Title
+    ref={ref}
+    className={cn("text-lg font-semibold", className)}
+    {...props}
+  />
+))
+AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName
+
+const AlertDialogDescription = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+AlertDialogDescription.displayName =
+  AlertDialogPrimitive.Description.displayName
+
+const AlertDialogAction = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Action>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Action
+    ref={ref}
+    className={cn(buttonVariants(), className)}
+    {...props}
+  />
+))
+AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName
+
+const AlertDialogCancel = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Cancel
+    ref={ref}
+    className={cn(
+      buttonVariants({ variant: "outline" }),
+      "mt-2 sm:mt-0",
+      className
+    )}
+    {...props}
+  />
+))
+AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName
+
+export {
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+}
+
+
+----- components/ui/alert.tsx -----
+
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const alertVariants = cva(
+  "relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  {
+    variants: {
+      variant: {
+        default: "bg-background text-foreground",
+        destructive:
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
+  <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+))
+Alert.displayName = "Alert"
+
+const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+AlertTitle.displayName = "AlertTitle"
+
+const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    {...props}
+  />
+))
+AlertDescription.displayName = "AlertDescription"
+
+export { Alert, AlertTitle, AlertDescription }
+
+
+----- components/ui/badge.tsx -----
+
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const badgeVariants = cva(
+  "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        destructive:
+          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+        outline: "text-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
+  return (
+    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+  )
+}
+
+export { Badge, badgeVariants }
+
+
+----- components/ui/button.tsx -----
+
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-10 rounded-md px-8",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
+
+
+----- components/ui/card.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-xl border bg-card text-card-foreground shadow",
+      className
+    )}
+    {...props}
+  />
+))
+Card.displayName = "Card"
+
+const CardHeader = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    {...props}
+  />
+))
+CardHeader.displayName = "CardHeader"
+
+const CardTitle = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("font-semibold leading-none tracking-tight", className)}
+    {...props}
+  />
+))
+CardTitle.displayName = "CardTitle"
+
+const CardDescription = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+CardDescription.displayName = "CardDescription"
+
+const CardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+))
+CardContent.displayName = "CardContent"
+
+const CardFooter = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("flex items-center p-6 pt-0", className)}
+    {...props}
+  />
+))
+CardFooter.displayName = "CardFooter"
+
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+
+
+----- components/ui/checkbox.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator
+      className={cn("flex items-center justify-center text-current")}
+    >
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+))
+Checkbox.displayName = CheckboxPrimitive.Root.displayName
+
+export { Checkbox }
+
+
+----- components/ui/command.tsx -----
+
+"use client"
+
+import * as React from "react"
+import { type DialogProps } from "@radix-ui/react-dialog"
+import { Command as CommandPrimitive } from "cmdk"
+import { Search } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+
+const Command = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive
+    ref={ref}
+    className={cn(
+      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
+      className
+    )}
+    {...props}
+  />
+))
+Command.displayName = CommandPrimitive.displayName
+
+const CommandDialog = ({ children, ...props }: DialogProps) => {
+  return (
+    <Dialog {...props}>
+      <DialogContent className="overflow-hidden p-0">
+        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+          {children}
+        </Command>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const CommandInput = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Input>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
+>(({ className, ...props }, ref) => (
+  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
+    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <CommandPrimitive.Input
+      ref={ref}
+      className={cn(
+        "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  </div>
+))
+
+CommandInput.displayName = CommandPrimitive.Input.displayName
+
+const CommandList = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive.List
+    ref={ref}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
+    {...props}
+  />
+))
+
+CommandList.displayName = CommandPrimitive.List.displayName
+
+const CommandEmpty = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Empty>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
+>((props, ref) => (
+  <CommandPrimitive.Empty
+    ref={ref}
+    className="py-6 text-center text-sm"
+    {...props}
+  />
+))
+
+CommandEmpty.displayName = CommandPrimitive.Empty.displayName
+
+const CommandGroup = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Group>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive.Group
+    ref={ref}
+    className={cn(
+      "overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+))
+
+CommandGroup.displayName = CommandPrimitive.Group.displayName
+
+const CommandSeparator = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 h-px bg-border", className)}
+    {...props}
+  />
+))
+CommandSeparator.displayName = CommandPrimitive.Separator.displayName
+
+const CommandItem = React.forwardRef<
+  React.ElementRef<typeof CommandPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
+>(({ className, ...props }, ref) => (
+  <CommandPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      className
+    )}
+    {...props}
+  />
+))
+
+CommandItem.displayName = CommandPrimitive.Item.displayName
+
+const CommandShortcut = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) => {
+  return (
+    <span
+      className={cn(
+        "ml-auto text-xs tracking-widest text-muted-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+CommandShortcut.displayName = "CommandShortcut"
+
+export {
+  Command,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
+}
+
+
+----- components/ui/dialog.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { X } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Dialog = DialogPrimitive.Root
+
+const DialogTrigger = DialogPrimitive.Trigger
+
+const DialogPortal = DialogPrimitive.Portal
+
+const DialogClose = DialogPrimitive.Close
+
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+))
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+DialogContent.displayName = DialogPrimitive.Content.displayName
+
+const DialogHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col space-y-1.5 text-center sm:text-left",
+      className
+    )}
+    {...props}
+  />
+)
+DialogHeader.displayName = "DialogHeader"
+
+const DialogFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      className
+    )}
+    {...props}
+  />
+)
+DialogFooter.displayName = "DialogFooter"
+
+const DialogTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title
+    ref={ref}
+    className={cn(
+      "text-lg font-semibold leading-none tracking-tight",
+      className
+    )}
+    {...props}
+  />
+))
+DialogTitle.displayName = DialogPrimitive.Title.displayName
+
+const DialogDescription = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Description
+    ref={ref}
+    className={cn("text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+DialogDescription.displayName = DialogPrimitive.Description.displayName
+
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogTrigger,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+}
+
+
+----- components/ui/dropdown-menu.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
+import { Check, ChevronRight, Circle } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const DropdownMenu = DropdownMenuPrimitive.Root
+
+const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
+
+const DropdownMenuGroup = DropdownMenuPrimitive.Group
+
+const DropdownMenuPortal = DropdownMenuPrimitive.Portal
+
+const DropdownMenuSub = DropdownMenuPrimitive.Sub
+
+const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
+
+const DropdownMenuSubTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
+    inset?: boolean
+  }
+>(({ className, inset, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubTrigger
+    ref={ref}
+    className={cn(
+      "flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      inset && "pl-8",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <ChevronRight className="ml-auto" />
+  </DropdownMenuPrimitive.SubTrigger>
+))
+DropdownMenuSubTrigger.displayName =
+  DropdownMenuPrimitive.SubTrigger.displayName
+
+const DropdownMenuSubContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.SubContent
+    ref={ref}
+    className={cn(
+      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuSubContent.displayName =
+  DropdownMenuPrimitive.SubContent.displayName
+
+const DropdownMenuContent = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+        className
+      )}
+      {...props}
+    />
+  </DropdownMenuPrimitive.Portal>
+))
+DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
+
+const DropdownMenuItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item> & {
+    inset?: boolean
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
+      inset && "pl-8",
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
+
+const DropdownMenuCheckboxItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
+>(({ className, children, checked, ...props }, ref) => (
+  <DropdownMenuPrimitive.CheckboxItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    checked={checked}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
+    {children}
+  </DropdownMenuPrimitive.CheckboxItem>
+))
+DropdownMenuCheckboxItem.displayName =
+  DropdownMenuPrimitive.CheckboxItem.displayName
+
+const DropdownMenuRadioItem = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
+>(({ className, children, ...props }, ref) => (
+  <DropdownMenuPrimitive.RadioItem
+    ref={ref}
+    className={cn(
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuPrimitive.ItemIndicator>
+        <Circle className="h-2 w-2 fill-current" />
+      </DropdownMenuPrimitive.ItemIndicator>
+    </span>
+    {children}
+  </DropdownMenuPrimitive.RadioItem>
+))
+DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName
+
+const DropdownMenuLabel = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Label> & {
+    inset?: boolean
+  }
+>(({ className, inset, ...props }, ref) => (
+  <DropdownMenuPrimitive.Label
+    ref={ref}
+    className={cn(
+      "px-2 py-1.5 text-sm font-semibold",
+      inset && "pl-8",
+      className
+    )}
+    {...props}
+  />
+))
+DropdownMenuLabel.displayName = DropdownMenuPrimitive.Label.displayName
+
+const DropdownMenuSeparator = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <DropdownMenuPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+))
+DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
+
+const DropdownMenuShortcut = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLSpanElement>) => {
+  return (
+    <span
+      className={cn("ml-auto text-xs tracking-widest opacity-60", className)}
+      {...props}
+    />
+  )
+}
+DropdownMenuShortcut.displayName = "DropdownMenuShortcut"
+
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+}
+
+
+----- components/ui/form.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { Slot } from "@radix-ui/react-slot"
+import {
+  Controller,
+  FormProvider,
+  useFormContext,
+  type ControllerProps,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form"
+
+import { cn } from "@/lib/utils"
+import { Label } from "@/components/ui/label"
+
+const Form = FormProvider
+
+type FormFieldContextValue<
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+> = {
+  name: TName
+}
+
+const FormFieldContext = React.createContext<FormFieldContextValue>(
+  {} as FormFieldContextValue
+)
+
+const FormField = <
+  TFieldValues extends FieldValues = FieldValues,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
+>({
+  ...props
+}: ControllerProps<TFieldValues, TName>) => {
+  return (
+    <FormFieldContext.Provider value={{ name: props.name }}>
+      <Controller {...props} />
+    </FormFieldContext.Provider>
+  )
+}
+
+const useFormField = () => {
+  const fieldContext = React.useContext(FormFieldContext)
+  const itemContext = React.useContext(FormItemContext)
+  const { getFieldState, formState } = useFormContext()
+
+  const fieldState = getFieldState(fieldContext.name, formState)
+
+  if (!fieldContext) {
+    throw new Error("useFormField should be used within <FormField>")
+  }
+
+  const { id } = itemContext
+
+  return {
+    id,
+    name: fieldContext.name,
+    formItemId: `${id}-form-item`,
+    formDescriptionId: `${id}-form-item-description`,
+    formMessageId: `${id}-form-item-message`,
+    ...fieldState,
+  }
+}
+
+type FormItemContextValue = {
+  id: string
+}
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+  {} as FormItemContextValue
+)
+
+const FormItem = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const id = React.useId()
+
+  return (
+    <FormItemContext.Provider value={{ id }}>
+      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+    </FormItemContext.Provider>
+  )
+})
+FormItem.displayName = "FormItem"
+
+const FormLabel = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+>(({ className, ...props }, ref) => {
+  const { error, formItemId } = useFormField()
+
+  return (
+    <Label
+      ref={ref}
+      className={cn(error && "text-destructive", className)}
+      htmlFor={formItemId}
+      {...props}
+    />
+  )
+})
+FormLabel.displayName = "FormLabel"
+
+const FormControl = React.forwardRef<
+  React.ElementRef<typeof Slot>,
+  React.ComponentPropsWithoutRef<typeof Slot>
+>(({ ...props }, ref) => {
+  const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
+
+  return (
+    <Slot
+      ref={ref}
+      id={formItemId}
+      aria-describedby={
+        !error
+          ? `${formDescriptionId}`
+          : `${formDescriptionId} ${formMessageId}`
+      }
+      aria-invalid={!!error}
+      {...props}
+    />
+  )
+})
+FormControl.displayName = "FormControl"
+
+const FormDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => {
+  const { formDescriptionId } = useFormField()
+
+  return (
+    <p
+      ref={ref}
+      id={formDescriptionId}
+      className={cn("text-[0.8rem] text-muted-foreground", className)}
+      {...props}
+    />
+  )
+})
+FormDescription.displayName = "FormDescription"
+
+const FormMessage = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, children, ...props }, ref) => {
+  const { error, formMessageId } = useFormField()
+  const body = error ? String(error?.message ?? "") : children
+
+  if (!body) {
+    return null
+  }
+
+  return (
+    <p
+      ref={ref}
+      id={formMessageId}
+      className={cn("text-[0.8rem] font-medium text-destructive", className)}
+      {...props}
+    >
+      {body}
+    </p>
+  )
+})
+FormMessage.displayName = "FormMessage"
+
+export {
+  useFormField,
+  Form,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+  FormField,
+}
+
+
+----- components/ui/input.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }
+
+
+----- components/ui/label.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as LabelPrimitive from "@radix-ui/react-label"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "@/lib/utils"
+
+const labelVariants = cva(
+  "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+)
+
+const Label = React.forwardRef<
+  React.ElementRef<typeof LabelPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+    VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root
+    ref={ref}
+    className={cn(labelVariants(), className)}
+    {...props}
+  />
+))
+Label.displayName = LabelPrimitive.Root.displayName
+
+export { Label }
+
+
+----- components/ui/pagination.tsx -----
+
+import * as React from "react";
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { ButtonProps, buttonVariants } from "@/components/ui/button";
+
+const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
+  <nav
+    role="navigation"
+    aria-label="pagination"
+    className={cn("mx-auto flex w-full justify-center", className)}
+    {...props}
+  />
+);
+Pagination.displayName = "Pagination";
+
+const PaginationContent = React.forwardRef<
+  HTMLUListElement,
+  React.ComponentProps<"ul">
+>(({ className, ...props }, ref) => (
+  <ul
+    ref={ref}
+    className={cn("flex flex-row items-center gap-1", className)}
+    {...props}
+  />
+));
+PaginationContent.displayName = "PaginationContent";
+
+const PaginationItem = React.forwardRef<
+  HTMLLIElement,
+  React.ComponentProps<"li">
+>(({ className, ...props }, ref) => (
+  <li ref={ref} className={cn("", className)} {...props} />
+));
+PaginationItem.displayName = "PaginationItem";
+
+type PaginationLinkProps = {
+  isActive?: boolean;
+} & Pick<ButtonProps, "size"> &
+  React.ComponentProps<"a">;
+
+const PaginationLink = ({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}: PaginationLinkProps) => (
+  <a
+    aria-current={isActive ? "page" : undefined}
+    className={cn(
+      buttonVariants({
+        variant: isActive ? "outline" : "ghost",
+        size,
+      }),
+      "cursor-pointer",
+      className
+    )}
+    {...props}
+  />
+);
+PaginationLink.displayName = "PaginationLink";
+
+const PaginationPrevious = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) => (
+  <PaginationLink
+    aria-label="Go to previous page"
+    size="default"
+    className={cn("gap-1 pl-2.5", className)}
+    {...props}
+  >
+    <ChevronLeft className="h-4 w-4" />
+    <span>Previous</span>
+  </PaginationLink>
+);
+PaginationPrevious.displayName = "PaginationPrevious";
+
+const PaginationNext = ({
+  className,
+  ...props
+}: React.ComponentProps<typeof PaginationLink>) => (
+  <PaginationLink
+    aria-label="Go to next page"
+    size="default"
+    className={cn("gap-1 pr-2.5", className)}
+    {...props}
+  >
+    <span>Next</span>
+    <ChevronRight className="h-4 w-4" />
+  </PaginationLink>
+);
+PaginationNext.displayName = "PaginationNext";
+
+const PaginationEllipsis = ({
+  className,
+  ...props
+}: React.ComponentProps<"span">) => (
+  <span
+    aria-hidden
+    className={cn("flex h-9 w-9 items-center justify-center", className)}
+    {...props}
+  >
+    <MoreHorizontal className="h-4 w-4" />
+    <span className="sr-only">More pages</span>
+  </span>
+);
+PaginationEllipsis.displayName = "PaginationEllipsis";
+
+export {
+  Pagination,
+  PaginationContent,
+  PaginationLink,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+};
+
+
+----- components/ui/popover.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as PopoverPrimitive from "@radix-ui/react-popover"
+
+import { cn } from "@/lib/utils"
+
+const Popover = PopoverPrimitive.Root
+
+const PopoverTrigger = PopoverPrimitive.Trigger
+
+const PopoverAnchor = PopoverPrimitive.Anchor
+
+const PopoverContent = React.forwardRef<
+  React.ElementRef<typeof PopoverPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
+>(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
+  <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Content
+      ref={ref}
+      align={align}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-popover-content-transform-origin]",
+        className
+      )}
+      {...props}
+    />
+  </PopoverPrimitive.Portal>
+))
+PopoverContent.displayName = PopoverPrimitive.Content.displayName
+
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor }
+
+
+----- components/ui/scroll-area.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
+
+import { cn } from "@/lib/utils"
+
+const ScrollArea = React.forwardRef<
+  React.ElementRef<typeof ScrollAreaPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
+>(({ className, children, ...props }, ref) => (
+  <ScrollAreaPrimitive.Root
+    ref={ref}
+    className={cn("relative overflow-hidden", className)}
+    {...props}
+  >
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+      {children}
+    </ScrollAreaPrimitive.Viewport>
+    <ScrollBar />
+    <ScrollAreaPrimitive.Corner />
+  </ScrollAreaPrimitive.Root>
+))
+ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
+
+const ScrollBar = React.forwardRef<
+  React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
+  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>
+>(({ className, orientation = "vertical", ...props }, ref) => (
+  <ScrollAreaPrimitive.ScrollAreaScrollbar
+    ref={ref}
+    orientation={orientation}
+    className={cn(
+      "flex touch-none select-none transition-colors",
+      orientation === "vertical" &&
+        "h-full w-2.5 border-l border-l-transparent p-[1px]",
+      orientation === "horizontal" &&
+        "h-2.5 flex-col border-t border-t-transparent p-[1px]",
+      className
+    )}
+    {...props}
+  >
+    <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border" />
+  </ScrollAreaPrimitive.ScrollAreaScrollbar>
+))
+ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName
+
+export { ScrollArea, ScrollBar }
+
+
+----- components/ui/select.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import { Check, ChevronDown, ChevronUp } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const Select = SelectPrimitive.Root
+
+const SelectGroup = SelectPrimitive.Group
+
+const SelectValue = SelectPrimitive.Value
+
+const SelectTrigger = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+      className
+    )}
+    {...props}
+  >
+    {children}
+    <SelectPrimitive.Icon asChild>
+      <ChevronDown className="h-4 w-4 opacity-50" />
+    </SelectPrimitive.Icon>
+  </SelectPrimitive.Trigger>
+))
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
+
+const SelectScrollUpButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollUpButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronUp className="h-4 w-4" />
+  </SelectPrimitive.ScrollUpButton>
+))
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
+
+const SelectScrollDownButton = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.ScrollDownButton
+    ref={ref}
+    className={cn(
+      "flex cursor-default items-center justify-center py-1",
+      className
+    )}
+    {...props}
+  >
+    <ChevronDown className="h-4 w-4" />
+  </SelectPrimitive.ScrollDownButton>
+))
+SelectScrollDownButton.displayName =
+  SelectPrimitive.ScrollDownButton.displayName
+
+const SelectContent = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+  <SelectPrimitive.Portal>
+    <SelectPrimitive.Content
+      ref={ref}
+      className={cn(
+        "relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-select-content-transform-origin]",
+        position === "popper" &&
+          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+        className
+      )}
+      position={position}
+      {...props}
+    >
+      <SelectScrollUpButton />
+      <SelectPrimitive.Viewport
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
+        )}
+      >
+        {children}
+      </SelectPrimitive.Viewport>
+      <SelectScrollDownButton />
+    </SelectPrimitive.Content>
+  </SelectPrimitive.Portal>
+))
+SelectContent.displayName = SelectPrimitive.Content.displayName
+
+const SelectLabel = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Label>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Label
+    ref={ref}
+    className={cn("px-2 py-1.5 text-sm font-semibold", className)}
+    {...props}
+  />
+))
+SelectLabel.displayName = SelectPrimitive.Label.displayName
+
+const SelectItem = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+  <SelectPrimitive.Item
+    ref={ref}
+    className={cn(
+      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      className
+    )}
+    {...props}
+  >
+    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectPrimitive.ItemIndicator>
+        <Check className="h-4 w-4" />
+      </SelectPrimitive.ItemIndicator>
+    </span>
+    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+  </SelectPrimitive.Item>
+))
+SelectItem.displayName = SelectPrimitive.Item.displayName
+
+const SelectSeparator = React.forwardRef<
+  React.ElementRef<typeof SelectPrimitive.Separator>,
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+  <SelectPrimitive.Separator
+    ref={ref}
+    className={cn("-mx-1 my-1 h-px bg-muted", className)}
+    {...props}
+  />
+))
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName
+
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
+  SelectScrollUpButton,
+  SelectScrollDownButton,
+}
+
+
+----- components/ui/skeleton.tsx -----
+
+import { cn } from "@/lib/utils"
+
+function Skeleton({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("animate-pulse rounded-md bg-primary/10", className)}
+      {...props}
+    />
+  )
+}
+
+export { Skeleton }
+
+
+----- components/ui/sonner.tsx -----
+
+"use client"
+
+import { useTheme } from "next-themes"
+import { Toaster as Sonner } from "sonner"
+
+type ToasterProps = React.ComponentProps<typeof Sonner>
+
+const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
+  return (
+    <Sonner
+      theme={theme as ToasterProps["theme"]}
+      className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          description: "group-[.toast]:text-muted-foreground",
+          actionButton:
+            "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+          cancelButton:
+            "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+        },
+      }}
+      {...props}
+    />
+  )
+}
+
+export { Toaster }
+
+
+----- components/ui/switch.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as SwitchPrimitives from "@radix-ui/react-switch"
+
+import { cn } from "@/lib/utils"
+
+const Switch = React.forwardRef<
+  React.ElementRef<typeof SwitchPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
+>(({ className, ...props }, ref) => (
+  <SwitchPrimitives.Root
+    className={cn(
+      "peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input",
+      className
+    )}
+    {...props}
+    ref={ref}
+  >
+    <SwitchPrimitives.Thumb
+      className={cn(
+        "pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0"
+      )}
+    />
+  </SwitchPrimitives.Root>
+))
+Switch.displayName = SwitchPrimitives.Root.displayName
+
+export { Switch }
+
+
+----- components/ui/table.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Table = React.forwardRef<
+  HTMLTableElement,
+  React.HTMLAttributes<HTMLTableElement>
+>(({ className, ...props }, ref) => (
+  <div className="relative w-full overflow-auto">
+    <table
+      ref={ref}
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  </div>
+))
+Table.displayName = "Table"
+
+const TableHeader = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+))
+TableHeader.displayName = "TableHeader"
+
+const TableBody = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tbody
+    ref={ref}
+    className={cn("[&_tr:last-child]:border-0", className)}
+    {...props}
+  />
+))
+TableBody.displayName = "TableBody"
+
+const TableFooter = React.forwardRef<
+  HTMLTableSectionElement,
+  React.HTMLAttributes<HTMLTableSectionElement>
+>(({ className, ...props }, ref) => (
+  <tfoot
+    ref={ref}
+    className={cn(
+      "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+      className
+    )}
+    {...props}
+  />
+))
+TableFooter.displayName = "TableFooter"
+
+const TableRow = React.forwardRef<
+  HTMLTableRowElement,
+  React.HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
+  <tr
+    ref={ref}
+    className={cn(
+      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      className
+    )}
+    {...props}
+  />
+))
+TableRow.displayName = "TableRow"
+
+const TableHead = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <th
+    ref={ref}
+    className={cn(
+      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      className
+    )}
+    {...props}
+  />
+))
+TableHead.displayName = "TableHead"
+
+const TableCell = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
+  <td
+    ref={ref}
+    className={cn(
+      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      className
+    )}
+    {...props}
+  />
+))
+TableCell.displayName = "TableCell"
+
+const TableCaption = React.forwardRef<
+  HTMLTableCaptionElement,
+  React.HTMLAttributes<HTMLTableCaptionElement>
+>(({ className, ...props }, ref) => (
+  <caption
+    ref={ref}
+    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    {...props}
+  />
+))
+TableCaption.displayName = "TableCaption"
+
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+}
+
+
+----- components/ui/tabs.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
+
+import { cn } from "@/lib/utils"
+
+const Tabs = TabsPrimitive.Root
+
+const TabsList = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.List>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.List
+    ref={ref}
+    className={cn(
+      "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
+      className
+    )}
+    {...props}
+  />
+))
+TabsList.displayName = TabsPrimitive.List.displayName
+
+const TabsTrigger = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Trigger
+    ref={ref}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      className
+    )}
+    {...props}
+  />
+))
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+
+const TabsContent = React.forwardRef<
+  React.ElementRef<typeof TabsPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
+>(({ className, ...props }, ref) => (
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn(
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+      className
+    )}
+    {...props}
+  />
+))
+TabsContent.displayName = TabsPrimitive.Content.displayName
+
+export { Tabs, TabsList, TabsTrigger, TabsContent }
+
+
+----- components/ui/textarea.tsx -----
+
+import * as React from "react"
+
+import { cn } from "@/lib/utils"
+
+const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.ComponentProps<"textarea">
+>(({ className, ...props }, ref) => {
+  return (
+    <textarea
+      className={cn(
+        "flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  )
+})
+Textarea.displayName = "Textarea"
+
+export { Textarea }
+
+
+----- components/ui/toast.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as ToastPrimitives from "@radix-ui/react-toast"
+import { cva, type VariantProps } from "class-variance-authority"
+import { X } from "lucide-react"
+
+import { cn } from "@/lib/utils"
+
+const ToastProvider = ToastPrimitives.Provider
+
+const ToastViewport = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Viewport>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Viewport
+    ref={ref}
+    className={cn(
+      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      className
+    )}
+    {...props}
+  />
+))
+ToastViewport.displayName = ToastPrimitives.Viewport.displayName
+
+const toastVariants = cva(
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  {
+    variants: {
+      variant: {
+        default: "border bg-background text-foreground",
+        destructive:
+          "destructive group border-destructive bg-destructive text-destructive-foreground",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+
+const Toast = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
+    VariantProps<typeof toastVariants>
+>(({ className, variant, ...props }, ref) => {
+  return (
+    <ToastPrimitives.Root
+      ref={ref}
+      className={cn(toastVariants({ variant }), className)}
+      {...props}
+    />
+  )
+})
+Toast.displayName = ToastPrimitives.Root.displayName
+
+const ToastAction = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Action
+    ref={ref}
+    className={cn(
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive",
+      className
+    )}
+    {...props}
+  />
+))
+ToastAction.displayName = ToastPrimitives.Action.displayName
+
+const ToastClose = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Close>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Close
+    ref={ref}
+    className={cn(
+      "absolute right-1 top-1 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      className
+    )}
+    toast-close=""
+    {...props}
+  >
+    <X className="h-4 w-4" />
+  </ToastPrimitives.Close>
+))
+ToastClose.displayName = ToastPrimitives.Close.displayName
+
+const ToastTitle = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Title>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Title>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Title
+    ref={ref}
+    className={cn("text-sm font-semibold [&+div]:text-xs", className)}
+    {...props}
+  />
+))
+ToastTitle.displayName = ToastPrimitives.Title.displayName
+
+const ToastDescription = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Description>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Description>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Description
+    ref={ref}
+    className={cn("text-sm opacity-90", className)}
+    {...props}
+  />
+))
+ToastDescription.displayName = ToastPrimitives.Description.displayName
+
+type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
+
+type ToastActionElement = React.ReactElement<typeof ToastAction>
+
+export {
+  type ToastProps,
+  type ToastActionElement,
+  ToastProvider,
+  ToastViewport,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastAction,
+}
+
+
+----- components/ui/toaster.tsx -----
+
+"use client"
+
+import { useToast } from "@/hooks/use-toast"
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "@/components/ui/toast"
+
+export function Toaster() {
+  const { toasts } = useToast()
+
+  return (
+    <ToastProvider>
+      {toasts.map(function ({ id, title, description, action, ...props }) {
+        return (
+          <Toast key={id} {...props}>
+            <div className="grid gap-1">
+              {title && <ToastTitle>{title}</ToastTitle>}
+              {description && (
+                <ToastDescription>{description}</ToastDescription>
+              )}
+            </div>
+            {action}
+            <ToastClose />
+          </Toast>
+        )
+      })}
+      <ToastViewport />
+    </ToastProvider>
+  )
+}
+
+
+----- components/ui/tooltip.tsx -----
+
+"use client"
+
+import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
+
+import { cn } from "@/lib/utils"
+
+const TooltipProvider = TooltipPrimitive.Provider
+
+const Tooltip = TooltipPrimitive.Root
+
+const TooltipTrigger = TooltipPrimitive.Trigger
+
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-tooltip-content-transform-origin]",
+        className
+      )}
+      {...props}
+    />
+  </TooltipPrimitive.Portal>
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+
+
+----- constants/navigation.ts -----
+
+// src/constants/navigation.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Navigation structure definition ONLY
+ */
+
+/**
+ * DRY Principle
+ * Single source of truth for navigation
+ */
+// src/constants/navigation.ts
+
+import { Permission } from "./permissions";
+
+export interface NavItem {
+  label: string;
+  href?: string;
+  icon: string;
+  permission: Permission;
+  children?: NavItem[];
+}
+
+export const navigationItems: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: "LayoutDashboard",
+    permission: "view_dashboard",
+  },
+  {
+    label: "League Management",
+    icon: "Trophy",
+    permission: "view_divisions",
+    children: [
+      {
+        label: "Cities",
+        href: "/league/cities",
+        icon: "Building2",
+        permission: "manage_cities",
+      },
+      {
+        label: "Locations",
+        href: "/league/locations",
+        icon: "MapPin",
+        permission: "manage_locations",
+      },
+      {
+        label: "Levels",
+        href: "/league/levels",
+        icon: "TrendingUp",
+        permission: "manage_levels",
+      },
+      {
+        label: "Prices",
+        href: "/league/prices",
+        icon: "DollarSign",
+        permission: "manage_prices",
+      },
+      {
+        label: "Divisions",
+        href: "/league/divisions",
+        icon: "List",
+        permission: "view_divisions",
+      },
+      {
+        label: "Teams",
+        href: "/league/teams",
+        icon: "Users",
+        permission: "view_teams",
+      },
+      {
+        label: "Players",
+        href: "/league/players",
+        icon: "User",
+        permission: "view_players",
+      },
+    ],
+  },
+  {
+    label: "Game Management",
+    href: "/games",
+    icon: "Calendar",
+    permission: "view_games",
+  },
+  {
+    label: "Payment Management",
+    href: "/payments",
+    icon: "CreditCard",
+    permission: "view_payments",
+  },
+  {
+    label: "Jersey Management",
+    href: "/jerseys",
+    icon: "Shirt",
+    permission: "view_jerseys",
+  },
+  {
+    label: "Photos Management",
+    href: "/photos",
+    icon: "Camera",
+    permission: "view_photos",
+  },
+  {
+    label: "Scorekeeper",
+    href: "/scorekeeper",
+    icon: "ClipboardList",
+    permission: "manage_scores",
+  },
+  {
+    label: "Communications",
+    href: "/communications",
+    icon: "MessageSquare",
+    permission: "view_communications",
+  },
+  {
+    label: "Settings",
+    icon: "Settings",
+    permission: "view_dashboard",
+    children: [
+      {
+        label: "Staff Management",
+        href: "/settings/admins",
+        icon: "Shield",
+        permission: "manage_admins",
+      },
+      {
+        label: "Profile",
+        href: "/settings/profile",
+        icon: "User",
+        permission: "view_dashboard",
+      },
+    ],
+  },
+];
+
+export function filterNavigationByPermissions(
+  items: NavItem[],
+  userPermissions: Permission[]
+): NavItem[] {
+  return items
+    .filter((item) => userPermissions.includes(item.permission))
+    .map((item) => {
+      if (item.children) {
+        return {
+          ...item,
+          children: item.children.filter((child) =>
+            userPermissions.includes(child.permission)
+          ),
+        };
+      }
+      return item;
+    })
+    .filter((item) => !item.children || item.children.length > 0);
+}
+
+
+----- constants/permissions.ts -----
+
+// src/constants/permissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Define permissions and role mappings ONLY
+ */
+
+/**
+ * DRY Principle
+ * Single source of truth for all permissions
+ */
+// src/constants/permissions.ts
+
+import { AdminRole } from "@/models/Admin";
+
+export type Permission =
+  // Dashboard
+  | "view_dashboard"
+
+  // League Management - EXECUTIVE only
+  | "manage_cities"
+  | "manage_locations"
+  | "manage_levels"
+
+  // League Management - EXECUTIVE + COMMISSIONER
+  | "manage_divisions"
+  | "view_divisions"
+  | "manage_teams"
+  | "view_teams"
+  | "manage_players"
+  | "view_players"
+
+  // Admin Management
+  | "manage_admins"
+
+  // Game Management
+  | "manage_games"
+  | "view_games"
+
+  // Payment Management
+  | "manage_prices"
+  | "manage_payments"
+  | "view_payments"
+
+  // Jersey Management
+  | "manage_jerseys"
+  | "view_jerseys"
+
+  // Photos Management
+  | "manage_photos"
+  | "view_photos"
+
+  // Scorekeeper Tools
+  | "manage_scores"
+
+  // Communications
+  | "manage_communications"
+  | "view_communications";
+
+export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
+  EXECUTIVE: [
+    "view_dashboard",
+    "manage_cities",
+    "manage_locations",
+    "manage_levels",
+    "manage_divisions",
+    "view_divisions",
+    "manage_teams",
+    "view_teams",
+    "manage_players",
+    "view_players",
+    "manage_admins",
+    "manage_games",
+    "view_games",
+    "manage_prices",
+    "manage_payments",
+    "view_payments",
+    "manage_jerseys",
+    "view_jerseys",
+    "manage_photos",
+    "view_photos",
+    "manage_scores",
+    "manage_communications",
+    "view_communications",
+  ],
+
+  COMMISSIONER: [
+    "view_dashboard",
+    // NO manage_cities, manage_locations, manage_levels
+    "manage_divisions",
+    "view_divisions",
+    "manage_teams",
+    "view_teams",
+    "manage_players",
+    "view_players",
+    "manage_games",
+    "view_games",
+    "manage_payments",
+    "view_payments",
+    "manage_jerseys",
+    "view_jerseys",
+    "manage_photos",
+    "view_photos",
+    "manage_scores",
+    "manage_communications",
+    "view_communications",
+  ],
+
+  SCOREKEEPER: ["view_dashboard", "manage_scores", "view_games"],
+
+  PHOTOGRAPHER: [
+    "view_dashboard",
+    "manage_photos",
+    "view_photos",
+    "view_games",
+  ],
+};
+
+export function hasPermission(
+  role: AdminRole,
+  permission: Permission
+): boolean {
+  return ROLE_PERMISSIONS[role].includes(permission);
+}
+
+export function hasAnyPermission(
+  role: AdminRole,
+  permissions: Permission[]
+): boolean {
+  return permissions.some((permission) => hasPermission(role, permission));
+}
+
+
+----- hooks/use-toast.ts -----
+
+"use client"
+
+// Inspired by react-hot-toast library
+import * as React from "react"
+
+import type {
+  ToastActionElement,
+  ToastProps,
+} from "@/components/ui/toast"
+
+const TOAST_LIMIT = 1
+const TOAST_REMOVE_DELAY = 1000000
+
+type ToasterToast = ToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+}
+
+const actionTypes = {
+  ADD_TOAST: "ADD_TOAST",
+  UPDATE_TOAST: "UPDATE_TOAST",
+  DISMISS_TOAST: "DISMISS_TOAST",
+  REMOVE_TOAST: "REMOVE_TOAST",
+} as const
+
+let count = 0
+
+function genId() {
+  count = (count + 1) % Number.MAX_SAFE_INTEGER
+  return count.toString()
+}
+
+type ActionType = typeof actionTypes
+
+type Action =
+  | {
+      type: ActionType["ADD_TOAST"]
+      toast: ToasterToast
+    }
+  | {
+      type: ActionType["UPDATE_TOAST"]
+      toast: Partial<ToasterToast>
+    }
+  | {
+      type: ActionType["DISMISS_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+  | {
+      type: ActionType["REMOVE_TOAST"]
+      toastId?: ToasterToast["id"]
+    }
+
+interface State {
+  toasts: ToasterToast[]
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({
+      type: "REMOVE_TOAST",
+      toastId: toastId,
+    })
+  }, TOAST_REMOVE_DELAY)
+
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: Action): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return {
+        ...state,
+        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
+      }
+
+    case "UPDATE_TOAST":
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === action.toast.id ? { ...t, ...action.toast } : t
+        ),
+      }
+
+    case "DISMISS_TOAST": {
+      const { toastId } = action
+
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
+      // but I'll keep it here for simplicity
+      if (toastId) {
+        addToRemoveQueue(toastId)
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id)
+        })
+      }
+
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
+      }
+    }
+    case "REMOVE_TOAST":
+      if (action.toastId === undefined) {
+        return {
+          ...state,
+          toasts: [],
+        }
+      }
+      return {
+        ...state,
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
+      }
+  }
+}
+
+const listeners: Array<(state: State) => void> = []
+
+let memoryState: State = { toasts: [] }
+
+function dispatch(action: Action) {
+  memoryState = reducer(memoryState, action)
+  listeners.forEach((listener) => {
+    listener(memoryState)
+  })
+}
+
+type Toast = Omit<ToasterToast, "id">
+
+function toast({ ...props }: Toast) {
+  const id = genId()
+
+  const update = (props: ToasterToast) =>
+    dispatch({
+      type: "UPDATE_TOAST",
+      toast: { ...props, id },
+    })
+  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast: {
+      ...props,
+      id,
+      open: true,
+      onOpenChange: (open) => {
+        if (!open) dismiss()
+      },
+    },
+  })
+
+  return {
+    id: id,
+    dismiss,
+    update,
+  }
+}
+
+function useToast() {
+  const [state, setState] = React.useState<State>(memoryState)
+
+  React.useEffect(() => {
+    listeners.push(setState)
+    return () => {
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
+    }
+  }, [state])
+
+  return {
+    ...state,
+    toast,
+    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+  }
+}
+
+export { useToast, toast }
+
+
+----- hooks/useAuth.ts -----
+
+// src/hooks/useAuth.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Auth hook provides session access ONLY
+ */
+
+/**
+ * Design Pattern - Adapter Pattern
+ * Wraps NextAuth's useSession for type safety
+ */
+
+"use client";
+
+import { useSession } from "next-auth/react";
+import { AdminRole } from "@/models/Admin";
+
+export function useAuth() {
+  const { data: session, status } = useSession();
+
+  return {
+    user: session?.user || null,
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+    isExecutive: session?.user?.role === "EXECUTIVE",
+    isCommissioner: session?.user?.role === "COMMISSIONER",
+    hasFullAccess: session?.user?.allLocations === true,
+  };
+}
+
+
+----- hooks/usePermissions.ts -----
+
+// src/hooks/usePermissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Permission checking hook ONLY
+ */
+
+/**
+ * Performance Optimization
+ * Memoized permission checks
+ */
+
+"use client";
+
+import { useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { Permission, ROLE_PERMISSIONS } from "@/constants/permissions";
+
+export function usePermissions() {
+  const { data: session } = useSession();
+
+  const permissions = useMemo(() => {
+    if (!session?.user?.role) return [];
+    return ROLE_PERMISSIONS[session.user.role];
+  }, [session?.user?.role]);
+
+  const hasPermission = useMemo(
+    () => (permission: Permission) => permissions.includes(permission),
+    [permissions]
+  );
+
+  const hasAnyPermission = useMemo(
+    () => (perms: Permission[]) =>
+      perms.some((permission) => permissions.includes(permission)),
+    [permissions]
+  );
+
+  const hasLocationAccess = useMemo(
+    () => (locationId: string) => {
+      if (!session?.user) return false;
+      if (session.user.allLocations) return true;
+      return session.user.assignedLocations.includes(locationId);
+    },
+    [session?.user]
+  );
+
+  return {
+    permissions,
+    hasPermission,
+    hasAnyPermission,
+    hasLocationAccess,
+  };
+}
+
+
+----- lib/auth/auth.config.ts -----
+
+// src/lib/auth/auth.config.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file handles ONLY NextAuth configuration
+ * No business logic, just auth setup
+ */
+
+/**
+ * Security
+ * - JWT strategy (no database sessions)
+ * - Credentials provider for admin login
+ * - Password verification with bcrypt
+ */
+
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { getAdminByEmail, updateLastLogin } from "@/lib/db/queries/admins";
+import { AdminRole } from "@/models/Admin";
+
+// Extend NextAuth types
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: AdminRole;
+      allLocations: boolean;
+      assignedLocations: string[];
+      isActive: boolean;
+    };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name: string;
+    role: AdminRole;
+    allLocations: boolean;
+    assignedLocations: string[];
+    isActive: boolean;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    email: string;
+    name: string;
+    role: AdminRole;
+    allLocations: boolean;
+    assignedLocations: string[];
+    isActive: boolean;
+  }
+}
+
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      id: "admin-credentials",
+      name: "Admin Credentials",
+      credentials: {
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "admin@example.com",
+        },
+        password: {
+          label: "Password",
+          type: "password",
+        },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Email and password required");
+        }
+
+        try {
+          // Find admin with password
+          const admin = await getAdminByEmail(credentials.email);
+
+          if (!admin) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Check if active
+          if (!admin.isActive) {
+            throw new Error("Account is inactive");
+          }
+
+          // Verify password
+          const isValidPassword = await admin.comparePassword(
+            credentials.password
+          );
+
+          if (!isValidPassword) {
+            throw new Error("Invalid credentials");
+          }
+
+          // Update last login
+          await updateLastLogin(admin._id.toString());
+
+          // Return user object (without password)
+          return {
+            id: admin._id.toString(),
+            email: admin.email,
+            name: admin.name,
+            role: admin.role,
+            allLocations: admin.allLocations,
+            assignedLocations: admin.assignedLocations.map((loc: any) =>
+              loc.toString()
+            ),
+            isActive: admin.isActive,
+          };
+        } catch (error: any) {
+          throw new Error(error.message || "Authentication failed");
+        }
+      },
+    }),
+  ],
+
+  callbacks: {
+    async jwt({ token, user }) {
+      // Initial sign in
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.role = user.role;
+        token.allLocations = user.allLocations;
+        token.assignedLocations = user.assignedLocations;
+        token.isActive = user.isActive;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.user = {
+          id: token.id,
+          email: token.email,
+          name: token.name,
+          role: token.role,
+          allLocations: token.allLocations,
+          assignedLocations: token.assignedLocations,
+          isActive: token.isActive,
+        };
+      }
+
+      return session;
+    },
+  },
+
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+
+  secret: process.env.NEXTAUTH_SECRET,
+
+  debug: process.env.NODE_ENV === "development",
+};
+
+
+----- lib/auth/permissions.ts -----
+
+// src/lib/auth/permissions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Permission checking utilities ONLY
+ */
+
+/**
+ * DRY Principle
+ * Centralized permission logic used across the app
+ */
+
+import { Session } from "next-auth";
+import { AdminRole } from "@/models/Admin";
+import { Permission, ROLE_PERMISSIONS } from "@/constants/permissions";
+
+/**
+ * Check if session has specific permission
+ */
+export function hasPermission(
+  session: Session | null,
+  permission: Permission
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const permissions = ROLE_PERMISSIONS[session.user.role];
+
+  return permissions.includes(permission);
+}
+
+/**
+ * Check if session has any of the specified permissions
+ */
+export function hasAnyPermission(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const userPermissions = ROLE_PERMISSIONS[session.user.role];
+  return permissions.some((p) => userPermissions.includes(p));
+}
+
+/**
+ * Check if session has all specified permissions
+ */
+export function hasAllPermissions(
+  session: Session | null,
+  permissions: Permission[]
+): boolean {
+  if (!session?.user?.role) return false;
+
+  const userPermissions = ROLE_PERMISSIONS[session.user.role];
+  return permissions.every((p) => userPermissions.includes(p));
+}
+
+/**
+ * Check if admin has access to specific location
+ */
+export function hasLocationAccess(
+  session: Session | null,
+  locationId: string
+): boolean {
+  if (!session?.user) return false;
+
+  // EXECUTIVE and COMMISSIONER have access to all locations
+  if (session.user.allLocations) return true;
+
+  // Check if location is in assigned locations
+  return session.user.assignedLocations.includes(locationId);
+}
+
+/**
+ * Get accessible location IDs for filtering queries
+ */
+export function getAccessibleLocationIds(
+  session: Session | null,
+  allLocationsInCity: string[]
+): string[] {
+  if (!session?.user) return [];
+
+  // EXECUTIVE and COMMISSIONER see all locations
+  if (session.user.allLocations) return allLocationsInCity;
+
+  // Return intersection of assigned locations and locations in the city
+  return session.user.assignedLocations.filter((loc) =>
+    allLocationsInCity.includes(loc)
+  );
+}
+
+
+----- lib/db/mongodb.ts -----
+
+// src/lib/db/mongodb.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file has ONE job: manage MongoDB connection
+ * No queries, no business logic, just connection management
+ */
+
+/**
+ * Performance Optimization
+ * - Global connection caching prevents multiple connections
+ * - Connection pooling for better performance
+ */
+
+/**
+ * Error Handling & Resilience
+ * - Graceful error messages
+ * - Connection retry logic built into Mongoose
+ */
+
+// src/lib/db/mongodb.ts
+import mongoose from "mongoose";
+
+if (!process.env.MONGODB_URI) {
+  throw new Error("Please add your MONGODB_URI to .env.local");
+}
+
+const MONGODB_URI: string = process.env.MONGODB_URI;
+
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
+let cached: MongooseCache = global.mongoose || {
+  conn: null,
+  promise: null,
+};
+
+if (!global.mongoose) {
+  global.mongoose = cached;
+}
+
+export async function connectDB(): Promise<typeof mongoose> {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 10000,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("✅ MongoDB connected successfully");
+
+      // Register all models after connection
+      require("@/models/Admin");
+      require("@/models/City");
+      require("@/models/Location");
+      require("@/models/Level");
+      require("@/models/Division");
+      require("@/models/Team");
+      require("@/models/Player");
+      require("@/models/User");
+      require("@/models/Game");
+      require("@/models/Price");
+      require("@/models/PaymentMethod");
+      require("@/models/JerseyOrder");
+      require("@/models/GamePhoto");
+      require("@/models/ChatChannel");
+      require("@/models/ChatMessage");
+      require("@/models/MessageForward");
+
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (error) {
+    cached.promise = null;
+    console.error("❌ MongoDB connection error:", error);
+    throw error;
+  }
+
+  return cached.conn;
+}
+
+export async function disconnectDB(): Promise<void> {
+  if (cached.conn) {
+    await cached.conn.disconnect();
+    cached.conn = null;
+    cached.promise = null;
+    console.log("MongoDB disconnected");
+  }
+}
+
+export function isConnected(): boolean {
+  return cached.conn !== null && mongoose.connection.readyState === 1;
+}
+
+
+----- lib/db/queries/admins.ts -----
+
+// src/lib/db/queries/admins.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * This file handles ONLY admin database queries
+ * No validation, no business logic, just data access
+ */
+
+/**
+ * DRY Principle
+ * Centralized admin queries - used by API routes and pages
+ */
+
+import { connectDB } from "../mongodb";
+import Admin, { IAdmin } from "@/models/Admin";
+import Location from "@/models/Location";
+import bcrypt from "bcryptjs";
+
+// Type for lean query results (plain objects without Mongoose methods)
+type LeanAdmin = Omit<IAdmin, keyof Document>;
+
+/**
+ * Get all admins (without passwords)
+ */
+export async function getAdmins(): Promise<IAdmin[]> {
+  await connectDB();
+  return Admin.find()
+    .select("-password")
+    .populate("assignedLocations", "name address")
+    .sort({ createdAt: -1 })
+    .lean();
+}
+
+/**
+ * Get admin by ID
+ */
+export async function getAdminById(id: string): Promise<IAdmin | null> {
+  await connectDB();
+  return Admin.findById(id)
+    .select("-password")
+    .populate("assignedLocations", "name address")
+    .lean();
+}
+
+/**
+ * Get admin by email (with password for auth)
+ */
+export async function getAdminByEmail(email: string) {
+  await connectDB();
+  return Admin.findOne({ email: email.toLowerCase() }).select("+password");
+}
+
+/**
+ * Create new admin
+ * Hashes password before storing
+ */
+export async function createAdmin(data: {
+  name: string;
+  email: string;
+  password: string;
+  role: IAdmin["role"];
+  phoneNumber?: string;
+  assignedLocations?: string[];
+}): Promise<IAdmin> {
+  await connectDB();
+
+  // Hash password before storing
+  const hashedPassword = await bcrypt.hash(data.password, 12);
+
+  const admin = await Admin.create({
+    ...data,
+    password: hashedPassword,
+    email: data.email.toLowerCase(),
+    isActive: true,
+  });
+
+  // Return without password
+  return Admin.findById(admin._id)
+    .select("-password")
+    .lean() as Promise<IAdmin>;
+}
+
+/**
+ * Update admin's last login
+ */
+export async function updateLastLogin(adminId: string): Promise<void> {
+  await connectDB();
+  await Admin.findByIdAndUpdate(adminId, { lastLogin: new Date() });
+}
+
+/**
+ * Check if email exists
+ */
+export async function emailExists(email: string): Promise<boolean> {
+  await connectDB();
+  const count = await Admin.countDocuments({ email: email.toLowerCase() });
+  return count > 0;
+}
+
+
+----- lib/db/queries/cities.ts -----
+
+// src/lib/db/queries/cities.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * City data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import City from "@/models/City";
+import Location from "@/models/Location";
+
+/**
+ * Get all cities (active and inactive)
+ */
+export async function getAllCities() {
+  await connectDB();
+  return City.find().populate("locations", "name").sort({ cityName: 1 }).lean();
+}
+
+/**
+ * Get only active cities
+ */
+export async function getActiveCities() {
+  await connectDB();
+  return City.find({ active: true })
+    .populate("locations", "name")
+    .sort({ cityName: 1 })
+    .lean();
+}
+
+/**
+ * Get city by ID
+ */
+export async function getCityById(id: string) {
+  await connectDB();
+  return City.findById(id).populate("locations", "name address").lean();
+}
+
+/**
+ * Create new city
+ */
+export async function createCity(data: {
+  cityName: string;
+  region: string;
+  country: string;
+  timezone: string;
+}) {
+  await connectDB();
+
+  const city = await City.create({
+    ...data,
+    active: true,
+  });
+
+  return city.toObject();
+}
+
+/**
+ * Update city
+ */
+export async function updateCity(
+  id: string,
+  data: {
+    cityName?: string;
+    region?: string;
+    country?: string;
+    timezone?: string;
+    active?: boolean;
+  }
+) {
+  await connectDB();
+
+  return City.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Delete city (hard delete)
+ */
+export async function deleteCity(id: string) {
+  await connectDB();
+  return City.findByIdAndDelete(id);
+}
+
+/**
+ * Check if city name exists
+ */
+export async function cityNameExists(
+  cityName: string,
+  region: string,
+  country: string,
+  excludeId?: string
+) {
+  await connectDB();
+
+  const query: any = { cityName, region, country };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await City.countDocuments(query);
+  return count > 0;
+}
+
+
+----- lib/db/queries/dashboard.ts -----
+
+// src/lib/db/queries/dashboard.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Dashboard statistics queries ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Division from "@/models/Division";
+import Team from "@/models/Team";
+import Player from "@/models/Player";
+import Game from "@/models/Game";
+
+export async function getDashboardStats(locationIds: string[]) {
+  await connectDB();
+
+  const filter =
+    locationIds.length > 0
+      ? { location: { $in: locationIds } }
+      : {};
+
+  const [divisions, teams, players, games] = await Promise.all([
+    Division.countDocuments({ ...filter, active: true }),
+    Team.countDocuments(filter),
+    Player.countDocuments({ division: { $exists: true } }),
+    Game.countDocuments(filter),
+  ]);
+
+  return {
+    divisions,
+    teams,
+    players,
+    games,
+  };
+}
+
+export async function getUpcomingGames(locationIds: string[]) {
+  await connectDB();
+
+  const filter =
+    locationIds.length > 0
+      ? { location: { $in: locationIds } }
+      : {};
+
+  return Game.find({
+    ...filter,
+    date: { $gte: new Date() },
+    status: false,
+  })
+    .populate("homeTeam", "teamName")
+    .populate("awayTeam", "teamName")
+    .sort({ date: 1 })
+    .limit(5)
+    .lean();
+}
+
+
+----- lib/db/queries/divisions.ts -----
+
+// src/lib/db/queries/divisions.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Division data access functions ONLY
+ */
+
+import { PopulatedDivision } from "@/types/division";
+import { connectDB } from "../mongodb";
+import Division from "@/models/Division";
+import Team from "@/models/Team";
+import Player from "@/models/Player";
+
+/**
+ * Get divisions with pagination and filters
+ */
+export async function getDivisions({
+  page = 1,
+  limit = 12,
+  activeFilter = "all",
+  locationId,
+  levelId,
+  day,
+  search,
+}: {
+  page?: number;
+  limit?: number;
+  activeFilter?: "all" | "active" | "inactive" | "registration";
+  locationId?: string;
+  levelId?: string;
+  day?: string;
+  search?: string;
+}) {
+  await connectDB();
+
+  const skip = (page - 1) * limit;
+
+  // Build filter
+  const filter: any = {};
+
+  if (activeFilter === "active") filter.active = true;
+  if (activeFilter === "inactive") filter.active = false;
+  if (activeFilter === "registration") filter.register = true;
+  if (locationId) filter.location = locationId;
+
+  if (levelId) filter.level = levelId;
+  if (day) filter.day = day;
+  if (search) filter.divisionName = { $regex: search, $options: "i" };
+
+  // Get divisions and total count in parallel
+  const [divisions, total] = await Promise.all([
+    Division.find(filter)
+      .populate("location")
+      .populate("level")
+      .sort({ startDate: -1 }) // Latest first
+      .skip(skip)
+      .limit(limit)
+      .lean<PopulatedDivision[]>(), // force the result shape
+    Division.countDocuments(filter),
+  ]);
+
+  // Get all division IDs for batch querying
+  const divisionIds = divisions.map((d) => d._id);
+
+  // Batch query for team counts - single query instead of N queries
+  const teamCounts = await Team.aggregate([
+    { $match: { division: { $in: divisionIds } } },
+    { $group: { _id: "$division", count: { $sum: 1 } } },
+  ]);
+
+  // Batch query for free agent counts - single query instead of 2N queries
+  const freeAgentCounts = await Player.aggregate([
+    {
+      $match: {
+        division: { $in: divisionIds },
+        freeAgent: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$division",
+        total: { $sum: 1 },
+        withTeam: {
+          $sum: {
+            $cond: [{ $ne: ["$team", null] }, 1, 0],
+          },
+        },
+        withoutTeam: {
+          $sum: {
+            $cond: [{ $eq: ["$team", null] }, 1, 0],
+          },
+        },
+      },
+    },
+  ]);
+
+  // Create lookup maps for O(1) access
+  const teamCountMap = new Map(
+    teamCounts.map((tc) => [tc._id.toString(), tc.count])
+  );
+  const freeAgentCountMap = new Map(
+    freeAgentCounts.map((fc) => [
+      fc._id.toString(),
+      { total: fc.total, withTeam: fc.withTeam, withoutTeam: fc.withoutTeam },
+    ])
+  );
+
+  // Add counts to divisions (no more queries, just map lookups)
+  const divisionsWithCounts = divisions.map((division) => {
+    const divisionId = division._id.toString();
+    return {
+      ...division,
+      teamCount: teamCountMap.get(divisionId) || 0,
+      freeAgentCounts: freeAgentCountMap.get(divisionId) || {
+        total: 0,
+        withTeam: 0,
+        withoutTeam: 0,
+      },
+    };
+  });
+
+  return {
+    divisions: divisionsWithCounts,
+    pagination: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+
+/**
+ * Get division by ID
+ */
+export async function getDivisionById(
+  id: string
+): Promise<PopulatedDivision | null> {
+  await connectDB();
+  return Division.findById(id)
+    .populate("city", "cityName region")
+    .populate("location", "name")
+    .populate("level", "name grade")
+    .populate("prices.earlyBird")
+    .populate("prices.regular")
+    .populate("prices.installment")
+    .populate("prices.regularInstallment")
+    .populate("prices.firstInstallment")
+    .populate("prices.free")
+    .lean() as Promise<PopulatedDivision | null>;
+}
+
+/**
+ * Create new division
+ */
+export async function createDivision(data: {
+  divisionName: string;
+  description: string;
+  city: string;
+  location: string;
+  level: string;
+  day: string;
+  startDate?: string;
+  startTime?: string;
+  endTime?: string;
+  prices: {
+    earlyBird: string;
+    regular: string;
+    installment: string;
+    regularInstallment: string;
+    firstInstallment: string;
+    free: string;
+  };
+  active: boolean;
+  register: boolean;
+}) {
+  await connectDB();
+
+  const division = await Division.create({
+    ...data,
+    startDate: data.startDate ? new Date(data.startDate) : undefined,
+  });
+
+  return division.toObject();
+}
+
+/**
+ * Update division
+ */
+export async function updateDivision(
+  id: string,
+  data: {
+    divisionName?: string;
+    description?: string;
+    location?: string;
+    level?: string;
+    day?: string;
+    startDate?: string;
+    startTime?: string;
+    endTime?: string;
+    active?: boolean;
+    register?: boolean;
+  }
+) {
+  await connectDB();
+
+  const updateData: any = { ...data };
+  if (data.startDate) {
+    updateData.startDate = new Date(data.startDate);
+  }
+
+  return Division.findByIdAndUpdate(id, updateData, { new: true }).lean();
+}
+
+/**
+ * Check for location conflicts
+ */
+export async function checkLocationConflict(
+  locationId: string,
+  day: string,
+  startTime: string,
+  endTime: string,
+  excludeDivisionId?: string
+): Promise<{ hasConflict: boolean; conflictingDivision?: any }> {
+  await connectDB();
+
+  const query: any = {
+    location: locationId,
+    day,
+    startTime: { $exists: true },
+    endTime: { $exists: true },
+  };
+
+  if (excludeDivisionId) {
+    query._id = { $ne: excludeDivisionId };
+  }
+
+  const divisions = await Division.find(query)
+    .select("divisionName startTime endTime")
+    .lean();
+
+  // Check for time overlap
+  for (const div of divisions) {
+    if (timeOverlaps(startTime, endTime, div.startTime, div.endTime)) {
+      return {
+        hasConflict: true,
+        conflictingDivision: div,
+      };
+    }
+  }
+
+  return { hasConflict: false };
+}
+
+/**
+ * Helper: Check if two time ranges overlap
+ */
+function timeOverlaps(
+  start1: string,
+  end1: string,
+  start2: string,
+  end2: string
+): boolean {
+  const s1 = parseTime(start1);
+  const e1 = parseTime(end1);
+  const s2 = parseTime(start2);
+  const e2 = parseTime(end2);
+
+  return s1 < e2 && e1 > s2;
+}
+
+/**
+ * Helper: Convert time string to minutes
+ */
+function parseTime(time: string): number {
+  const [timePart, period] = time.split(" ");
+  let [hours, minutes] = timePart.split(":").map(Number);
+
+  if (period === "PM" && hours !== 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+
+  return hours * 60 + minutes;
+}
+
+/**
+ * Get team count for division
+ */
+export async function getDivisionTeamCount(
+  divisionId: string
+): Promise<number> {
+  await connectDB();
+
+  const Team = (await import("@/models/Team")).default;
+  return Team.countDocuments({ division: divisionId });
+}
+
+/**
+ * Get free agent counts for a division
+ */
+export async function getDivisionFreeAgentCounts(divisionId: string): Promise<{
+  withTeam: number;
+  withoutTeam: number;
+  total: number;
+}> {
+  await connectDB();
+
+  const Player = (await import("@/models/Player")).default;
+
+  const [withTeam, withoutTeam] = await Promise.all([
+    Player.countDocuments({
+      division: divisionId,
+      freeAgent: true,
+      team: { $exists: true, $ne: null },
+    }),
+    Player.countDocuments({
+      division: divisionId,
+      freeAgent: true,
+      $or: [{ team: { $exists: false } }, { team: null }],
+    }),
+  ]);
+
+  return {
+    withTeam,
+    withoutTeam,
+    total: withTeam + withoutTeam,
+  };
+}
+
+
+----- lib/db/queries/levels.ts -----
+
+// src/lib/db/queries/levels.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Level data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Level from "@/models/Level";
+
+/**
+ * Get all levels (sorted by grade ascending - 1 is highest)
+ */
+export async function getAllLevels(activeFilter?: string | null, activeOnly?: boolean) {
+  await connectDB();
+
+  const filter: any = {};
+
+  if (activeOnly) {
+    // For division forms - only show active levels
+    filter.active = true;
+  } else if (activeFilter === "active") {
+    filter.active = true;
+  } else if (activeFilter === "inactive") {
+    filter.active = false;
+  }
+  // If activeFilter is null/undefined, show all
+
+  return Level.find(filter).sort({ grade: 1 }).lean();
+}
+
+/**
+ * Get level by ID
+ */
+export async function getLevelById(id: string) {
+  await connectDB();
+  return Level.findById(id).lean();
+}
+
+/**
+ * Create new level
+ */
+export async function createLevel(data: { name: string; grade: number; active?: boolean }) {
+  await connectDB();
+
+  const level = await Level.create(data);
+
+  return level.toObject();
+}
+
+/**
+ * Update level
+ */
+export async function updateLevel(
+  id: string,
+  data: {
+    name?: string;
+    grade?: number;
+    active?: boolean;
+  }
+) {
+  await connectDB();
+  return Level.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Check if level name exists
+ */
+export async function levelNameExists(
+  name: string,
+  excludeId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = { name };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await Level.countDocuments(query);
+  return count > 0;
+}
+
+/**
+ * Check if grade exists
+ */
+export async function gradeExists(
+  grade: number,
+  excludeId?: string
+): Promise<boolean> {
+  await connectDB();
+
+  const query: any = { grade };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+
+  const count = await Level.countDocuments(query);
+  return count > 0;
+}
+
+
+----- lib/db/queries/locations.ts -----
+
+// src/lib/db/queries/locations.ts
+
+/**
+ * SOLID - Single Responsibility Principle (SRP)
+ * Location data access functions ONLY
+ */
+
+import { connectDB } from "../mongodb";
+import Location from "@/models/Location";
+import Division from "@/models/Division";
+import { LeanLocation } from "@/types/location";
+
+/**
+ * Get all locations
+ */
+export async function getAllLocations() {
+  await connectDB();
+  return Location.find().sort({ name: 1 }).lean();
+}
+
+/**
+ * Get locations by city
+ */
+export async function getLocationsByCity(cityId: string) {
+  await connectDB();
+
+  // First get city to find its locations
+  const City = (await import("@/models/City")).default;
+  const city = await City.findById(cityId)
+    .populate({
+      path: "locations",
+      options: { lean: true }
+    })
+    .lean<{ locations: LeanLocation[] }>();
+
+  if (!city) return [];
+
+  return city.locations || [];
+}
+
+/**
+ * Get location by ID
+ */
+export async function getLocationById(id: string) {
+  await connectDB();
+  return Location.findById(id).lean();
+}
+
+/**
+ * Create new location
+ */
+export async function createLocation(data: {
+  name: string;
+  address: string;
+  city: string;
+  coordinates?: {
+    latitude?: number;
+    longitude?: number;
+  };
+}) {
+  await connectDB();
+
+  const location = await Location.create(data);
+
+  // Add location to city's locations array
+  const City = (await import("@/models/City")).default;
+  await City.findByIdAndUpdate(data.city, {
+    $push: { locations: location._id },
+  });
+
+  return location.toObject();
+}
+
+/**
+ * Update location
+ */
+export async function updateLocation(
+  id: string,
+  data: {
+    name?: string;
+    address?: string;
+    coordinates?: {
+      latitude?: number;
+      longitude?: number;
+    };
+  }
+) {
+  await connectDB();
+  return Location.findByIdAndUpdate(id, data, { new: true }).lean();
+}
+
+/**
+ * Delete location
+ */
+export async function deleteLocation(id: string) {
+  await connectDB();
+
+  // Remove from city's locations array
+  const location = await Location.findById(id);
+  if (location) {
+    const City = (await import("@/models/City")).default;
+    await City.updateMany({ locations: id }, { $pull: { locations: id } });
+  }
+
+  return Location.findByIdAndDelete(id);
+}
+
+/**
+ * Check if location has active divisions
+ */
+export async function locationHasActiveDivisions(
+  locationId: string
+): Promise<boolean> {
+  await connectDB();
+  const count = await Division.countDocuments({
+    location: locationId,
+    active: true,
+  });
+  return count > 0;
+}
+
+/**
+ * Get division count for location
+ */
+export async function getLocationDivisionCount(
+  locationId: string
+): Promise<number> {
+  await connectDB();
+  return Division.countDocuments({ location: locationId });
+}
