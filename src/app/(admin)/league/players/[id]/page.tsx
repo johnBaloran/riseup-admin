@@ -79,7 +79,7 @@ export default async function PlayerDetailPage({
         }
         actions={
           <>
-            {player.paymentStatus === "paid" && (
+            {player.calculatedPaymentStatus === "paid" && (
               <Badge
                 variant="outline"
                 className="bg-green-100 text-green-800 border-green-200"
@@ -87,7 +87,7 @@ export default async function PlayerDetailPage({
                 Paid
               </Badge>
             )}
-            {player.paymentStatus === "in_progress" && (
+            {player.calculatedPaymentStatus === "in_progress" && (
               <Badge
                 variant="outline"
                 className="bg-blue-100 text-blue-800 border-blue-200"
@@ -95,7 +95,7 @@ export default async function PlayerDetailPage({
                 Installments
               </Badge>
             )}
-            {player.paymentStatus === "unpaid" && (
+            {player.calculatedPaymentStatus === "unpaid" && (
               <Badge
                 variant="outline"
                 className="bg-red-100 text-red-800 border-red-200"
@@ -227,21 +227,21 @@ export default async function PlayerDetailPage({
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm text-gray-500 mb-2">Status</p>
-              {player.paymentStatus === "paid" && (
+              {player.calculatedPaymentStatus === "paid" && (
                 <div className="flex items-center gap-2">
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     Fully Paid
                   </Badge>
                 </div>
               )}
-              {player.paymentStatus === "in_progress" && (
+              {player.calculatedPaymentStatus === "in_progress" && (
                 <div className="space-y-3">
                   <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                     Installment Plan Active
                   </Badge>
                 </div>
               )}
-              {player.paymentStatus === "unpaid" && (
+              {player.calculatedPaymentStatus === "unpaid" && (
                 <Badge className="bg-red-100 text-red-800 border-red-200">
                   No Payment Recorded
                 </Badge>

@@ -24,36 +24,49 @@ interface SendReminderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   player: any;
-  cityId: string;
 }
 
 export function SendReminderModal({
   open,
   onOpenChange,
   player,
-  cityId,
 }: SendReminderModalProps) {
   const [isSending, setIsSending] = useState(false);
-
+console.log("player:",player)
   const handleSend = async () => {
     setIsSending(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/payments/send-reminder`, {
+      const response = await fetch(`/api/v1/payments/send-reminder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           playerId: player._id,
-          email: player.user?.email,
-          phoneNumber: player.user?.phoneNumber,
+          email: player.paymentStatus?.email,
+          phoneNumber: player.paymentStatus?.phoneNumber,
+          playerName: player.playerName,
+          teamName: player.team?.teamName,
+          teamId: player.team?._id,
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to send reminder");
+      const data = await response.json();
 
-      toast.success("Payment reminder sent successfully!");
+      if (!response.ok) throw new Error(data.error || "Failed to send reminder");
+
+      // Show specific success message based on what was sent
+      if (data.results?.sms?.sent && data.results?.email?.sent) {
+        toast.success("Payment reminder sent via SMS and email!");
+      } else if (data.results?.sms?.sent) {
+        toast.success("Payment reminder sent via SMS!");
+      } else if (data.results?.email?.sent) {
+        toast.success("Payment reminder sent via email!");
+      } else {
+        toast.success("Payment reminder sent!");
+      }
+
       onOpenChange(false);
-    } catch (error) {
-      toast.error("Failed to send reminder. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send reminder. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -74,8 +87,8 @@ export function SendReminderModal({
             This will send a reminder to:
           </p>
           <ul className="mt-2 space-y-1 text-sm">
-            {player.user?.email && <li>📧 {player.user.email}</li>}
-            {player.user?.phoneNumber && <li>📱 {player.user.phoneNumber}</li>}
+            {player.paymentStatus?.email && <li>📧 {player.paymentStatus.email}</li>}
+            {player.paymentStatus?.phoneNumber && <li>📱 {player.paymentStatus.phoneNumber}</li>}
           </ul>
         </div>
 

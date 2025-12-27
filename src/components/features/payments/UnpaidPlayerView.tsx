@@ -242,7 +242,6 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
         open={showReminderModal}
         onOpenChange={setShowReminderModal}
         player={player}
-        cityId={cityId}
       />
 
       {player.team && (

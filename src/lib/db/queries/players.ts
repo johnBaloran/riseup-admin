@@ -286,6 +286,7 @@ export async function getPlayerById(id: string) {
   await connectDB();
 
   const player = await Player.findById(id)
+    .select("+paymentStatus") // Explicitly select paymentStatus field
     .populate("team", "teamName teamCode")
     .populate({
       path: "division",
@@ -304,19 +305,22 @@ export async function getPlayerById(id: string) {
 
   if (!player) return null;
 
-  // Get payment status
+  // Get payment method status (calculated from PaymentMethod records)
   const divisionId = (player.division as any)?._id || player.division;
   const paymentInfo = await getPlayerPaymentStatus(id, divisionId.toString());
 
   return {
     ...player,
-    paymentStatus: paymentInfo.status,
+    // Keep both: paymentStatus object from Player model (with email/phone)
+    // and calculated payment method status
+    calculatedPaymentStatus: paymentInfo.status,
     paymentType: paymentInfo.type,
     installmentProgress: paymentInfo.installmentProgress,
     remainingBalance: paymentInfo.remainingBalance,
     nextPaymentDate: paymentInfo.nextPaymentDate,
     pricingTier: paymentInfo.pricingTier,
     amountPaid: paymentInfo.amountPaid,
+    // paymentStatus object (email, phoneNumber, etc.) is preserved via ...player spread
   };
 }
 

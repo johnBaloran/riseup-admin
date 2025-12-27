@@ -77,8 +77,8 @@ export async function getPlayersWithPaymentStatus({
 }) {
   await connectDB();
 
-  // Build filter for active divisions only
-  const divisionFilter: any = { $or: [{ active: true }, { register: true }] };
+  // Build filter for register divisions only
+  const divisionFilter: any = { register: true };
   if (locationId) divisionFilter.location = locationId;
   if (divisionId) divisionFilter._id = divisionId;
 
