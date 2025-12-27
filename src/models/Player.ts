@@ -56,6 +56,13 @@ export interface IPlayer extends mongoose.Document {
     lastAttempt?: Date;
     email?: string;
     phoneNumber?: string;
+    reminderLogs?: Array<{
+      timestamp: Date;
+      status: string;
+      twilioSid?: string;
+      errorMessage?: string;
+      sentBy: string;
+    }>;
   };
   subscriptionPayments: Array<any>;
 
@@ -136,6 +143,15 @@ const playerSchema = new Schema<IPlayer>(
       lastAttempt: Date,
       email: String,
       phoneNumber: String,
+      reminderLogs: [
+        {
+          timestamp: { type: Date, required: true },
+          status: { type: String, required: true, enum: ["sent", "failed"] },
+          twilioSid: String,
+          errorMessage: String,
+          sentBy: { type: String, required: true }, // "cron" or adminId
+        },
+      ],
     },
     averageStats: {
       points: { type: Number, default: 0 },

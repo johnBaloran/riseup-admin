@@ -27,6 +27,7 @@ import { SendReminderModal } from "./SendReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
 import { MarkCashPaymentModal } from "./MarkCashPaymentModal";
 import { MarkTerminalPaymentModal } from "./MarkTerminalPaymentModal";
+import { ReminderLogsCard } from "./ReminderLogsCard";
 import { formatDistanceToNow } from "date-fns";
 
 interface UnpaidPlayerViewProps {
@@ -224,6 +225,9 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
           </Card>
         </div>
       </div>
+
+      {/* Reminder Logs */}
+      <ReminderLogsCard paymentStatus={player.paymentStatus} />
 
       {/* Modals */}
       <MarkTerminalPaymentModal
