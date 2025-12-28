@@ -45,7 +45,7 @@ async function sendReminderSMS(player: EligiblePlayer) {
     player.team?.teamName || "a team"
   }. Please register at https://www.riseupleague.com/register/join-team/${
     player.team?._id || ""
-  } to secure your spot. Reply STOP to opt out.`;
+  } to secure your spot.`;
 
   const message = await client.messages.create({
     body: messageBody,
