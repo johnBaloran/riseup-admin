@@ -109,7 +109,10 @@ async function sendCitySpecificReports(testMode: boolean) {
 
     // Get all cities with webhooks configured
     const cities = await City.find({
-      googleChatWebhook: { $exists: true, $ne: null, $ne: "" },
+      googleChatWebhook: { $exists: true, $ne: "" },
+      $and: [
+        { googleChatWebhook: { $ne: null } },
+      ],
     })
       .select("_id cityName googleChatWebhook")
       .lean();

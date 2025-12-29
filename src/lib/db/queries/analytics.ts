@@ -28,6 +28,7 @@ export interface PaymentAnalytics {
       INSTALLMENTS: { count: number; paid: number; withUser: number };
       CASH: { count: number; paid: number; withUser: number };
       TERMINAL: { count: number; paid: number; withUser: number };
+      E_TRANSFER: { count: number; paid: number; withUser: number };
     };
 
     byPricingTier: {
@@ -213,6 +214,7 @@ function calculateStats(paymentMethods: any[]) {
     INSTALLMENTS: calculateTypeStats(paymentMethods, "INSTALLMENTS"),
     CASH: calculateTypeStats(paymentMethods, "CASH"),
     TERMINAL: calculateTypeStats(paymentMethods, "TERMINAL"),
+    E_TRANSFER: calculateTypeStats(paymentMethods, "E_TRANSFER"),
   };
 
   // By pricing tier

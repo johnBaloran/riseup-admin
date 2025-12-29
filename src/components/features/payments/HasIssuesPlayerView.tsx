@@ -581,7 +581,6 @@ export function HasIssuesPlayerView({
           onOpenChange={setShowCaptainModal}
           player={player}
           teamId={player.team._id}
-          cityId={cityId}
         />
       )}
 

@@ -26,6 +26,11 @@ interface PaymentTypeBreakdownProps {
         paid: number;
         withUser: number;
       };
+      E_TRANSFER: {
+        count: number;
+        paid: number;
+        withUser: number;
+      };
     };
     byPricingTier: {
       EARLY_BIRD: { count: number; paid: number };
@@ -84,13 +89,20 @@ export function PaymentTypeBreakdown({ stats }: PaymentTypeBreakdownProps) {
       data: stats.byPaymentType.TERMINAL,
       color: "orange",
     },
+    {
+      label: "E-Transfer",
+      key: "E_TRANSFER",
+      data: stats.byPaymentType.E_TRANSFER,
+      color: "pink",
+    },
   ];
 
   const totalCount =
     stats.byPaymentType.FULL_PAYMENT.count +
     stats.byPaymentType.INSTALLMENTS.count +
     stats.byPaymentType.CASH.count +
-    stats.byPaymentType.TERMINAL.count;
+    stats.byPaymentType.TERMINAL.count +
+    stats.byPaymentType.E_TRANSFER.count;
 
   return (
     <div className="bg-white rounded-lg shadow">

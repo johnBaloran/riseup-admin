@@ -54,6 +54,8 @@ export function PaymentMethodList({ paymentMethods }: PaymentMethodListProps) {
         return "bg-green-100 text-green-800";
       case "TERMINAL":
         return "bg-orange-100 text-orange-800";
+      case "E_TRANSFER":
+        return "bg-pink-100 text-pink-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -69,6 +71,8 @@ export function PaymentMethodList({ paymentMethods }: PaymentMethodListProps) {
         return "Cash";
       case "TERMINAL":
         return "Terminal";
+      case "E_TRANSFER":
+        return "E-Transfer";
       default:
         return type;
     }
