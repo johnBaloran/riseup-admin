@@ -25,7 +25,6 @@ interface NotifyCaptainModalProps {
   onOpenChange: (open: boolean) => void;
   player: any;
   teamId: string;
-  cityId: string;
 }
 
 export function NotifyCaptainModal({
@@ -33,14 +32,13 @@ export function NotifyCaptainModal({
   onOpenChange,
   player,
   teamId,
-  cityId,
 }: NotifyCaptainModalProps) {
   const [isSending, setIsSending] = useState(false);
 
   const handleNotify = async () => {
     setIsSending(true);
     try {
-      const response = await fetch(`/api/v1/${cityId}/payments/notify-captain`, {
+      const response = await fetch(`/api/v1/payments/notify-captain`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

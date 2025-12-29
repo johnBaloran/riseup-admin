@@ -27,20 +27,21 @@ import { SendReminderModal } from "./SendReminderModal";
 import { NotifyCaptainModal } from "./NotifyCaptainModal";
 import { MarkCashPaymentModal } from "./MarkCashPaymentModal";
 import { MarkTerminalPaymentModal } from "./MarkTerminalPaymentModal";
+import { MarkETransferPaymentModal } from "./MarkETransferPaymentModal";
 import { ReminderLogsCard } from "./ReminderLogsCard";
 import { formatDistanceToNow } from "date-fns";
 
 interface UnpaidPlayerViewProps {
   player: any;
-  cityId: string;
 }
 
-export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
+export function UnpaidPlayerView({ player }: UnpaidPlayerViewProps) {
   const router = useRouter();
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showCaptainModal, setShowCaptainModal] = useState(false);
   const [showCashPaymentModal, setShowCashPaymentModal] = useState(false);
   const [showTerminalPaymentModal, setShowTerminalPaymentModal] = useState(false);
+  const [showETransferPaymentModal, setShowETransferPaymentModal] = useState(false);
 
   const daysSinceRegistration = player.createdAt
     ? Math.floor(
@@ -189,6 +190,13 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
               </Button>
 
               <Button
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                onClick={() => setShowETransferPaymentModal(true)}
+              >
+                Add E-Transfer Payment
+              </Button>
+
+              <Button
                 className="w-full"
                 onClick={() => setShowReminderModal(true)}
               >
@@ -242,6 +250,12 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
         player={player}
       />
 
+      <MarkETransferPaymentModal
+        open={showETransferPaymentModal}
+        onOpenChange={setShowETransferPaymentModal}
+        player={player}
+      />
+
       <SendReminderModal
         open={showReminderModal}
         onOpenChange={setShowReminderModal}
@@ -254,7 +268,6 @@ export function UnpaidPlayerView({ player, cityId }: UnpaidPlayerViewProps) {
           onOpenChange={setShowCaptainModal}
           player={player}
           teamId={player.team._id}
-          cityId={cityId}
         />
       )}
     </div>

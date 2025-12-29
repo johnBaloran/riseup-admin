@@ -12,6 +12,8 @@ const Schema = mongoose.Schema;
 export interface ICity extends mongoose.Document {
   cityName: string;
   stripeAccountId?: string;
+  googleChatWebhook?: string;
+  eTransferEmail?: string; // Email for receiving e-transfers
   region: string;
   country: string;
   timezone: string;
@@ -29,6 +31,14 @@ const citySchema = new Schema<ICity>(
       trim: true,
     },
     stripeAccountId: {
+      type: String,
+      trim: true,
+    },
+    googleChatWebhook: {
+      type: String,
+      trim: true,
+    },
+    eTransferEmail: {
       type: String,
       trim: true,
     },

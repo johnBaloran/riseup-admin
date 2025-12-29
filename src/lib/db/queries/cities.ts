@@ -41,6 +41,8 @@ export async function getCityById(id: string) {
  */
 export async function createCity(data: {
   cityName: string;
+  stripeAccountId?: string;
+  googleChatWebhook?: string;
   region: string;
   country: string;
   timezone: string;
@@ -62,6 +64,8 @@ export async function updateCity(
   id: string,
   data: {
     cityName?: string;
+    stripeAccountId?: string;
+    googleChatWebhook?: string;
     region?: string;
     country?: string;
     timezone?: string;

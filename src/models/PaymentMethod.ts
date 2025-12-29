@@ -12,7 +12,7 @@ const Schema = mongoose.Schema;
 export interface IPaymentMethod extends mongoose.Document {
   player: mongoose.Types.ObjectId;
   division: mongoose.Types.ObjectId;
-  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "CASH" | "TERMINAL";
+  paymentType: "FULL_PAYMENT" | "INSTALLMENTS" | "CASH" | "TERMINAL" | "E_TRANSFER";
   pricingTier: "EARLY_BIRD" | "REGULAR";
   originalPrice: number;
   amountPaid: number;
@@ -52,6 +52,17 @@ export interface IPaymentMethod extends mongoose.Document {
     receiptUrl?: string;
     status: "processing" | "succeeded" | "failed";
   };
+  eTransferPayments?: Array<{
+    city: mongoose.Types.ObjectId; // Which city's bank account received it
+    amount: number; // Amount applied to this player from this e-transfer
+    paidDate: Date;
+    senderEmail?: string; // Email from e-transfer notification
+    referenceNumber?: string; // Bank transaction reference
+    transactionId: string; // Links multiple players paid by same e-transfer
+    notes?: string;
+    receivedBy: mongoose.Types.ObjectId; // Admin who confirmed receipt
+    createdAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -70,7 +81,7 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
     },
     paymentType: {
       type: String,
-      enum: ["FULL_PAYMENT", "INSTALLMENTS", "CASH", "TERMINAL"],
+      enum: ["FULL_PAYMENT", "INSTALLMENTS", "CASH", "TERMINAL", "E_TRANSFER"],
       required: [true, "Payment type is required"],
     },
     pricingTier: {
@@ -140,6 +151,39 @@ const paymentMethodSchema = new Schema<IPaymentMethod>(
         enum: ["processing", "succeeded", "failed"],
       },
     },
+    eTransferPayments: [
+      {
+        city: {
+          type: Schema.Types.ObjectId,
+          ref: "City",
+          required: true,
+        },
+        amount: {
+          type: Number,
+          required: true,
+        },
+        paidDate: {
+          type: Date,
+          required: true,
+        },
+        senderEmail: String,
+        referenceNumber: String,
+        transactionId: {
+          type: String,
+          required: true,
+        },
+        notes: String,
+        receivedBy: {
+          type: Schema.Types.ObjectId,
+          ref: "Admin",
+          required: true,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,
@@ -175,6 +219,27 @@ paymentMethodSchema.pre("save", function (next) {
       this.status = "COMPLETED";
     }
   }
+
+  // Auto-calculate e-transfer total and update status
+  if (
+    this.paymentType === "E_TRANSFER" &&
+    this.eTransferPayments &&
+    this.eTransferPayments.length > 0
+  ) {
+    const totalPaid = this.eTransferPayments.reduce(
+      (sum, payment) => sum + (payment.amount || 0),
+      0
+    );
+    this.amountPaid = totalPaid;
+
+    // Auto-complete if total paid >= original price
+    if (totalPaid >= this.originalPrice) {
+      this.status = "COMPLETED";
+    } else if (totalPaid > 0) {
+      this.status = "IN_PROGRESS";
+    }
+  }
+
   next();
 });
 

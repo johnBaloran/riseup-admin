@@ -126,6 +126,42 @@ export function CreateCityForm() {
         </div>
 
         <div>
+          <Label htmlFor="googleChatWebhook">Google Chat Webhook (Optional)</Label>
+          <Input
+            {...register("googleChatWebhook")}
+            id="googleChatWebhook"
+            placeholder="https://chat.googleapis.com/v1/spaces/..."
+            disabled={isLoading}
+          />
+          {errors.googleChatWebhook && (
+            <p className="text-sm text-red-600 mt-1">
+              {errors.googleChatWebhook.message}
+            </p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Webhook URL for city-specific daily/weekly payment reports
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="eTransferEmail">E-Transfer Email (Optional)</Label>
+          <Input
+            {...register("eTransferEmail")}
+            id="eTransferEmail"
+            placeholder="payments@riseupleague.com"
+            disabled={isLoading}
+          />
+          {errors.eTransferEmail && (
+            <p className="text-sm text-red-600 mt-1">
+              {errors.eTransferEmail.message}
+            </p>
+          )}
+          <p className="text-sm text-gray-500 mt-1">
+            Email address for receiving e-transfer payments for this city
+          </p>
+        </div>
+
+        <div>
           <Label htmlFor="region">Region/State *</Label>
           <Input
             {...register("region")}

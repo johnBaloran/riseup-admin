@@ -73,6 +73,8 @@ export function EditCityDialog({
     defaultValues: {
       cityName: city.cityName,
       stripeAccountId: city.stripeAccountId || "",
+      googleChatWebhook: city.googleChatWebhook || "",
+      eTransferEmail: city.eTransferEmail || "",
       region: city.region,
       country: city.country,
       timezone: city.timezone,
@@ -84,6 +86,8 @@ export function EditCityDialog({
       reset({
         cityName: city.cityName,
         stripeAccountId: city.stripeAccountId || "",
+        googleChatWebhook: city.googleChatWebhook || "",
+        eTransferEmail: city.eTransferEmail || "",
         region: city.region,
         country: city.country,
         timezone: city.timezone,
@@ -161,6 +165,42 @@ export function EditCityDialog({
             )}
             <p className="text-sm text-gray-500 mt-1">
               Stripe account ID for webhook routing (e.g., acct_1Sa2AhHytqyWH4aT)
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="edit-googleChatWebhook">Google Chat Webhook (Optional)</Label>
+            <Input
+              {...register("googleChatWebhook")}
+              id="edit-googleChatWebhook"
+              placeholder="https://chat.googleapis.com/v1/spaces/..."
+              disabled={isLoading}
+            />
+            {errors.googleChatWebhook && (
+              <p className="text-sm text-red-600 mt-1">
+                {errors.googleChatWebhook.message}
+              </p>
+            )}
+            <p className="text-sm text-gray-500 mt-1">
+              Webhook URL for city-specific daily/weekly payment reports
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="edit-eTransferEmail">E-Transfer Email (Optional)</Label>
+            <Input
+              {...register("eTransferEmail")}
+              id="edit-eTransferEmail"
+              placeholder="payments@riseupleague.com"
+              disabled={isLoading}
+            />
+            {errors.eTransferEmail && (
+              <p className="text-sm text-red-600 mt-1">
+                {errors.eTransferEmail.message}
+              </p>
+            )}
+            <p className="text-sm text-gray-500 mt-1">
+              Email address for receiving e-transfer payments for this city
             </p>
           </div>
 

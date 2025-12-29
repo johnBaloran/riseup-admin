@@ -42,6 +42,7 @@ export function PaidPlayerView({
 }: PaidPlayerViewProps) {
   const [showRevertModal, setShowRevertModal] = useState(false);
   const isCashPayment = paymentMethod?.paymentType === "CASH";
+  const isETransferPayment = paymentMethod?.paymentType === "E_TRANSFER";
 
   return (
     <div className="p-6 space-y-6">
@@ -101,6 +102,8 @@ export function PaidPlayerView({
                       ? "Cash Payment"
                       : paymentMethod.paymentType === "TERMINAL"
                       ? "Terminal Payment"
+                      : paymentMethod.paymentType === "E_TRANSFER"
+                      ? "E-Transfer"
                       : "Installments"}
                   </p>
                 </div>
@@ -194,6 +197,100 @@ export function PaidPlayerView({
                   </div>
                 </>
               )}
+
+              {/* E-Transfer Payment Specific Details */}
+              {isETransferPayment &&
+                paymentMethod.eTransferPayments &&
+                paymentMethod.eTransferPayments.length > 0 && (
+                  <>
+                    <div className="pt-3 border-t" />
+
+                    <div className="space-y-4">
+                      <p className="text-sm font-medium text-gray-700">
+                        E-Transfer Payments ({paymentMethod.eTransferPayments.length})
+                      </p>
+
+                      {paymentMethod.eTransferPayments.map(
+                        (transfer: any, index: number) => (
+                          <div
+                            key={index}
+                            className="rounded-lg bg-purple-50 border border-purple-200 p-3 space-y-2"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-sm font-medium text-purple-900">
+                                  E-Transfer #{index + 1}
+                                </p>
+                                <p className="text-xs text-purple-600">
+                                  {transfer.paidDate
+                                    ? format(
+                                        new Date(transfer.paidDate),
+                                        "MMM dd, yyyy 'at' h:mm a"
+                                      )
+                                    : "Date unknown"}
+                                </p>
+                              </div>
+                              <p className="text-sm font-bold text-purple-900">
+                                ${transfer.amount?.toFixed(2)}
+                              </p>
+                            </div>
+
+                            {transfer.city && (
+                              <div className="text-xs text-purple-700">
+                                <span className="font-medium">City:</span>{" "}
+                                {typeof transfer.city === "object"
+                                  ? transfer.city.cityName
+                                  : transfer.city}
+                              </div>
+                            )}
+
+                            {transfer.senderEmail && (
+                              <div className="text-xs text-purple-700">
+                                <span className="font-medium">From:</span>{" "}
+                                {transfer.senderEmail}
+                              </div>
+                            )}
+
+                            {transfer.referenceNumber && (
+                              <div className="text-xs text-purple-700">
+                                <span className="font-medium">Ref:</span>{" "}
+                                {transfer.referenceNumber}
+                              </div>
+                            )}
+
+                            {transfer.notes && (
+                              <div className="text-xs text-purple-700">
+                                <span className="font-medium">Notes:</span>{" "}
+                                {transfer.notes}
+                              </div>
+                            )}
+
+                            {transfer.receivedBy && (
+                              <div className="text-xs text-purple-700">
+                                <span className="font-medium">Received by:</span>{" "}
+                                {typeof transfer.receivedBy === "object"
+                                  ? transfer.receivedBy.name ||
+                                    transfer.receivedBy.email
+                                  : transfer.receivedBy}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      )}
+
+                      <div className="flex items-center gap-3 pt-2">
+                        <DollarSign className="h-5 w-5 text-gray-400" />
+                        <div>
+                          <p className="text-sm text-gray-500">Total Received</p>
+                          <p className="font-medium">
+                            ${paymentMethod.amountPaid?.toFixed(2)} / $
+                            {paymentMethod.originalPrice?.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
             </CardContent>
           </Card>
 

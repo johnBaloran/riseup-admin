@@ -182,7 +182,16 @@ export async function getPlayersWithPaymentStatus({
 
   // Add payment status filter if needed
   if (paymentStatusFilter !== "all") {
-    pipeline.push({ $match: { paymentStatus: paymentStatusFilter } });
+    // Handle "issues" filter which includes both "has-issues" and "critical"
+    if (paymentStatusFilter === "issues") {
+      pipeline.push({
+        $match: {
+          paymentStatus: { $in: ["has-issues", "critical"] },
+        },
+      });
+    } else {
+      pipeline.push({ $match: { paymentStatus: paymentStatusFilter } });
+    }
   }
 
   // Get total count before pagination

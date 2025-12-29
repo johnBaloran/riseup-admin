@@ -65,15 +65,12 @@ export function PaymentDashboard({
     const onTrack = allPlayers.filter(
       (p) => p.paymentStatus === "on-track"
     ).length;
-    const hasIssues = allPlayers.filter(
-      (p) => p.paymentStatus === "has-issues"
-    ).length;
-    const critical = allPlayers.filter(
-      (p) => p.paymentStatus === "critical"
+    const issues = allPlayers.filter(
+      (p) => p.paymentStatus === "has-issues" || p.paymentStatus === "critical"
     ).length;
     const paid = allPlayers.filter((p) => p.paymentStatus === "paid").length;
 
-    return { total, unpaid, onTrack, hasIssues, critical, paid };
+    return { total, unpaid, onTrack, issues, paid };
   }, [allPlayers]);
 
   const updateFilters = (updates: Record<string, string | undefined>) => {
@@ -163,8 +160,8 @@ export function PaymentDashboard({
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {stats.total} total players • {stats.unpaid} unpaid •{" "}
-                {stats.onTrack} on track • {stats.hasIssues} has issues •{" "}
-                {stats.critical} critical • {stats.paid} paid
+                {stats.onTrack} on track • {stats.issues} with issues •{" "}
+                {stats.paid} paid
               </p>
             </div>
           </div>
@@ -243,8 +240,7 @@ export function PaymentDashboard({
                   <SelectItem value="on-track">
                     On Track (Installments)
                   </SelectItem>
-                  <SelectItem value="has-issues">Has Issues</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
+                  <SelectItem value="issues">Payment Issues</SelectItem>
                   <SelectItem value="paid">Fully Paid</SelectItem>
                 </SelectContent>
               </Select>
@@ -313,7 +309,9 @@ export function PaymentDashboard({
                 {currentFilters.payment !== "all" && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                     <Filter className="h-3 w-3" />
-                    {currentFilters.payment}
+                    {currentFilters.payment === "issues"
+                      ? "Payment Issues"
+                      : currentFilters.payment}
                   </span>
                 )}
                 {currentFilters.search && (

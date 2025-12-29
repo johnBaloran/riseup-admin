@@ -14,8 +14,7 @@ import { getPlayerPaymentStatus } from "@/lib/db/queries/payments";
 import { UnpaidPlayerView } from "@/components/features/payments/UnpaidPlayerView";
 import { PaidPlayerView } from "@/components/features/payments/PaidPlayerView";
 import { OnTrackPlayerView } from "@/components/features/payments/OnTrackPlayerView";
-import { HasIssuesPlayerView } from "@/components/features/payments/HasIssuesPlayerView";
-import { CriticalPlayerView } from "@/components/features/payments/CriticalPlayerView";
+import { IssuesPlayerView } from "@/components/features/payments/IssuesPlayerView";
 
 interface PlayerPaymentPageProps {
   params: { cityId: string; playerId: string };
@@ -48,7 +47,7 @@ export default async function PlayerPaymentPage({
   const renderView = () => {
     switch (status) {
       case "unpaid":
-        return <UnpaidPlayerView player={player} cityId={params.cityId} />;
+        return <UnpaidPlayerView player={player} />;
       case "paid":
         return (
           <PaidPlayerView
@@ -67,22 +66,24 @@ export default async function PlayerPaymentPage({
         );
       case "has-issues":
         return (
-          <HasIssuesPlayerView
+          <IssuesPlayerView
             player={player}
             paymentMethod={paymentMethod}
             cityId={params.cityId}
+            severity="has-issues"
           />
         );
       case "critical":
         return (
-          <CriticalPlayerView
+          <IssuesPlayerView
             player={player}
             paymentMethod={paymentMethod}
             cityId={params.cityId}
+            severity="critical"
           />
         );
       default:
-        return <UnpaidPlayerView player={player} cityId={params.cityId} />;
+        return <UnpaidPlayerView player={player} />;
     }
   };
 

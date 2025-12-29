@@ -28,6 +28,14 @@ export interface DailyReportAnalytics {
   allTimeTotalPayments: number;
 }
 
+export interface CitySpecificAnalytics {
+  cityName: string;
+  totalRevenue: number;
+  totalPayments: number;
+  allTimeTotalRevenue: number;
+  allTimeTotalPayments: number;
+}
+
 /**
  * Get analytics for last 24 hours
  */
@@ -152,6 +160,77 @@ export async function getDailyReportAnalytics(): Promise<DailyReportAnalytics> {
     totalRevenue,
     totalPayments,
     allTimeCitiesBreakdown,
+    allTimeTotalRevenue,
+    allTimeTotalPayments,
+  };
+}
+
+/**
+ * Get analytics for a specific city (last 24 hours)
+ */
+export async function getCityDailyReportAnalytics(
+  cityId: string,
+  cityName: string
+): Promise<CitySpecificAnalytics> {
+  await connectDB();
+
+  // Calculate 24 hours ago
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  // Query PaymentMethods from last 24 hours for this city
+  const paymentMethods = await PaymentMethod.find({
+    createdAt: {
+      $gte: twentyFourHoursAgo,
+      $lte: now,
+    },
+  })
+    .populate({
+      path: "division",
+      populate: {
+        path: "city",
+        select: "cityName",
+      },
+    })
+    .lean();
+
+  // Filter for this specific city
+  const cityPaymentMethods = paymentMethods.filter(
+    (pm: any) => pm.division?.city?._id?.toString() === cityId
+  );
+
+  // Calculate total revenue and payment count for last 24 hours
+  const totalRevenue = cityPaymentMethods.reduce(
+    (sum, pm) => sum + (pm.amountPaid || 0),
+    0
+  );
+  const totalPayments = cityPaymentMethods.length;
+
+  // Get all-time stats for this city (registered divisions only)
+  const registeredDivisions = await Division.find({
+    register: true,
+    city: cityId,
+  })
+    .select("_id")
+    .lean();
+  const registeredDivisionIds = registeredDivisions.map((d) => d._id);
+
+  // Query all PaymentMethods in registered divisions for this city
+  const allTimePaymentMethods = await PaymentMethod.find({
+    division: { $in: registeredDivisionIds },
+  }).lean();
+
+  // Calculate all-time total revenue and payment count
+  const allTimeTotalRevenue = allTimePaymentMethods.reduce(
+    (sum, pm) => sum + (pm.amountPaid || 0),
+    0
+  );
+  const allTimeTotalPayments = allTimePaymentMethods.length;
+
+  return {
+    cityName,
+    totalRevenue,
+    totalPayments,
     allTimeTotalRevenue,
     allTimeTotalPayments,
   };
