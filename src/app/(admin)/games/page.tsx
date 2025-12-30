@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/games/StatusBadge";
 import { formatTimeRange } from "@/lib/utils/time";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface DivisionStatus {
   divisionId: string;
@@ -103,7 +104,10 @@ export default function GamesPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Game Scheduling</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold">Game Scheduling</h1>
+          <TutorialLink tutorialId="creating-games" />
+        </div>
         <p className="text-gray-600 mt-1">
           Manage schedules for all your divisions
         </p>

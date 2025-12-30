@@ -14,6 +14,7 @@ import { CreateLocationForm } from "@/components/features/league/locations/Creat
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface CreateLocationPageProps {
   params: { cityId: string };
@@ -46,7 +47,10 @@ export default async function CreateLocationPage({
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Add Location</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Add Location</h1>
+          <TutorialLink tutorialId="managing-locations" />
+        </div>
         <p className="text-gray-600 mt-1">
           Create a new venue location for league games
         </p>

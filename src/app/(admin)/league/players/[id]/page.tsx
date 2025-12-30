@@ -77,6 +77,7 @@ export default async function PlayerDetailPage({
             ? `#${player.jerseyNumber}`
             : undefined
         }
+        tutorialId="viewing-editing-players"
         actions={
           <>
             {player.calculatedPaymentStatus === "paid" && (
@@ -369,7 +370,16 @@ export default async function PlayerDetailPage({
       {/* Jersey Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Jersey Information</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Jersey Information</CardTitle>
+            {player.team && hasPermission(session, "manage_players") && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/jerseys/${(player.team as any)._id}`}>
+                  Manage Jersey
+                </Link>
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
@@ -394,6 +404,11 @@ export default async function PlayerDetailPage({
               </p>
             </div>
           </div>
+          {!player.team && (
+            <p className="text-sm text-gray-500 italic">
+              Jersey details can be managed once player is assigned to a team
+            </p>
+          )}
         </CardContent>
       </Card>
 

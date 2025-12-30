@@ -15,6 +15,7 @@ import { EditTeamForm } from "@/components/features/league/teams/EditTeamForm";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface EditTeamPageProps {
   params: { cityId: string; id: string };
@@ -52,7 +53,10 @@ export default async function EditTeamPage({ params }: EditTeamPageProps) {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Edit Team</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Edit Team</h1>
+          <TutorialLink tutorialId="editing-managing-teams" />
+        </div>
         <p className="text-gray-600 mt-1">
           Update team information and settings
         </p>

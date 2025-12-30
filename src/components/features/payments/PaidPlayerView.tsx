@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { RevertCashPaymentModal } from "./RevertCashPaymentModal";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface PaidPlayerViewProps {
   player: any;
@@ -65,6 +66,7 @@ export function PaidPlayerView({
           <Badge className="bg-green-100 text-green-800 border-green-200">
             Payment Complete
           </Badge>
+          <TutorialLink tutorialId="viewing-payment-details" />
         </div>
         <p className="text-gray-600">
           {player.team?.teamName || "No Team"} • {player.division?.divisionName}

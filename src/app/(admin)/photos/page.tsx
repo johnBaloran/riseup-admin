@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Calendar, Camera, ArrowRight } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function PhotosManagementPage({
   searchParams,
@@ -74,7 +75,10 @@ export default async function PhotosManagementPage({
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Photos Management</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Photos Management</h1>
+          <TutorialLink tutorialId="game-photos" />
+        </div>
         <p className="text-gray-600 mt-1">
           Upload and manage game photos and media day photos
         </p>

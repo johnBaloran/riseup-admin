@@ -84,9 +84,6 @@ export function EditPlayerForm({
           ? player.division._id.toString()
           : player.division,
       team: player.team?._id?.toString() || null,
-      jerseyNumber: player.jerseyNumber ?? null,
-      jerseySize: player.jerseySize || null,
-      jerseyName: player.jerseyName || null,
       instagram: player.instagram || null,
       user: player.user?._id?.toString() || null,
     },
@@ -307,71 +304,6 @@ export function EditPlayerForm({
                 placeholder="@username"
                 disabled={isLoading}
               />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Jersey Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Jersey Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <Label htmlFor="jerseyNumber">Jersey Number</Label>
-                <Input
-                  {...register("jerseyNumber", { valueAsNumber: true })}
-                  id="jerseyNumber"
-                  type="number"
-                  min="0"
-                  max="99"
-                  disabled={isLoading}
-                />
-                {errors.jerseyNumber && (
-                  <p className="text-sm text-red-600 mt-1">
-                    {errors.jerseyNumber.message}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="jerseySize">Jersey Size</Label>
-                <Select
-                  value={watch("jerseySize") || "none"}
-                  onValueChange={(value) =>
-                    setValue(
-                      "jerseySize",
-                      value === "none"
-                        ? null
-                        : (value as "S" | "M" | "L" | "XL" | "2XL")
-                    )
-                  }
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Not specified</SelectItem>
-                    <SelectItem value="S">Small</SelectItem>
-                    <SelectItem value="M">Medium</SelectItem>
-                    <SelectItem value="L">Large</SelectItem>
-                    <SelectItem value="XL">XL</SelectItem>
-                    <SelectItem value="2XL">2XL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="jerseyName">Jersey Name</Label>
-                <Input
-                  {...register("jerseyName")}
-                  id="jerseyName"
-                  placeholder="DOE"
-                  disabled={isLoading}
-                />
-              </div>
             </div>
           </CardContent>
         </Card>

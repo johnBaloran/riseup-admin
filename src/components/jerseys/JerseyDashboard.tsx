@@ -21,6 +21,7 @@ import { useJerseyData } from "@/hooks/useJerseyData";
 import JerseyStats from "./JerseyStats";
 import DivisionInfo from "./DivisionInfo";
 import TeamCard from "./TeamCard";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default function JerseyDashboard() {
   const router = useRouter();
@@ -87,7 +88,10 @@ export default function JerseyDashboard() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Jersey Management</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Jersey Management</h1>
+          <TutorialLink tutorialId="jersey-dashboard" />
+        </div>
         <p className="text-gray-600 mt-1">
           Manage jersey designs and player details across all teams
         </p>

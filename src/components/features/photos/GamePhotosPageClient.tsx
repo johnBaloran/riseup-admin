@@ -5,6 +5,7 @@ import { Camera } from "lucide-react";
 import { PhotoUploadManager } from "./PhotoUploadManager";
 import { PlayerLinkingSection } from "./PlayerLinkingSection";
 import { DuplicatePersonsSection } from "./DuplicatePersonsSection";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface Player {
   _id: string;
@@ -80,7 +81,10 @@ export function GamePhotosPageClient({
     <div className="p-6 space-y-6">
       {/* Game Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold">{game.gameName}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold">{game.gameName}</h1>
+          <TutorialLink tutorialId="game-photos" />
+        </div>
         <div className="flex flex-wrap gap-4 text-sm text-gray-600">
           <div>
             <span className="font-medium">Division:</span>{" "}

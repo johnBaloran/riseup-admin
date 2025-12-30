@@ -56,6 +56,7 @@ export default async function CreateTeamPage({
       <PageHeader
         title="Create Team"
         description="Create a new team manually. Players and captain can be assigned after creation."
+        tutorialId="creating-teams"
       />
 
       <div className="max-w-2xl">

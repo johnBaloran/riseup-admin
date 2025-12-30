@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { WeekSidebar } from "@/components/games/WeekSidebar";
 import { WeekScheduleView } from "@/components/games/WeekScheduleView";
 import { DeleteGameDialog } from "@/components/games/DeleteGameDialog";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface Division {
   id: string;
@@ -431,14 +432,17 @@ export default function DivisionSchedulePage() {
         </Link>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold">
-            <Link
-              href={`/league/divisions/${divisionId}`}
-              className="text-blue-600 hover:underline"
-            >
-              {schedule.division.name}
-            </Link>
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold">
+              <Link
+                href={`/league/divisions/${divisionId}`}
+                className="text-blue-600 hover:underline"
+              >
+                {schedule.division.name}
+              </Link>
+            </h1>
+            <TutorialLink tutorialId="managing-games" />
+          </div>
           <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs sm:text-sm text-gray-600 mt-2">
             <div className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />

@@ -17,6 +17,7 @@ import PlayerJerseyTable from "./PlayerJerseyTable";
 import GenericJerseySection from "./GenericJerseySection";
 import JerseyEditionPopup from "./JerseyEditionPopup";
 import UploadJerseyPopup from "./UploadJerseyPopup";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface TeamJerseyDetailProps {
   teamId: string;
@@ -227,8 +228,9 @@ export default function TeamJerseyDetail({ teamId }: TeamJerseyDetailProps) {
                       />
                     </>
                   )}
-                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                  <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate flex items-center gap-2">
                     {team.teamName}
+                    <TutorialLink tutorialId="managing-jersey-orders" />
                   </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-600 truncate">

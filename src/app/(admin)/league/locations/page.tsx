@@ -15,6 +15,7 @@ import { LocationsTable } from "@/components/features/league/locations/Locations
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function LocationsPage() {
   const session = await getServerSession(authOptions);
@@ -36,7 +37,10 @@ export default async function LocationsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Locations</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Locations</h1>
+            <TutorialLink tutorialId="managing-locations" />
+          </div>
           <p className="text-gray-600 mt-1">
             Manage venue locations for league operations
           </p>

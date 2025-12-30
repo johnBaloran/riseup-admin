@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { formatTime } from "@/lib/utils/time";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface OverviewData {
   divisions: Array<{
@@ -119,7 +120,10 @@ export default function ScorekeeperOverviewPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Scorekeeper</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold">Scorekeeper</h1>
+          <TutorialLink tutorialId="scorekeeper-dashboard" />
+        </div>
         <p className="text-gray-600 mt-1">
           Manage game scoring for all active divisions
         </p>

@@ -93,6 +93,7 @@ export default async function TeamDetailPage({ params }: TeamDetailPageProps) {
       <PageHeader
         title={team.teamName}
         description={`${team.teamNameShort} (${team.teamCode})`}
+        tutorialId="managing-teams"
         actions={
           <>
             {noCaptainWarning && (

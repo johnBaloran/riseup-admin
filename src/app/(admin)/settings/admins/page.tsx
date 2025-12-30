@@ -14,6 +14,7 @@ import { AdminsTable } from "@/components/features/admins/AdminsTable";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function AdminsPage() {
   const session = await getServerSession(authOptions);
@@ -33,9 +34,12 @@ export default async function AdminsPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Staff Management
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Staff Management
+            </h1>
+            <TutorialLink tutorialId="understanding-admin-roles" />
+          </div>
           <p className="text-gray-600 mt-1">
             Manage admin accounts and permissions
           </p>

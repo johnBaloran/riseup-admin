@@ -11,6 +11,7 @@ import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { getAllLocations } from "@/lib/db/queries/locations";
 import { MediaDayUploadManager } from "@/components/features/photos/MediaDayUploadManager";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function MediaDayUploadPage() {
   const session = await getServerSession(authOptions);
@@ -28,9 +29,12 @@ export default async function MediaDayUploadPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Media Day Photo Upload
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Media Day Photo Upload
+          </h1>
+          <TutorialLink tutorialId="media-day-setup" sectionId="media-day-upload-workflow" />
+        </div>
         <p className="text-gray-600 mt-1">
           Upload promotional photos from media day events
         </p>

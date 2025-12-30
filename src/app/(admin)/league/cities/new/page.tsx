@@ -13,6 +13,7 @@ import { CreateCityForm } from "@/components/features/league/cities/CreateCityFo
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function CreateCityPage() {
   const session = await getServerSession(authOptions);
@@ -37,7 +38,10 @@ export default async function CreateCityPage() {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Add City</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Add City</h1>
+          <TutorialLink tutorialId="setting-up-cities" />
+        </div>
         <p className="text-gray-600 mt-1">
           Create a new city for league operations
         </p>

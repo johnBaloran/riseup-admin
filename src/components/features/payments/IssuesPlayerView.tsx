@@ -35,6 +35,7 @@ import { SendPaymentLinkModal } from "./SendPaymentLinkModal";
 import { PayInstallmentTerminalModal } from "./PayInstallmentTerminalModal";
 import { EscalateToCaptainModal } from "./EscalateToCaptainModal";
 import { SuspensionWarningModal } from "./SuspensionWarningModal";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface IssuesPlayerViewProps {
   player: any;
@@ -231,6 +232,7 @@ export function IssuesPlayerView({
             <AlertIcon className="h-3 w-3 mr-1" />
             {isCritical ? "Critical" : "Has Issues"}
           </Badge>
+          <TutorialLink tutorialId="handling-payment-issues" />
         </div>
         <p className="text-gray-600">
           {player.team?.teamName || "No Team"} • {player.division?.divisionName}

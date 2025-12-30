@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface ProfileSettingsProps {
   admin: any;
@@ -116,7 +117,10 @@ export function ProfileSettings({ admin }: ProfileSettingsProps) {
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+          <TutorialLink tutorialId="profile-settings" />
+        </div>
         <p className="text-gray-600 mt-1">
           Manage your personal information and security settings
         </p>

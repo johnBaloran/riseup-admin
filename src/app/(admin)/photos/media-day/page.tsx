@@ -15,6 +15,7 @@ import { MediaDayGallery } from "@/components/features/photos/MediaDayGallery";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Upload } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function MediaDayPhotosPage({
   searchParams,
@@ -52,9 +53,12 @@ export default async function MediaDayPhotosPage({
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Media Day Photos
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Media Day Photos
+            </h1>
+            <TutorialLink tutorialId="media-day-setup" />
+          </div>
           <p className="text-gray-600 mt-1">
             View and manage promotional photos from media day events
           </p>

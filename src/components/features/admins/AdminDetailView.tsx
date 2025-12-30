@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 
 import { IAdmin } from "@/models/Admin";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface AdminDetailViewProps {
   admin: IAdmin;
@@ -132,6 +133,7 @@ export function AdminDetailView({ admin }: AdminDetailViewProps) {
               Inactive
             </Badge>
           )}
+          <TutorialLink tutorialId="managing-staff" />
         </div>
         <p className="text-gray-600">{admin.email}</p>
       </div>

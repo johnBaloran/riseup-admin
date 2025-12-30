@@ -14,6 +14,8 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CreatePlayerForm } from "@/components/features/league/players/CreatePlayerForm";
+import { PageHeader } from "@/components/layout/PageHeader";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface CreatePlayerPageProps {
   params: { cityId: string };
@@ -46,7 +48,10 @@ export default async function CreatePlayerPage({
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Create Player</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Create Player</h1>
+          <TutorialLink tutorialId="adding-players-manually" />
+        </div>
         <p className="text-gray-600 mt-1">
           Manually create a player profile. Payment and user account can be set
           up later.

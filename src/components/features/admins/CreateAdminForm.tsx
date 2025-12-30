@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 const createAdminSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -90,10 +91,18 @@ export function CreateAdminForm() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-6 bg-white p-6 rounded-lg shadow"
-    >
+    <>
+      <div className="mb-6">
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Add Staff Member</h1>
+          <TutorialLink tutorialId="adding-new-staff" />
+        </div>
+        <p className="text-gray-600 mt-1">Create a new admin account with role and permissions</p>
+      </div>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-6 bg-white p-6 rounded-lg shadow"
+      >
       <div className="grid gap-6 md:grid-cols-2">
         <div>
           <Label htmlFor="name">Full Name *</Label>
@@ -184,5 +193,6 @@ export function CreateAdminForm() {
         </Button>
       </div>
     </form>
+    </>
   );
 }

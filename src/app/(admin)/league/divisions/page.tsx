@@ -16,6 +16,7 @@ import { DivisionsContent } from "@/components/features/league/divisions/Divisio
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface DivisionsPageProps {
   searchParams: {
@@ -61,7 +62,10 @@ export default async function DivisionsPage({
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Divisions</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Divisions</h1>
+            <TutorialLink tutorialId="creating-divisions" />
+          </div>
           <p className="text-gray-600 mt-1">
             Manage league divisions, schedules, and registration
           </p>

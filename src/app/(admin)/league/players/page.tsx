@@ -76,6 +76,7 @@ export default async function PlayersPage({
       <PageHeader
         title="Players"
         description="Manage player profiles and registrations"
+        tutorialId="adding-players-manually"
         actions={
           hasPermission(session, "manage_players") && (
             <Button asChild>

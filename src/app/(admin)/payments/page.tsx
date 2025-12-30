@@ -16,6 +16,7 @@ import {
 } from "@/lib/db/queries/locations";
 import { getDivisions } from "@/lib/db/queries/divisions";
 import { PaymentDashboard } from "@/components/features/payments/PaymentDashboard";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface PaymentPageProps {
   searchParams: {
@@ -60,9 +61,12 @@ export default async function PaymentPage({ searchParams }: PaymentPageProps) {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Payment Management
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Payment Management
+          </h1>
+          <TutorialLink tutorialId="payment-dashboard-overview" />
+        </div>
         <p className="text-gray-600 mt-1">
           Track player payments and manage installment plans
         </p>

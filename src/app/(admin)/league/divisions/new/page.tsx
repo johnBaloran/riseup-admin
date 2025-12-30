@@ -16,6 +16,7 @@ import { CreateDivisionForm } from "@/components/features/league/divisions/Creat
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function CreateDivisionPage() {
   const session = await getServerSession(authOptions);
@@ -51,7 +52,10 @@ export default async function CreateDivisionPage() {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Create Division</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Create Division</h1>
+          <TutorialLink tutorialId="creating-divisions" />
+        </div>
         <p className="text-gray-600 mt-1">
           Set up a new division with schedule, pricing, and registration
           settings

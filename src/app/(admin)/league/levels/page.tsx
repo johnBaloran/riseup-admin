@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { LevelsContent } from "@/components/features/league/levels/LevelsContent";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface LevelsPageProps {
   searchParams: { tab?: string };
@@ -32,7 +33,10 @@ export default async function LevelsPage({ searchParams }: LevelsPageProps) {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Skill Levels</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Skill Levels</h1>
+            <TutorialLink tutorialId="creating-competition-levels" />
+          </div>
           <p className="text-gray-600 mt-1">
             Manage skill levels for league divisions (Grade 1 = Highest)
           </p>

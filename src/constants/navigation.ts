@@ -127,6 +127,12 @@ export const navigationItems: NavItem[] = [
     ],
   },
   {
+    label: "Tutorials",
+    href: "/tutorials",
+    icon: "BookOpen",
+    permission: "view_dashboard",
+  },
+  {
     label: "Settings",
     icon: "Settings",
     permission: "view_dashboard",

@@ -77,6 +77,7 @@ export default async function TeamsPage({ searchParams }: TeamsPageProps) {
       <PageHeader
         title="Teams"
         description="Manage teams, rosters, and assignments"
+        tutorialId="creating-teams"
         actions={
           <Button asChild>
             <Link href={createTeamUrl}>

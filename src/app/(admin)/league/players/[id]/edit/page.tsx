@@ -15,6 +15,7 @@ import { EditPlayerForm } from "@/components/features/league/players/EditPlayerF
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface EditPlayerPageProps {
   params: { cityId: string; id: string };
@@ -52,7 +53,10 @@ export default async function EditPlayerPage({ params }: EditPlayerPageProps) {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Edit Player</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Edit Player</h1>
+          <TutorialLink tutorialId="managing-editing-players" />
+        </div>
         <p className="text-gray-600 mt-1">
           Update player information and settings
         </p>

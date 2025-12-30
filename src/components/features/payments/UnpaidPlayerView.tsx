@@ -30,6 +30,7 @@ import { MarkTerminalPaymentModal } from "./MarkTerminalPaymentModal";
 import { MarkETransferPaymentModal } from "./MarkETransferPaymentModal";
 import { ReminderLogsCard } from "./ReminderLogsCard";
 import { formatDistanceToNow } from "date-fns";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface UnpaidPlayerViewProps {
   player: any;
@@ -71,6 +72,7 @@ export function UnpaidPlayerView({ player }: UnpaidPlayerViewProps) {
           <Badge className="bg-red-100 text-red-800 border-red-200">
             Payment Required
           </Badge>
+          <TutorialLink tutorialId="managing-unpaid-players" />
         </div>
         <p className="text-gray-600">
           {player.team?.teamName || "No Team"} • {player.division?.divisionName}

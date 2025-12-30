@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth/auth.config";
 import { hasPermission } from "@/lib/auth/permissions";
 import { PlayerExportContent } from "@/components/features/exports/PlayerExportContent";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function PlayerExportPage() {
   const session = await getServerSession(authOptions);
@@ -26,9 +27,12 @@ export default async function PlayerExportPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Export Player Data
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Export Player Data
+          </h1>
+          <TutorialLink tutorialId="exporting-data" />
+        </div>
         <p className="text-gray-600 mt-1">
           Download Excel report of all registered players with user accounts
         </p>

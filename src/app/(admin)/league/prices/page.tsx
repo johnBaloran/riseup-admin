@@ -14,6 +14,7 @@ import { PricesGrid } from "@/components/features/league/prices/PricesGrid";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 // Type definitions for populated Mongoose data
 interface PopulatedCity {
@@ -53,7 +54,10 @@ export default async function PricesPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Prices</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight">Prices</h1>
+            <TutorialLink tutorialId="managing-pricing-tiers" />
+          </div>
           <p className="text-gray-600 mt-1">
             Manage Stripe pricing for divisions (Prices are permanent once
             created)

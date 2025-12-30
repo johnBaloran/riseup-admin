@@ -15,13 +15,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,9 +29,6 @@ export function EditPlayerInfoDialog({ player }: EditPlayerInfoDialogProps) {
   const [formData, setFormData] = useState({
     playerName: player.playerName || "",
     instagram: player.instagram || "",
-    jerseyNumber: player.jerseyNumber ?? "",
-    jerseySize: player.jerseySize || "",
-    jerseyName: player.jerseyName || "",
   });
 
   const handleChange = (field: string, value: string | number) => {
@@ -65,9 +55,6 @@ export function EditPlayerInfoDialog({ player }: EditPlayerInfoDialogProps) {
           id: player._id,
           playerName: formData.playerName,
           instagram: formData.instagram || null,
-          jerseyNumber: formData.jerseyNumber === "" ? null : Number(formData.jerseyNumber),
-          jerseySize: formData.jerseySize || null,
-          jerseyName: formData.jerseyName || null,
         }),
       });
 
@@ -100,7 +87,7 @@ export function EditPlayerInfoDialog({ player }: EditPlayerInfoDialogProps) {
         <DialogHeader>
           <DialogTitle>Edit Player Information</DialogTitle>
           <DialogDescription>
-            Update the player's basic information and jersey details
+            Update the player's basic information
           </DialogDescription>
         </DialogHeader>
 
@@ -125,61 +112,6 @@ export function EditPlayerInfoDialog({ player }: EditPlayerInfoDialogProps) {
               placeholder="@username"
               disabled={isSubmitting}
             />
-          </div>
-
-          {/* Jersey Information */}
-          <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-3">Jersey Information</h4>
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="jerseyNumber">Jersey Number</Label>
-                <Input
-                  id="jerseyNumber"
-                  type="number"
-                  min="0"
-                  max="99"
-                  value={formData.jerseyNumber}
-                  onChange={(e) => handleChange("jerseyNumber", e.target.value)}
-                  disabled={isSubmitting}
-                  placeholder="0-99"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="jerseySize">Jersey Size</Label>
-                <Select
-                  value={formData.jerseySize || "none"}
-                  onValueChange={(value) =>
-                    handleChange("jerseySize", value === "none" ? "" : value)
-                  }
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Not specified</SelectItem>
-                    <SelectItem value="S">Small</SelectItem>
-                    <SelectItem value="M">Medium</SelectItem>
-                    <SelectItem value="L">Large</SelectItem>
-                    <SelectItem value="XL">XL</SelectItem>
-                    <SelectItem value="2XL">2XL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="jerseyName">Jersey Name</Label>
-                <Input
-                  id="jerseyName"
-                  value={formData.jerseyName}
-                  onChange={(e) => handleChange("jerseyName", e.target.value)}
-                  placeholder="DOE"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </div>
           </div>
 
           <div className="flex gap-3 justify-end pt-4">

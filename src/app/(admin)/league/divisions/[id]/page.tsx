@@ -110,6 +110,7 @@ export default async function DivisionDetailPage({
       <PageHeader
         title={division.divisionName}
         description={division.description}
+        tutorialId="editing-managing-divisions"
         actions={
           <>
             {getStatusBadge()}

@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface ScoreboardProps {
   homeTeam: {
@@ -22,6 +23,10 @@ export default function Scoreboard({
   return (
     <Card className="rounded-none border-x-0 border-t-0 shadow-lg">
       <CardContent className="p-0">
+        <div className="flex items-center justify-between px-6 py-3 bg-gradient-to-r from-slate-700 to-slate-800 border-b border-slate-600">
+          <h2 className="text-lg font-semibold text-white">Live Scoring</h2>
+          <TutorialLink tutorialId="scoring-games" />
+        </div>
         <div
           className={`grid grid-cols-11 gap-4 py-8 px-6 bg-gradient-to-r from-slate-800 to-slate-900 text-white ${
             isTeamsSwitched ? "flex flex-row-reverse" : ""

@@ -13,6 +13,7 @@ import {
   getAllCities,
 } from "@/lib/db/queries/analytics";
 import { AnalyticsDashboard } from "@/components/features/analytics/AnalyticsDashboard";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface DashboardPageProps {
   searchParams: {
@@ -80,7 +81,10 @@ export default async function DashboardPage({
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Payment Analytics</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Payment Analytics</h1>
+          <TutorialLink tutorialId="understanding-dashboard" />
+        </div>
         <p className="text-gray-600 mt-1">
           Track payment methods, revenue, and player signups
         </p>

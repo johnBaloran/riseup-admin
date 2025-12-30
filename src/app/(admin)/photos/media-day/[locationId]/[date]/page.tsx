@@ -15,6 +15,7 @@ import { MediaDayPhotoGalleryWithHeader } from "@/components/features/photos/Med
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 export default async function MediaDayPhotoGalleryPage({
   params,
@@ -52,7 +53,10 @@ export default async function MediaDayPhotoGalleryPage({
             Back to Media Day
           </Link>
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">Media Day Photos</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Media Day Photos</h1>
+          <TutorialLink tutorialId="media-day-setup" sectionId="media-day-upload-workflow" />
+        </div>
       </div>
 
       <MediaDayPhotoGalleryWithHeader

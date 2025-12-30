@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { format, subDays, isBefore } from "date-fns";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface RosterPageProps {
   params: { cityId: string; id: string };
@@ -62,9 +63,12 @@ export default async function RosterPage({ params }: RosterPageProps) {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Manage Roster - {team.teamName}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Manage Roster - {team.teamName}
+          </h1>
+          <TutorialLink tutorialId="managing-team-rosters" />
+        </div>
         <p className="text-gray-600 mt-1">
           Add or remove players from the team roster
         </p>

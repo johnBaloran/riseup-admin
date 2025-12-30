@@ -23,6 +23,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { format } from "date-fns";
+import TutorialLink from "@/components/features/tutorials/TutorialLink";
 
 interface OnTrackPlayerViewProps {
   player: any;
@@ -75,6 +76,7 @@ export function OnTrackPlayerView({
             <TrendingUp className="h-3 w-3 mr-1" />
             On Track
           </Badge>
+          <TutorialLink tutorialId="tracking-installments" />
         </div>
         <p className="text-gray-600">
           {player.team?.teamName || "No Team"} • {player.division?.divisionName}

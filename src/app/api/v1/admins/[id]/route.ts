@@ -106,7 +106,37 @@ export async function PATCH(
       );
     }
 
-    // Regular update
+    // Regular update - validate inputs
+    const currentAdminId = (session.user as any).id;
+    const isEditingSelf = currentAdminId === params.id;
+
+    // Prevent self-role editing
+    if (isEditingSelf && role) {
+      const currentAdmin = await getAdminById(params.id);
+      if (currentAdmin && currentAdmin.role !== role) {
+        return NextResponse.json(
+          { success: false, error: "Cannot change your own role" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Check email uniqueness if email is being changed
+    if (email) {
+      const currentAdmin = await getAdminById(params.id);
+      if (currentAdmin && currentAdmin.email !== email.toLowerCase()) {
+        const { emailExists } = await import("@/lib/db/queries/admins");
+        const exists = await emailExists(email);
+        if (exists) {
+          return NextResponse.json(
+            { success: false, error: "Email already in use by another admin" },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Update admin
     const admin = await updateAdmin(params.id, {
       name,
       email,
